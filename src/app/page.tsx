@@ -1,132 +1,158 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sun, Droplets, Wallet, Calculator, FileText } from "lucide-react";
+import { SignInButton, SignUpButton, SignedOut, SignedIn } from "@clerk/nextjs";
 
-export default function Home() {
-  return (
-    <div className="container mx-auto py-10 px-4 md:px-8 max-w-6xl">
-      <div className="flex justify-between items-center mb-10">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight mb-2">RV Masterplan</h1>
-          <p className="text-muted-foreground text-lg">Design and manage your optimal RV setup</p>
+export default function LandingPage() {
+    return (
+        <div className="min-h-screen bg-white">
+            {/* Header - Buttons Only */}
+            <header className="absolute top-0 right-0 z-50 p-6 flex justify-end items-center">
+                <div className="space-x-4">
+                    <SignedOut>
+                        <SignInButton mode="modal">
+                            <Button variant="outline" className="bg-white/80 backdrop-blur border-white/40 text-slate-800 hover:bg-white">Log In</Button>
+                        </SignInButton>
+                        <SignUpButton mode="modal">
+                            <Button className="bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white">Subscribe Now</Button>
+                        </SignUpButton>
+                    </SignedOut>
+                    <SignedIn>
+                        <Button asChild className="bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white">
+                            <Link href="/dashboard">Go to Dashboard</Link>
+                        </Button>
+                    </SignedIn>
+                </div>
+            </header>
+
+            {/* Static Image Hero Section */}
+            <section className="relative w-full h-[70vh] min-h-[500px] flex items-center justify-center overflow-hidden bg-slate-900">
+                <Image
+                    src="/images/page-headers/landing-header.jpg"
+                    alt="RV MasterPlan Hero"
+                    fill
+                    className="object-cover opacity-60"
+                    priority
+                />
+
+                {/* Hero Overlay Content */}
+                <div className="relative z-10 text-center px-4 max-w-4xl mx-auto mt-16">
+                    <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 drop-shadow-lg tracking-tight">
+                        Your Blueprint for the Open Road.
+                    </h1>
+                    <p className="text-xl md:text-2xl text-slate-200 mb-10 drop-shadow-md">
+                        The ultimate toolkit to plan, budget, and optimize your full-time RV lifestyle. From solar arrays to water conservation.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <Button asChild size="lg" className="bg-[#8ca163] hover:bg-[#7a8e52] text-white text-lg px-8 py-6 rounded-full shadow-lg">
+                            <Link href="/dashboard">Try the Demo</Link>
+                        </Button>
+                        <SignedOut>
+                            <SignUpButton mode="modal">
+                                <Button size="lg" variant="outline" className="bg-transparent border-2 border-white text-white hover:bg-white/10 text-lg px-8 py-6 rounded-full shadow-lg">
+                                    Create Account
+                                </Button>
+                            </SignUpButton>
+                        </SignedOut>
+                    </div>
+                </div>
+            </section>
+
+            {/* Video Introduction Section */}
+            <section className="bg-[#f8fbf5] py-20 px-4">
+                <div className="max-w-4xl mx-auto">
+                    <div className="text-center mb-10">
+                        <h2 className="text-3xl font-bold text-[#2a4f3f] mb-4">Meet Your Guide</h2>
+                        <p className="text-lg text-slate-600">Why I built the RV MasterPlan.</p>
+                    </div>
+
+                    <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-white bg-black">
+                        <video
+                            playsInline
+                            controls
+                            preload="metadata"
+                            className="w-full h-full object-contain"
+                        >
+                            <source src="/videos/intro.mp4" type="video/mp4" />
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </section>
+
+            {/* Narrative Section */}
+            <section className="py-16 px-6 max-w-4xl mx-auto text-center border-t border-slate-200 mt-8">
+                <h2 className="text-3xl font-bold text-[#2a4f3f] mb-6">Designed For the Serious Nomads</h2>
+                <p className="text-lg text-slate-600 leading-relaxed mb-8">
+                    The RV MasterPlan is designed around a core philosophy: knowing your numbers means knowing your freedom.
+                    Whether you are boondocking for weeks in the desert or navigating the complexities of financing a new rig,
+                    these calculators adapt to your exact equipment limits and living expenses so you never run out of power, water, or runway.
+                </p>
+            </section>
+
+            {/* Pricing / Demo Explanation */}
+            <section className="py-20 bg-[#f1f6ea] px-6">
+                <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12">
+
+                    <div className="bg-white p-10 rounded-2xl shadow-sm border border-[#e0e8d5]">
+                        <h3 className="text-2xl font-bold text-slate-800 mb-4 tracking-tight">Guest Mode</h3>
+                        <p className="text-slate-600 mb-6">
+                            Get an immediate feel for the calculators. Guest Mode comes pre-loaded with mock data so you can test sliding the tank limits, tweaking the solar array, and generating an example Master Plan PDF.
+                        </p>
+                        <ul className="space-y-3 text-sm text-slate-600 border-t pt-6 mb-8">
+                            <li className="flex items-center">✓ Access all calculators</li>
+                            <li className="flex items-center">✓ Generate PDF reports</li>
+                            <li className="flex items-center text-amber-600 font-medium">⚠️ Data resets when you leave</li>
+                        </ul>
+                        <Button asChild variant="outline" className="w-full">
+                            <Link href="/dashboard">Try Guest Mode</Link>
+                        </Button>
+                    </div>
+
+                    <div className="bg-[#2a4f3f] text-white p-10 rounded-2xl shadow-xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-4 opacity-10">
+                            <Image src="/images/logos/rv-masterplan-logo.png" width={150} height={150} alt="Background Logo" />
+                        </div>
+                        <h3 className="text-2xl font-bold mb-4 tracking-tight relative z-10">Pro Subscription</h3>
+                        <p className="text-slate-300 mb-6 relative z-10">
+                            Save your exact RV loadout in the cloud. We securely save your solar panel wattage, tank capacities, and daily living budget. Log in from any device to update your strategy real-time.
+                        </p>
+                        <ul className="space-y-3 text-sm text-slate-200 border-t border-white/20 pt-6 mb-8 relative z-10">
+                            <li className="flex items-center">✓ Custom equipment database</li>
+                            <li className="flex items-center">✓ Saved historical budgets</li>
+                            <li className="flex items-center">✓ Secure cloud synchronization</li>
+                        </ul>
+                        <SignedOut>
+                            <SignUpButton mode="modal">
+                                <Button className="w-full bg-[#8ca163] hover:bg-[#7a8e52] text-white border-0 relative z-10">Subscribe $X/mo</Button>
+                            </SignUpButton>
+                        </SignedOut>
+                        <SignedIn>
+                            <Button disabled variant="outline" className="w-full relative z-10">Currently Subscribed</Button>
+                        </SignedIn>
+                    </div>
+
+                </div>
+            </section>
+
+            {/* Footer */}
+            <footer className="bg-slate-900 border-t border-slate-800 py-12 px-6">
+                <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center opacity-80 gap-6">
+                    <Image
+                        src="/images/logos/rv-masterplan-logo-landscape.png"
+                        alt="RV MasterPlan Logo"
+                        width={180}
+                        height={60}
+                        className="object-contain filter brightness-0 invert"
+                    />
+                    <div className="text-slate-400 text-sm text-center md:text-left">
+                        © {new Date().getFullYear()} Robert Bogatin. The Wolves to Feed.<br />
+                        All rights reserved.
+                    </div>
+                </div>
+            </footer>
         </div>
-        <div className="bg-amber-100 text-amber-800 px-4 py-2 rounded-full text-sm font-medium border border-amber-200">
-          Demo Mode Active
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-        {/* Power Strategy Card */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-amber-100 p-2 rounded-full">
-                <Sun className="h-6 w-6 text-amber-600" />
-              </div>
-              <CardTitle>Power Strategy</CardTitle>
-            </div>
-            <CardDescription>Track daily energy consumption and configure solar, batteries, and generators.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full" variant="outline">
-              <Link href="/calculators/power">Open Calculator</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Water Calculator Card */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-blue-100 p-2 rounded-full">
-                <Droplets className="h-6 w-6 text-blue-600" />
-              </div>
-              <CardTitle>Water Strategy</CardTitle>
-            </div>
-            <CardDescription>Manage fresh, gray, and black water tanks and usage schedules.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full" variant="outline">
-              <Link href="/calculators/water">Open Calculator</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Living Budget Card */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-purple-100 p-2 rounded-full">
-                <Wallet className="h-6 w-6 text-purple-600" />
-              </div>
-              <CardTitle>Living Budget</CardTitle>
-            </div>
-            <CardDescription>Track monthly expenses, fuel, campsite fees, and maintenance.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full" variant="outline">
-              <Link href="/calculators/budget">Open Calculator</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Purchase Calculator Card */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-green-100 p-2 rounded-full">
-                <Calculator className="h-6 w-6 text-green-600" />
-              </div>
-              <CardTitle>Purchase Planner</CardTitle>
-            </div>
-            <CardDescription>Calculate loan amortizations, down payments, and total costs.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full" variant="outline">
-              <Link href="/calculators/purchase">Open Calculator</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Setup Budget Card */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-emerald-100 p-2 rounded-full">
-                <Wallet className="h-6 w-6 text-emerald-600" />
-              </div>
-              <CardTitle>Setup Budget</CardTitle>
-            </div>
-            <CardDescription>Track items needed to set up your RV for full-time living.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full" variant="outline">
-              <Link href="/calculators/setup">Open Calculator</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Master Plan Report Card */}
-        <Card className="hover:shadow-md transition-shadow md:col-span-2 lg:col-span-1 bg-slate-50 border-slate-200">
-          <CardHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-slate-200 p-2 rounded-full">
-                <FileText className="h-6 w-6 text-slate-700" />
-              </div>
-              <CardTitle>Master Plan Report</CardTitle>
-            </div>
-            <CardDescription>Generate a comprehensive PDF export of all your RV planning data.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full bg-slate-800 hover:bg-slate-700 text-white">
-              <Link href="/reports/master">Generate Report</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-      </div>
-    </div>
-  );
+    );
 }

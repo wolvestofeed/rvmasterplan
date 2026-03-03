@@ -1,0 +1,64 @@
+'use server';
+
+import { db } from '../db';
+import { waterActivities, tankLogs } from '../db/schema';
+import { eq, desc } from 'drizzle-orm';
+import { auth } from '@clerk/nextjs/server';
+import { revalidatePath } from 'next/cache';
+
+export async function getWaterActivities() {
+    const { userId } = await auth();
+    if (!userId) return [];
+
+    return await db.select().from(waterActivities).where(eq(waterActivities.userId, userId));
+}
+
+export async function addWaterActivity(data: { name: string, category: string, gallonsPerUse: number, timesPerDay: number }) {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const id = Date.now().toString(); // simple ID generation
+    await db.insert(waterActivities).values({
+        id,
+        userId,
+        ...data,
+        gallonsPerUse: String(data.gallonsPerUse),
+        timesPerDay: String(data.timesPerDay)
+    });
+
+    revalidatePath('/calculators/water');
+    return id;
+}
+
+export async function deleteWaterActivity(id: string) {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    await db.delete(waterActivities).where(eq(waterActivities.id, id));
+    revalidatePath('/calculators/water');
+}
+
+export async function getTankLogs() {
+    const { userId } = await auth();
+    if (!userId) return [];
+
+    return await db.select().from(tankLogs)
+        .where(eq(tankLogs.userId, userId))
+        .orderBy(desc(tankLogs.date));
+}
+
+export async function addTankLog(data: { date: string, type: string, tank: string, volume: number }) {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const id = Date.now().toString();
+    await db.insert(tankLogs).values({
+        id,
+        userId,
+        ...data,
+        volume: String(data.volume)
+    });
+
+    revalidatePath('/calculators/water');
+    return id;
+}
