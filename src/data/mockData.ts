@@ -1,4 +1,4 @@
-import { WaterData, WaterActivity, SetupItem } from '@/types';
+import { WaterData, WaterActivity, SetupItem, SolarInverter, GenericSolarEquipment, DailySolarLog } from '@/types';
 
 export const mockRVDetails = {
     type: 'Travel Trailer',
@@ -32,7 +32,7 @@ export const mockFinancialData = {
 
 export const mockDevices = [
     { id: '1', name: '12V 10.7 CU FT Refrigerator & Freezer', group: 'Essential', category: 'Refrigeration', watts: 85, hoursPerDay: 12 },
-    { id: '2', name: 'Space Heater', group: 'Essential', category: 'Climate Control', watts: 750, hoursPerDay: 0 },
+    { id: '2', name: 'Space Heater', group: 'Essential', category: 'Climate Control', watts: 750, hoursPerDay: 4 },
     { id: '3', name: 'Water Pump', group: 'Essential', category: 'Plumbing', watts: 100, hoursPerDay: 0.33 },
     { id: '4', name: 'Microwave', group: 'Non-essential', category: 'Kitchen', watts: 800, hoursPerDay: 0.1 },
     { id: '5', name: 'Laptop', group: 'Non-essential', category: 'Work', watts: 45, hoursPerDay: 3 },
@@ -64,13 +64,29 @@ export const mockSolarPanels = [
 ];
 
 export const mockSolarBatteries = [
-    { id: '1', make: 'EcoFlow', model: 'Smart Extra Battery', capacityWh: 3600, capacityAh: 300, ampHours: 300, voltage: '12V', cycles: 3500, weight: 84, type: 'LFP', rechargeTime120V: 2.7, rechargeTime30Amp: 1.8, rechargeSolar: 4.5, daisyChainCapable: true, dimensions: '25.0 × 10.6 × 10.8 in', lifespan: 10, warranty: 5, quantity: 1 },
-    { id: '2', make: 'EcoFlow', model: 'DELTA Pro Battery', capacityWh: 3600, capacityAh: 300, ampHours: 300, voltage: '12V', cycles: 3500, weight: 84, type: 'LFP', rechargeTime120V: 2.7, rechargeTime30Amp: 1.8, rechargeSolar: 4.5, daisyChainCapable: true, dimensions: '25.0 × 10.6 × 10.8 in', lifespan: 10, warranty: 5, quantity: 1 }
+    { id: '1', make: 'EcoFlow', model: 'DELTA Pro Battery', capacityWh: 3600, capacityAh: 300, ampHours: 300, voltage: '12V', cycles: 3500, weight: 84, type: 'LFP', rechargeTime120V: 2.7, rechargeTime30Amp: 1.8, rechargeSolar: 4.5, daisyChainCapable: true, dimensions: '25.0 × 10.6 × 10.8 in', lifespan: 10, warranty: 5, quantity: 1 }
 ];
 
 export const mockSolarGenerators = [
-    { id: '1', make: 'EcoFlow', model: 'DELTA Pro', outputWatts: 3600, batteryCapacityWh: 3600, systemType: 'generator', chargeControllerType: 'MPPT', rechargeTime120V: 2.7, rechargeTimeSolar: 4.5, has12VOutput: true, has30AmpOutput: true, acOutlets: 5, usbPorts: 6, dcPorts: 2, weight: 99, quantity: 1 },
-    { id: '2', make: 'EcoFlow', model: 'DELTA Pro', outputWatts: 3600, batteryCapacityWh: 3600, systemType: 'generator', chargeControllerType: 'MPPT', rechargeTime120V: 2.7, rechargeTimeSolar: 4.5, has12VOutput: true, has30AmpOutput: true, acOutlets: 5, usbPorts: 6, dcPorts: 2, weight: 99, quantity: 1 }
+    { id: '1', make: 'EcoFlow', model: 'DELTA Pro', outputWatts: 3600, batteryCapacityWh: 3600, systemType: 'generator', chargeControllerType: 'MPPT', rechargeTime120V: 2.7, rechargeTimeSolar: 4.5, has12VOutput: true, has30AmpOutput: true, acOutlets: 5, usbPorts: 6, dcPorts: 2, weight: 99, quantity: 1 }
+];
+
+export const mockSolarInverters: SolarInverter[] = [];
+
+export const mockGenericSolarEquipment: GenericSolarEquipment[] = [
+    { id: 'gen-1', make: 'EcoFlow', model: 'PV400', equipmentType: 'Solar Panel', specs: '400W, 23% Eff, Flexible Monocrystalline', quantity: 2, price: 899, wattage: 400, weight: 12.5 },
+    { id: 'gen-2', make: 'EcoFlow', model: 'DELTA Pro Battery', equipmentType: 'Battery', specs: '3600Wh, 300Ah, LFP, 3500 Cycles', quantity: 1, price: 1599, wattage: 3600, weight: 84 },
+    { id: 'gen-3', make: 'EcoFlow', model: 'DELTA Pro', equipmentType: 'Generator', specs: '3600W Output, MPPT, 5 AC / 6 USB / 2 DC', quantity: 1, price: 2499, wattage: 3600, weight: 99 }
+];
+
+export const mockDailySolarLogs: DailySolarLog[] = [
+    { id: '1', date: '2026-02-25', weatherCondition: 'Sunny', sunHours: 6, generatedWh: 3200 },
+    { id: '2', date: '2026-02-26', weatherCondition: 'Partly Cloudy', sunHours: 4, generatedWh: 2100 },
+    { id: '3', date: '2026-02-27', weatherCondition: 'Cloudy', sunHours: 2.5, generatedWh: 1200 },
+    { id: '4', date: '2026-02-28', weatherCondition: 'Sunny', sunHours: 6.5, generatedWh: 3400 },
+    { id: '5', date: '2026-03-01', weatherCondition: 'Partly Cloudy', sunHours: 5, generatedWh: 2600 },
+    { id: '6', date: '2026-03-02', weatherCondition: 'Overcast', sunHours: 1.5, generatedWh: 750 },
+    { id: '7', date: '2026-03-03', weatherCondition: 'Sunny', sunHours: 7, generatedWh: 3600 },
 ];
 
 export const mockWaterData: WaterData = {
@@ -117,6 +133,9 @@ export const mockDemoUser = {
         solarPanels: mockSolarPanels,
         solarBatteries: mockSolarBatteries,
         solarGenerators: mockSolarGenerators,
+        solarInverters: mockSolarInverters,
+        genericSolarEquipment: mockGenericSolarEquipment,
+        dailySolarLogs: mockDailySolarLogs,
         water: mockWaterData
     }
 };

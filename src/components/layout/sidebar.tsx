@@ -23,7 +23,7 @@ const navItems = [
     { name: "RV Purchase Calculator", href: "/calculators/purchase", icon: Calculator },
     { name: "RV Setup Budget", href: "/calculators/setup", icon: Wallet },
     { name: "RV Living Budget", href: "/calculators/budget", icon: Banknote },
-    { name: "Power and Solar Calculator", href: "/calculators/power", icon: Sun },
+    { name: "Power and Solar Calculator", href: "/calculators/power/system", icon: Sun },
     { name: "Water Calculator", href: "/calculators/water", icon: Droplets },
     { name: "Documents", href: "/documents", icon: FileText },
     { name: "Reports", href: "/reports/master", icon: PieChart },

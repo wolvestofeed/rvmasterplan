@@ -10,60 +10,47 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { FileText, Image as ImageIcon, Upload, Trash2, Eye, Calendar, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
+import { getDocuments, addDocument, deleteDocument } from "@/app/actions/documents";
+import { useEffect } from "react";
 
 // Make sure formatCurrency exists in lib/utils, if not we will just use basic formatting
 
 type DocumentItem = {
     id: string;
     title: string;
-    type: "pdf" | "image";
-    dateAdded: string;
-    renewalDate: string;
-    renewalCost: number | null;
+    fileType: string;
+    fileUrl: string | null;
+    createdAt: Date;
+    renewalDate: Date | null;
+    renewalCost: string | null;
 };
 
-const initialDocuments: DocumentItem[] = [
-    {
-        id: "1",
-        title: "Progressive RV Insurance Policy",
-        type: "pdf",
-        dateAdded: "2024-05-15",
-        renewalDate: "2025-05-15",
-        renewalCost: 705.00
-    },
-    {
-        id: "2",
-        title: "State Driver's License",
-        type: "image",
-        dateAdded: "2024-01-10",
-        renewalDate: "2028-01-10",
-        renewalCost: null
-    },
-    {
-        id: "3",
-        title: "Good Sam Membership",
-        type: "pdf",
-        dateAdded: "2024-06-01",
-        renewalDate: "2025-06-01",
-        renewalCost: 29.00
-    },
-    {
-        id: "4",
-        title: "RV Extended Warranty",
-        type: "pdf",
-        dateAdded: "2024-05-20",
-        renewalDate: "2029-05-20",
-        renewalCost: 0
-    }
-];
-
 export default function DocumentsPage() {
-    const [documents, setDocuments] = useState<DocumentItem[]>(initialDocuments);
+    const [documents, setDocuments] = useState<DocumentItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isUploading, setIsUploading] = useState(false);
+
     const [title, setTitle] = useState("");
     const [renewalDate, setRenewalDate] = useState("");
     const [renewalCost, setRenewalCost] = useState("");
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-    const handleUpload = (e: React.FormEvent) => {
+    useEffect(() => {
+        loadDocuments();
+    }, []);
+
+    const loadDocuments = async () => {
+        setIsLoading(true);
+        const res = await getDocuments();
+        if (res.success && res.data) {
+            setDocuments(res.data as any);
+        } else {
+            toast.error("Failed to load documents.");
+        }
+        setIsLoading(false);
+    };
+
+    const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!title) {
@@ -71,27 +58,66 @@ export default function DocumentsPage() {
             return;
         }
 
-        const newDoc: DocumentItem = {
-            id: Math.random().toString(36).substr(2, 9),
-            title,
-            type: "pdf", // default mock type
-            dateAdded: new Date().toISOString().split('T')[0],
-            renewalDate: renewalDate || "-",
-            renewalCost: renewalCost ? parseFloat(renewalCost) : null
-        };
+        if (!selectedFile) {
+            toast.error("Please select a file to upload.");
+            return;
+        }
 
-        setDocuments([newDoc, ...documents]);
-        setTitle("");
-        setRenewalDate("");
-        setRenewalCost("");
+        setIsUploading(true);
 
-        toast.success("Document uploaded successfully!");
+        try {
+            // 1. Upload to local API route
+            const formData = new FormData();
+            formData.append("file", selectedFile);
+
+            const uploadRes = await fetch("/api/documents/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            const uploadData = await uploadRes.json();
+
+            if (!uploadRes.ok) throw new Error(uploadData.error || "Upload failed");
+
+            // 2. Save metadata to database
+            const dbRes = await addDocument({
+                title,
+                fileType: selectedFile.type.includes('pdf') ? 'pdf' : 'image',
+                fileUrl: uploadData.url,
+                renewalDate: renewalDate ? new Date(renewalDate) : null,
+                renewalCost: renewalCost || null
+            });
+
+            if (!dbRes.success) throw new Error(dbRes.error);
+
+            // 3. Reset form and reload
+            setTitle("");
+            setRenewalDate("");
+            setRenewalCost("");
+            setSelectedFile(null);
+
+            // Quick optimistic update or full reload
+            await loadDocuments();
+            toast.success("Document uploaded successfully!");
+
+        } catch (error: any) {
+            toast.error(error.message || "Something went wrong.");
+        } finally {
+            setIsUploading(false);
+        }
     };
 
-    const handleDelete = (id: string) => {
-        setDocuments(documents.filter(doc => doc.id !== id));
-        toast.success("Document removed.");
+    const handleDelete = async (id: string) => {
+        const res = await deleteDocument(id);
+        if (res.success) {
+            setDocuments(documents.filter(doc => doc.id !== id));
+            toast.success("Document removed.");
+        } else {
+            toast.error("Failed to delete document.");
+        }
     };
+
+
 
     return (
         <div className="container mx-auto py-10 px-4 md:px-8 max-w-6xl">
@@ -111,10 +137,26 @@ export default function DocumentsPage() {
                     </CardHeader>
                     <CardContent className="pt-6">
                         <form onSubmit={handleUpload} className="space-y-4">
-                            <div className="border-2 border-dashed border-slate-200 rounded-lg p-6 flex flex-col items-center justify-center text-center bg-slate-50 cursor-pointer hover:bg-slate-100 transition">
-                                <Upload className="h-8 w-8 text-slate-400 mb-2" />
-                                <p className="text-sm font-medium text-slate-600">Click to browse or drag and drop</p>
-                                <p className="text-xs text-slate-400 mt-1">Max file size: 10MB</p>
+                            <div className="relative border-2 border-dashed border-slate-300 rounded-lg p-6 flex flex-col items-center justify-center text-center bg-slate-50 overflow-hidden hover:bg-slate-100 transition focus-within:ring-2 focus-within:ring-[#2a4f3f] focus-within:border-transparent">
+                                <input
+                                    type="file"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                />
+                                {selectedFile ? (
+                                    <>
+                                        <FileText className="h-8 w-8 text-[#2a4f3f] mb-2" />
+                                        <p className="text-sm font-medium text-slate-800 truncate px-4">{selectedFile.name}</p>
+                                        <p className="text-xs text-slate-500 mt-1">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="h-8 w-8 text-slate-400 mb-2" />
+                                        <p className="text-sm font-medium text-slate-600">Click to browse or drag and drop</p>
+                                        <p className="text-xs text-slate-400 mt-1">Supported: PDF, JPG, PNG (Max 10MB)</p>
+                                    </>
+                                )}
                             </div>
 
                             <div className="space-y-2">
@@ -156,8 +198,8 @@ export default function DocumentsPage() {
                                 </div>
                             </div>
 
-                            <Button type="submit" className="w-full bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white">
-                                Upload & Save
+                            <Button disabled={isUploading} type="submit" className="w-full bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white">
+                                {isUploading ? "Uploading..." : "Upload & Save"}
                             </Button>
                         </form>
                     </CardContent>
@@ -187,7 +229,7 @@ export default function DocumentsPage() {
                                     {documents.length === 0 ? (
                                         <TableRow>
                                             <TableCell colSpan={5} className="text-center py-10 text-slate-500">
-                                                No documents uploaded yet.
+                                                {isLoading ? "Loading documents..." : "No documents uploaded yet."}
                                             </TableCell>
                                         </TableRow>
                                     ) : (
@@ -195,7 +237,7 @@ export default function DocumentsPage() {
                                             <TableRow key={doc.id}>
                                                 <TableCell className="font-medium">
                                                     <div className="flex items-center">
-                                                        {doc.type === 'pdf' ? (
+                                                        {doc.fileType === 'pdf' ? (
                                                             <div className="h-8 w-8 rounded bg-red-100 flex items-center justify-center mr-3 text-red-600">
                                                                 <FileText className="h-4 w-4" />
                                                             </div>
@@ -208,10 +250,10 @@ export default function DocumentsPage() {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-slate-500">
-                                                    {new Date(doc.dateAdded).toLocaleDateString()}
+                                                    {new Date(doc.createdAt).toLocaleDateString()}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {doc.renewalDate !== "-" && doc.renewalDate ? (
+                                                    {doc.renewalDate ? (
                                                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                                                             {new Date(doc.renewalDate).toLocaleDateString()}
                                                         </span>
@@ -220,13 +262,17 @@ export default function DocumentsPage() {
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-right font-medium">
-                                                    {doc.renewalCost !== null ? formatCurrency(doc.renewalCost) : '-'}
+                                                    {doc.renewalCost !== null ? formatCurrency(Number(doc.renewalCost)) : '-'}
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center justify-center gap-2">
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-blue-600">
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
+                                                        {doc.fileUrl && (
+                                                            <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-blue-600">
+                                                                <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+                                                                    <Eye className="h-4 w-4" />
+                                                                </a>
+                                                            </Button>
+                                                        )}
                                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-red-500" onClick={() => handleDelete(doc.id)}>
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>

@@ -241,24 +241,24 @@ export default function WaterCalculatorPage() {
             />
 
             {/* Dashboard Summary Cards */}
-            <Card className="p-6 bg-slate-50 border border-slate-200 mb-6 border-t-2 border-t-cyan-500 shadow-md shadow-cyan-900/5">
+            <Card className="p-6 bg-slate-50 mb-6">
                 <h3 className="text-lg font-medium text-slate-800 mb-4">Water Usage Summary</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-white p-4 rounded-lg border border-slate-200 text-slate-800 text-center">
-                        <div className="text-sm text-slate-500 mb-1">Daily Usage</div>
-                        <div className="font-bold text-3xl text-cyan-600">{formatNumber(summary.dailyUsage, 1)} gal</div>
+                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Daily Usage</div>
+                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatNumber(summary.dailyUsage, 1)} gal</div>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border border-slate-200 text-slate-800 text-center">
-                        <div className="text-sm text-slate-500 mb-1">Days Until Empty</div>
-                        <div className="font-bold text-3xl text-blue-600">{summary.daysUntilEmpty}</div>
+                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Days Until Empty</div>
+                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{summary.daysUntilEmpty}</div>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border border-slate-200 text-slate-800 text-center">
-                        <div className="text-sm text-slate-500 mb-1">Weekly Usage</div>
-                        <div className="font-bold text-3xl text-indigo-600">{formatNumber(summary.weeklyUsage, 1)} gal</div>
+                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Weekly Usage</div>
+                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatNumber(summary.weeklyUsage, 1)} gal</div>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border border-slate-200 text-slate-800 text-center">
-                        <div className="text-sm text-slate-500 mb-1">Current Tank Level</div>
-                        <div className="font-bold text-3xl text-emerald-600">{summary.percentWaterRemaining}%</div>
+                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Current Tank Level</div>
+                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{summary.percentWaterRemaining}%</div>
                     </div>
                 </div>
             </Card>

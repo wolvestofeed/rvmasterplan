@@ -2,8 +2,15 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HeaderHero } from "@/components/layout/header-hero";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { ArrowUp, ArrowRight, Droplet, DollarSign, Activity, Calendar, CheckCircle, Flame, Truck, Wrench } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { Droplet, Activity, Calendar, CheckCircle, Flame, Truck, Plus, FileText, ShoppingBag, Bell } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { mockGenericSolarEquipment } from "@/data/mockData";
 
 // --- Mock Data for Dashboard ---
 const expenseData = [
@@ -21,12 +28,16 @@ const expenseData = [
   { month: "Dec", budget: 500, actual: 800 },
 ];
 
+const solarEquipmentWeight = mockGenericSolarEquipment.reduce((total, item) => total + ((item.weight || 0) * item.quantity), 0);
+const estimatedDeviceWeight = 20; // Demo default from Power page
+const computedEquipmentWeight = solarEquipmentWeight + estimatedDeviceWeight;
+
 const weightData = [
   { name: "Base Vehicle", value: 4850, color: "#e11d48" }, // Red
   { name: "Payload", value: 460, color: "#fbbf24" }, // Amber
   { name: "Towable", value: 0, color: "#10b981" }, // Green
   { name: "Water", value: 350, color: "#3b82f6" }, // Blue
-  { name: "Equipment", value: 250, color: "#8b5cf6" }, // Purple
+  { name: "Equipment", value: Math.round(computedEquipmentWeight), color: "#8b5cf6" }, // Purple
 ];
 
 const recentActivity = [
@@ -36,15 +47,75 @@ const recentActivity = [
   { id: 4, title: "RV Warranty Registration", desc: "Completed setup tracking for extended warranty.", date: "Last Week", icon: Activity, color: "text-purple-500" },
   { id: 5, title: "Created Master Plan PDF", desc: "Exported current layout report for sharing.", date: "Last Month", icon: Truck, color: "text-slate-500" }
 ];
+import { useState, useEffect } from "react";
+import { getDashboardEvents, type DashboardEvent } from "@/app/actions/dashboard";
+import { addManualEvent } from "@/app/actions/events";
 
-const upcomingEvents = [
-  { id: 1, title: "Insurance Renewal", desc: "Progressive RV bundle renews.", date: "Mar 20, 2026", color: "text-blue-500" },
-  { id: 2, title: "Tire Pressure Inspection", desc: "Check PSI across all 4 wheels before long transit.", date: "Apr 05, 2026", color: "text-amber-500" },
-  { id: 3, title: "Seasonal Check", desc: "De-winterize plumbing systems and hook up water filter.", date: "May 10, 2026", color: "text-emerald-500" },
-  { id: 4, title: "Battery System Maintenance", desc: "Check voltage and clean LFP terminals.", date: "Jul 15, 2026", color: "text-amber-500" },
+const initialUpcomingEvents = [
+  { id: 2, title: "Tire Pressure Inspection [Placeholder]", desc: "Check PSI across all 4 wheels before long transit.", date: "Apr 05, 2026", color: "text-amber-500", rawDate: new Date("2026-04-05"), source: "event" as any },
+  { id: 3, title: "Seasonal Check [Placeholder]", desc: "De-winterize plumbing systems and hook up water filter.", date: "May 10, 2026", color: "text-emerald-500", rawDate: new Date("2026-05-10"), source: "event" as any },
+  { id: 4, title: "Battery System Maintenance [Placeholder]", desc: "Check voltage and clean LFP terminals.", date: "Jul 15, 2026", color: "text-amber-500", rawDate: new Date("2026-07-15"), source: "event" as any },
 ];
 
 export default function Dashboard() {
+  const [events, setEvents] = useState<any[]>(initialUpcomingEvents);
+
+  // Modal State
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newEventTitle, setNewEventTitle] = useState("");
+  const [newEventType, setNewEventType] = useState("Maintenance");
+  const [newEventDate, setNewEventDate] = useState("");
+  const [newEventDesc, setNewEventDesc] = useState("");
+
+  const fetchEvents = async () => {
+    const res = await getDashboardEvents();
+    if (res.success && res.data) {
+      const combined = [...initialUpcomingEvents, ...res.data].sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
+      setEvents(combined.slice(0, 8)); // Top 8 events
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const handleAddEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEventTitle || !newEventDate) {
+      toast.error("Title and Date are required.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const res = await addManualEvent({
+      title: newEventTitle,
+      eventType: newEventType,
+      scheduledDate: new Date(newEventDate),
+      notes: newEventDesc
+    });
+
+    if (res.success) {
+      toast.success("Event scheduled!");
+      setIsEventModalOpen(false);
+      setNewEventTitle("");
+      setNewEventDesc("");
+      setNewEventDate("");
+      await fetchEvents();
+    } else {
+      toast.error("Failed to add event.");
+    }
+    setIsSubmitting(false);
+  };
+
+  const getEventIcon = (source: string) => {
+    switch (source) {
+      case "document": return <FileText className="w-5 h-5" />;
+      case "equipment": return <ShoppingBag className="w-5 h-5" />;
+      case "subscription": return <Activity className="w-5 h-5" />;
+      default: return <Calendar className="w-5 h-5" />;
+    }
+  };
   return (
     <div className="container mx-auto py-10 px-4 md:px-8 max-w-6xl">
       <HeaderHero
@@ -56,79 +127,67 @@ export default function Dashboard() {
 
       {/* KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 mt-6">
-        <Card className="border-t-4 border-t-[#2a4f3f]">
+        <Card className="border-2 border-[#2a4f3f] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30">
           <CardContent className="p-4 flex flex-col justify-center">
             <p className="text-sm text-slate-500 font-medium">Est Liability</p>
             <p className="text-2xl font-bold text-[#2a4f3f]">$18,644.00</p>
           </CardContent>
         </Card>
-        <Card className="border-t-4 border-t-[#8ca163]">
+        <Card className="border-2 border-[#8ca163] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40">
           <CardContent className="p-4 flex flex-col justify-center">
             <p className="text-sm text-slate-500 font-medium">Remaining Budget</p>
             <p className="text-2xl font-bold text-[#2a4f3f]">$185.98</p>
           </CardContent>
         </Card>
-        <Card className="border-t-4 border-t-[#2a4f3f]">
+        <Card className="border-2 border-[#2a4f3f] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30">
           <CardContent className="p-4 flex flex-col justify-center">
             <p className="text-sm text-slate-500 font-medium">Avg Daily Power</p>
             <p className="text-xl font-bold text-[#2a4f3f]">1,695 Wh / Day</p>
           </CardContent>
         </Card>
-        <Card className="border-t-4 border-t-[#8ca163]">
+        <Card className="border-2 border-[#8ca163] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40">
           <CardContent className="p-4 flex flex-col justify-center">
             <p className="text-sm text-slate-500 font-medium">Avg Daily Water</p>
             <p className="text-xl font-bold text-[#2a4f3f]">4.2 gal</p>
           </CardContent>
         </Card>
 
-        <Card className="border-t-4 border-t-[#2a4f3f]">
-          <CardContent className="p-4 flex justify-between items-center">
+        <Card className="border-2 border-[#2a4f3f] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30">
+          <CardContent className="p-4 flex flex-col justify-center">
             <div>
               <p className="text-sm text-slate-500 font-medium">Financial Health</p>
               <p className="text-xl font-bold text-[#2a4f3f]">Excellent <span className="text-sm text-[#8ca163] font-semibold">90/100</span></p>
             </div>
-            <div className="bg-[#f1f6ea] p-2 rounded-full h-10 w-10 flexitems-center justify-center">
-              <ArrowUp className="h-5 w-5 text-[#8ca163]" />
-            </div>
           </CardContent>
         </Card>
-        <Card className="border-t-4 border-t-[#8ca163]">
-          <CardContent className="p-4 flex justify-between items-center">
+        <Card className="border-2 border-[#8ca163] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40">
+          <CardContent className="p-4 flex flex-col justify-center">
             <div>
               <p className="text-sm text-slate-500 font-medium">Avg. Solar Coverage</p>
               <p className="text-xl font-bold text-[#2a4f3f]">450 <span className="text-sm text-[#8ca163] font-semibold">Wh / Day</span></p>
             </div>
-            <div className="bg-[#f1f6ea] p-2 rounded-full h-10 w-10 flex items-center justify-center">
-              <ArrowRight className="h-5 w-5 text-[#8ca163]" />
-            </div>
           </CardContent>
         </Card>
-        <Card className="border-t-4 border-t-[#2a4f3f]">
-          <CardContent className="p-4 flex justify-between items-center">
+        <Card className="border-2 border-[#2a4f3f] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30">
+          <CardContent className="p-4 flex flex-col justify-center">
             <div>
               <p className="text-sm text-slate-500 font-medium">Estimated Water Supply</p>
               <p className="text-xl font-bold text-[#2a4f3f]">12.4 Days <span className="text-sm text-[#8ca163] font-semibold">Available</span></p>
             </div>
-            <div className="bg-[#eef2f6] p-2 rounded-full h-10 w-10 flex items-center justify-center">
-              <Droplet className="h-5 w-5 text-[#3b82f6]" />
-            </div>
           </CardContent>
         </Card>
-        <Card className="border-t-4 border-t-[#8ca163]">
-          <CardContent className="p-4 flex justify-between items-center">
+        <Card className="border-2 border-[#8ca163] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40">
+          <CardContent className="p-4 flex flex-col justify-center">
             <div>
               <p className="text-sm text-slate-500 font-medium">YTD Expenses</p>
               <p className="text-xl font-bold text-[#2a4f3f]">$5,477.37</p>
-            </div>
-            <div className="bg-[#f1f6ea] p-2 rounded-full h-10 w-10 flex items-center justify-center">
-              <DollarSign className="h-5 w-5 text-[#8ca163]" />
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Expense Tracker Chart */}
-      <Card className="mb-8 border border-slate-200">
+      <Card className="mb-8">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg font-bold text-slate-800">Monthly Expense Tracker</CardTitle>
           <p className="text-sm text-slate-500">Your planned budget vs. actual spending over time.</p>
@@ -140,7 +199,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
-                <Tooltip
+                <RechartsTooltip
                   cursor={{ fill: '#f1f5f9' }}
                   contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }}
                 />
@@ -154,7 +213,7 @@ export default function Dashboard() {
       </Card>
 
       {/* RV Weight Distribution */}
-      <Card className="mb-8 border border-slate-200">
+      <Card className="mb-8">
         <CardHeader className="pb-4 border-b border-slate-100">
           <CardTitle className="text-lg font-bold text-slate-800">RV Weight Distribution</CardTitle>
           <p className="text-sm text-slate-500">Track varying load variables to maintain your ideal distribution.</p>
@@ -178,7 +237,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-2">
             <div>
               <p className="text-sm text-slate-500">Equipment Weight</p>
-              <p className="text-xl font-bold">250 lbs</p>
+              <p className="text-xl font-bold">{Math.round(computedEquipmentWeight).toLocaleString()} lbs</p>
             </div>
             <div>
               <p className="text-sm text-slate-500">Water Weight</p>
@@ -208,7 +267,7 @@ export default function Dashboard() {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <RechartsTooltip />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -232,7 +291,7 @@ export default function Dashboard() {
       {/* Activity and Events Split */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
 
-        <Card className="border border-slate-200">
+        <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-lg font-bold text-slate-800">Recent Activity</CardTitle>
           </CardHeader>
@@ -254,24 +313,79 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-bold text-slate-800">Upcoming Events</CardTitle>
+        <Card>
+          <CardHeader className="pb-4 flex flex-row items-center justify-between">
+            <CardTitle className="text-lg font-bold text-slate-800">Timeline & Deadlines</CardTitle>
+
+            <Dialog open={isEventModalOpen} onOpenChange={setIsEventModalOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 text-[#2a4f3f] bg-[#2a4f3f]/10 hover:bg-[#2a4f3f]/20">
+                  <Plus className="w-4 h-4 mr-1" /> Add Event
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <form onSubmit={handleAddEvent}>
+                  <DialogHeader>
+                    <DialogTitle>Schedule an Event</DialogTitle>
+                    <DialogDescription>
+                      Add manual maintenance logs, reminders, or deadlines to your timeline.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="title">Event Title</Label>
+                      <Input id="title" placeholder="e.g. Inspect Roof Seals" value={newEventTitle} onChange={e => setNewEventTitle(e.target.value)} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="type">Event Type</Label>
+                      <Select value={newEventType} onValueChange={setNewEventType}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Maintenance">Maintenance</SelectItem>
+                          <SelectItem value="Reminder">Reminder</SelectItem>
+                          <SelectItem value="Custom">Custom Note</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="date">Scheduled Date</Label>
+                      <Input id="date" type="date" value={newEventDate} onChange={e => setNewEventDate(e.target.value)} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="desc">Description / Notes (Optional)</Label>
+                      <Input id="desc" placeholder="Details about this event..." value={newEventDesc} onChange={e => setNewEventDesc(e.target.value)} />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button disabled={isSubmitting} type="submit" className="bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white">
+                      {isSubmitting ? "Saving..." : "Save Event"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {upcomingEvents.map((evt, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className={`mt-1 ${evt.color}`}>
-                    <Calendar className="w-5 h-5" />
+              {events.length === 0 ? (
+                <p className="text-sm text-slate-500">No upcoming events.</p>
+              ) : (
+                events.map((evt, i) => (
+                  <div key={evt.id || i} className="flex gap-4">
+                    <div className={`mt-1 ${evt.color}`}>
+                      {getEventIcon(evt.source)}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-800">{evt.title}</h4>
+                      <p className="text-xs text-slate-500 mb-1">{evt.desc}</p>
+                      <p className="text-xs font-medium text-slate-700">{evt.date}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-800">{evt.title}</h4>
-                    <p className="text-xs text-slate-500 mb-1">{evt.desc}</p>
-                    <p className="text-xs font-medium text-slate-700">{evt.date}</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

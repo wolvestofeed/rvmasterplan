@@ -29,6 +29,7 @@ import { mockSetupItems } from "@/data/mockData";
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
 import { formatCurrency, formatNumber } from "@/lib/utils";
+import { getEquipmentItems, addEquipmentItem, updateEquipmentItem, deleteEquipmentItem } from "@/app/actions/equipment";
 
 const CATEGORIES: SetupItemCategory[] = [
     'ENERGY', 'TOWING', 'BRAKES', 'WATER', 'STORAGE', 'RENOVATIONS', 'SECURITY', 'OTHER'
@@ -42,7 +43,8 @@ const setupItemSchema = z.object({
     priority: z.enum(['Must Have', 'Nice to Have', 'Future Upgrade']),
     acquired: z.boolean().default(false),
     weight: z.coerce.number().optional().default(0),
-    notes: z.string().optional()
+    notes: z.string().optional(),
+    purchaseDeadline: z.string().optional()
 });
 
 type SetupItemFormValues = z.infer<typeof setupItemSchema>;
@@ -51,7 +53,7 @@ const COLORS = ['#3b82f6', '#14b8a6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e'
 
 export default function RVSetupBudgetPage() {
     const [isClient, setIsClient] = useState(false);
-    const [items, setItems] = useState<SetupItem[]>(mockSetupItems);
+    const [items, setItems] = useState<any[]>([]);
     const [editingId, setEditingId] = useState<string | null>(null);
 
     const [summary, setSummary] = useState({
@@ -63,7 +65,28 @@ export default function RVSetupBudgetPage() {
         totalWeight: 0
     });
 
-    useEffect(() => { setIsClient(true); }, []);
+    useEffect(() => {
+        setIsClient(true);
+        loadItems();
+    }, []);
+
+    const loadItems = async () => {
+        const res = await getEquipmentItems();
+        if (res.success && res.data) {
+            const formatted = res.data.map(d => ({
+                id: d.id,
+                name: d.name,
+                category: d.category,
+                priority: d.priority,
+                cost: Number(d.cost),
+                weight: Number(d.weight || 0),
+                acquired: d.isAcquired,
+                notes: d.notes || "",
+                purchaseDeadline: d.purchaseDeadline ? new Date(d.purchaseDeadline).toISOString().split("T")[0] : ""
+            }));
+            setItems(formatted);
+        }
+    };
 
     const form = useForm<SetupItemFormValues>({
         resolver: zodResolver(setupItemSchema) as any,
@@ -74,7 +97,8 @@ export default function RVSetupBudgetPage() {
             priority: "Nice to Have",
             acquired: false,
             weight: 0,
-            notes: ""
+            notes: "",
+            purchaseDeadline: ""
         }
     });
 
@@ -105,21 +129,35 @@ export default function RVSetupBudgetPage() {
         });
     }, [items]);
 
-    const onSubmitItem = (data: SetupItemFormValues) => {
-        const itemData: SetupItem = {
-            ...data,
-            id: editingId || Date.now().toString(),
-            category: data.category as SetupItemCategory,
-            priority: data.priority as SetupItemPriority,
-        };
+    const onSubmitItem = async (data: SetupItemFormValues) => {
+        // Adjust for timezone offset to prevent date shifting backwards
+        const dObj = data.purchaseDeadline ? new Date(data.purchaseDeadline + "T12:00:00") : null;
 
         if (editingId) {
-            setItems(items.map(a => a.id === editingId ? itemData : a));
-            setEditingId(null);
-            toast.success("Item updated");
+            const res = await updateEquipmentItem(editingId, {
+                ...data,
+                cost: data.cost.toString(),
+                weight: data.weight?.toString(),
+                isAcquired: data.acquired,
+                purchaseDeadline: dObj
+            });
+            if (res.success) {
+                toast.success("Item updated in database");
+                setEditingId(null);
+                loadItems();
+            }
         } else {
-            setItems([...items, itemData]);
-            toast.success("Item added");
+            const res = await addEquipmentItem({
+                ...data,
+                cost: data.cost.toString(),
+                weight: data.weight?.toString(),
+                isAcquired: data.acquired,
+                purchaseDeadline: dObj
+            });
+            if (res.success) {
+                toast.success("Item saved to database");
+                loadItems();
+            }
         }
         form.reset({
             name: "",
@@ -128,7 +166,8 @@ export default function RVSetupBudgetPage() {
             priority: "Nice to Have",
             acquired: false,
             weight: 0,
-            notes: ""
+            notes: "",
+            purchaseDeadline: ""
         });
     };
 
@@ -137,29 +176,40 @@ export default function RVSetupBudgetPage() {
         if (itm) {
             setEditingId(id);
             form.reset({
-                name: itm.name,
-                category: itm.category,
-                cost: itm.cost,
-                priority: itm.priority,
-                acquired: itm.acquired,
-                weight: itm.weight || 0,
-                notes: itm.notes || ""
+                ...itm,
+                priority: itm.priority as any,
+                category: itm.category as any,
             });
             window.scrollTo({ top: 200, behavior: 'smooth' });
         }
     };
 
-    const deleteItem = (id: string) => {
-        setItems(items.filter(a => a.id !== id));
-        toast.success("Item removed");
+    const deleteItem = async (id: string) => {
+        setItems(items.filter(a => a.id !== id)); // optimistic
+        const res = await deleteEquipmentItem(id);
+        if (res.success) {
+            toast.success("Item removed from database");
+            loadItems();
+        }
     };
 
-    const toggleAcquired = (id: string) => {
-        setItems(items.map(a => a.id === id ? { ...a, acquired: !a.acquired } : a));
+    const toggleAcquired = async (id: string) => {
+        const itm = items.find(a => a.id === id);
+        if (!itm) return;
+        const newAc = !itm.acquired;
+        setItems(items.map(a => a.id === id ? { ...a, acquired: newAc } : a)); // optimistic
+
+        await updateEquipmentItem(id, {
+            ...itm,
+            cost: itm.cost.toString(),
+            weight: itm.weight?.toString(),
+            isAcquired: newAc,
+            purchaseDeadline: itm.purchaseDeadline ? new Date(itm.purchaseDeadline + "T12:00:00") : null
+        });
     };
 
     const saveOverallData = () => {
-        toast.success("Setup budget saved temporarily for demo mode!");
+        toast.info("Database auto-saves on every change now.");
     };
 
     // Pie chart data by category (Cost)
@@ -169,7 +219,7 @@ export default function RVSetupBudgetPage() {
     }, {} as Record<string, number>);
 
     const chartData = Object.entries(costByCategory)
-        .map(([name, value]) => ({ name, value }))
+        .map(([name, value]) => ({ name, value: Number(value) }))
         .filter(d => d.value > 0);
 
     if (!isClient) return null;
@@ -189,24 +239,24 @@ export default function RVSetupBudgetPage() {
             </div>
 
             {/* Dashboard Summary Cards */}
-            <Card className="p-6 bg-slate-50 border border-slate-200 mb-6 border-t-2 border-t-teal-500 shadow-md shadow-teal-900/5">
+            <Card className="p-6 bg-slate-50 mb-6">
                 <h3 className="text-lg font-medium text-slate-800 mb-4">Purchase Plan Summary</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-white p-4 rounded-lg border border-slate-200 text-slate-800 text-center">
-                        <div className="text-sm text-slate-500 mb-1">Total Estimated Cost</div>
-                        <div className="font-bold text-3xl text-slate-700">{formatCurrency(summary.totalCost)}</div>
+                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Total Estimated Cost</div>
+                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatCurrency(summary.totalCost)}</div>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border border-slate-200 text-slate-800 text-center">
-                        <div className="text-sm text-slate-500 mb-1">Spent / Acquired</div>
-                        <div className="font-bold text-3xl text-teal-600">{formatCurrency(summary.acquiredCost)}</div>
+                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Spent / Acquired</div>
+                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatCurrency(summary.acquiredCost)}</div>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border border-slate-200 text-slate-800 text-center">
-                        <div className="text-sm text-slate-500 mb-1">Remaining to Purchase</div>
-                        <div className="font-bold text-3xl text-orange-600">{formatCurrency(summary.remainingCost)}</div>
+                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Remaining to Purchase</div>
+                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatCurrency(summary.remainingCost)}</div>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border border-slate-200 text-slate-800 text-center">
-                        <div className="text-sm text-slate-500 mb-1">Added Weight</div>
-                        <div className="font-bold text-3xl text-blue-600">{formatNumber(summary.totalWeight, 1)} lbs</div>
+                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Added Weight</div>
+                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatNumber(summary.totalWeight, 1)} lbs</div>
                     </div>
                 </div>
             </Card>
@@ -268,6 +318,22 @@ export default function RVSetupBudgetPage() {
                                         <FormItem>
                                             <FormLabel>Weight (lbs)</FormLabel>
                                             <FormControl><Input type="number" step="0.1" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField control={form.control} name="purchaseDeadline" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Purchase Deadline</FormLabel>
+                                            <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="notes" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Notes (Optional)</FormLabel>
+                                            <FormControl><Input placeholder="Links, details..." {...field} value={field.value || ""} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )} />
@@ -382,6 +448,7 @@ export default function RVSetupBudgetPage() {
                                                                 {item.priority}
                                                             </span>
                                                             {item.weight ? <span className="text-slate-500">{item.weight} lbs</span> : null}
+                                                            {item.purchaseDeadline && !item.acquired ? <span className="px-2 py-0.5 bg-orange-50 text-orange-600 rounded-full font-medium">Due: {new Date(item.purchaseDeadline + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span> : null}
                                                         </div>
                                                     </div>
                                                 </div>

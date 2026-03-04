@@ -189,25 +189,25 @@ export default function RVBudgetPage() {
 
             {/* Summary Dash */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <Card className="border-t-2 border-t-purple-600">
-                    <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-500 font-medium">Annual Budget</CardTitle></CardHeader>
-                    <CardContent><div className="text-2xl font-bold">{formatCurrency(getAnnualBudgetTotal())}</div></CardContent>
+                <Card className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] relative overflow-hidden">
+                    <CardHeader className="pb-2 relative z-10 p-0 mb-1"><CardTitle className="text-sm text-slate-500 font-medium">Annual Budget</CardTitle></CardHeader>
+                    <CardContent className="p-0 relative z-10"><div className="text-2xl font-bold text-[#2a4f3f]">{formatCurrency(getAnnualBudgetTotal())}</div></CardContent>
                 </Card>
-                <Card className="border-t-2 border-t-blue-600">
-                    <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-500 font-medium">YTD Expenses</CardTitle></CardHeader>
-                    <CardContent><div className="text-2xl font-bold">{formatCurrency(getYTDExpenses())}</div></CardContent>
+                <Card className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] relative overflow-hidden">
+                    <CardHeader className="pb-2 relative z-10 p-0 mb-1"><CardTitle className="text-sm text-slate-500 font-medium">YTD Expenses</CardTitle></CardHeader>
+                    <CardContent className="p-0 relative z-10"><div className="text-2xl font-bold text-[#2a4f3f]">{formatCurrency(getYTDExpenses())}</div></CardContent>
                 </Card>
-                <Card className="border-t-2 border-t-amber-500">
-                    <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-500 font-medium">Budget Used</CardTitle></CardHeader>
-                    <CardContent>
-                        <div className={`text-2xl font-bold ${!isBudgetOkay ? 'text-red-500' : ''}`}>{formatNumber(percentUsed, 1)}%</div>
+                <Card className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] relative overflow-hidden">
+                    <CardHeader className="pb-2 relative z-10 p-0 mb-1"><CardTitle className="text-sm text-slate-500 font-medium">Budget Used</CardTitle></CardHeader>
+                    <CardContent className="p-0 relative z-10">
+                        <div className={`text-2xl font-bold ${!isBudgetOkay ? 'text-red-500' : 'text-[#2a4f3f]'}`}>{formatNumber(percentUsed, 1)}%</div>
                         <div className="text-xs text-slate-500 mt-1">{isBudgetOkay ? "On track" : "Over budget"}</div>
                     </CardContent>
                 </Card>
-                <Card className="border-t-2 border-t-emerald-500">
-                    <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-500 font-medium">Financial Health</CardTitle></CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{healthScore}/100</div>
+                <Card className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] relative overflow-hidden">
+                    <CardHeader className="pb-2 relative z-10 p-0 mb-1"><CardTitle className="text-sm text-slate-500 font-medium">Financial Health</CardTitle></CardHeader>
+                    <CardContent className="p-0 relative z-10">
+                        <div className="text-2xl font-bold text-[#2a4f3f]">{healthScore}/100</div>
                         <div className="text-xs text-slate-500 mt-1">{healthStatus}</div>
                     </CardContent>
                 </Card>

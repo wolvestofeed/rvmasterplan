@@ -68,6 +68,7 @@ export interface SetupItem {
     cost: number;
     priority: SetupItemPriority;
     acquired: boolean;
+    purchaseDeadline?: Date | null;
     notes?: string;
     weight?: number;
     make?: string;
@@ -148,6 +149,42 @@ export interface SolarGenerator {
     dcPorts: number;
     weight: number;
     quantity: number;
+}
+
+export interface SolarInverter {
+    id: string;
+    make: string;
+    model: string;
+    continuousWatts: number;
+    surgeWatts: number;
+    voltageIn: string;
+    voltageOut: string;
+    type: string; // e.g., 'Pure Sine Wave'
+    quantity: number;
+}
+
+export type GenericSolarEquipmentType = 'Generator' | 'Battery' | 'Solar Panel' | 'Inverter' | 'Charge Controller' | 'Battery Monitor' | 'DC Alternator Charger' | 'Surge Protector' | 'Other';
+
+export interface GenericSolarEquipment {
+    id: string;
+    make: string;
+    model: string;
+    equipmentType: GenericSolarEquipmentType;
+    specs?: string;
+    quantity: number;
+    price: number;
+    wattage?: number; // Watts per hour — relevant for Solar Panels, Batteries, Generators
+    weight?: number; // Weight in lbs
+}
+
+export type WeatherCondition = 'Sunny' | 'Partly Cloudy' | 'Cloudy' | 'Overcast' | 'Bad Weather';
+
+export interface DailySolarLog {
+    id: string;
+    date: string; // ISO date string e.g. '2026-03-03'
+    weatherCondition: WeatherCondition;
+    sunHours: number;
+    generatedWh: number; // Actual Wh generated, manually entered by user
 }
 
 export type ExpenseGroup = 'Essential' | 'Non-essential';

@@ -37,10 +37,23 @@ export default function LandingPage() {
                     priority
                 />
 
+                {/* Logo in top left */}
+                <div className="absolute top-6 left-6 z-20">
+                    <div className="bg-white p-3 rounded-xl shadow-lg inline-flex items-center justify-center">
+                        <Image
+                            src="/images/logos/rv-masterplan-logo-landscape.png"
+                            alt="RV MasterPlan Logo"
+                            width={160}
+                            height={53}
+                            className="object-contain"
+                        />
+                    </div>
+                </div>
+
                 {/* Hero Overlay Content */}
                 <div className="relative z-10 text-center px-4 max-w-4xl mx-auto mt-16">
-                    <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 drop-shadow-lg tracking-tight">
-                        Your Blueprint for the Open Road.
+                    <h1 className="text-5xl md:text-7xl font-bold text-white mb-32 drop-shadow-lg tracking-tight">
+                        Your Blueprint<br />for the Open Road.
                     </h1>
                     <p className="text-xl md:text-2xl text-slate-200 mb-10 drop-shadow-md">
                         The ultimate toolkit to plan, budget, and optimize your full-time RV lifestyle. From solar arrays to water conservation.
@@ -64,8 +77,11 @@ export default function LandingPage() {
             <section className="bg-[#f8fbf5] py-20 px-4">
                 <div className="max-w-4xl mx-auto">
                     <div className="text-center mb-10">
-                        <h2 className="text-3xl font-bold text-[#2a4f3f] mb-4">Meet Your Guide</h2>
-                        <p className="text-lg text-slate-600">Why I built the RV MasterPlan.</p>
+                        <h2 className="text-3xl font-bold text-[#2a4f3f] mb-4">Meet Your Guide &sim; Rob</h2>
+                        <p className="text-lg text-slate-600">
+                            I built this for myself when I moved into a travel trailer last Spring.<br />
+                            It's really helpful, so I thought you might like it too!
+                        </p>
                     </div>
 
                     <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-white bg-black">
@@ -126,7 +142,7 @@ export default function LandingPage() {
                         </ul>
                         <SignedOut>
                             <SignUpButton mode="modal">
-                                <Button className="w-full bg-[#8ca163] hover:bg-[#7a8e52] text-white border-0 relative z-10">Subscribe $X/mo</Button>
+                                <Button className="w-full bg-[#8ca163] hover:bg-[#7a8e52] text-white border-0 relative z-10">Subscribe $5/mo</Button>
                             </SignUpButton>
                         </SignedOut>
                         <SignedIn>

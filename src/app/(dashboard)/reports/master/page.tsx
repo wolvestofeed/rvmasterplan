@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
     ArrowLeft,
     FileText,
@@ -43,14 +44,22 @@ export default function ReportsDashboard() {
                 { id: "1", name: "Starlink", group: "Essential" as const, category: "Work" as const, watts: 50, hoursPerDay: 8 }
             ];
 
+            const mockBatteries = [
+                { id: "1", make: "EcoFlow", model: "Delta Pro Extra Battery", capacityWh: 3600, capacityAh: 75, ampHours: 75, voltage: "48", cycles: 6500, weight: 84, type: "LiFePO4", rechargeTime120V: 2.7, rechargeTime30Amp: 0, rechargeSolar: 4, daisyChainCapable: true, dimensions: "25 x 11.2 x 16.4", lifespan: 10, warranty: 5, quantity: 1 }
+            ];
+
+            const mockGenerators = [
+                { id: "1", make: "EcoFlow", model: "Delta Pro", outputWatts: 3600, batteryCapacityWh: 3600, systemType: "All-in-one", chargeControllerType: "MPPT", rechargeTime120V: 2.7, rechargeTimeSolar: 4, has12VOutput: true, has30AmpOutput: true, acOutlets: 5, usbPorts: 4, dcPorts: 2, weight: 99, quantity: 1 }
+            ];
+
             if (type === 'master') {
-                pdf.generateMasterPlanReport(mockExpenses, mockBudgets, mockDevices, [], [], []);
+                pdf.generateMasterPlanReport(mockExpenses, mockBudgets, mockDevices, [], mockBatteries, mockGenerators);
                 pdf.saveReport('RV_MasterPlan_Export.pdf');
             } else if (type === 'budget') {
                 pdf.generateLivingBudgetReport(mockExpenses, mockBudgets);
                 pdf.saveReport('RV_Living_Budget_Report.pdf');
             } else if (type === 'power') {
-                pdf.generatePowerStrategyReport(mockDevices, [], [], []);
+                pdf.generatePowerStrategyReport(mockDevices, [], mockBatteries, mockGenerators);
                 pdf.saveReport('RV_Power_Strategy_Report.pdf');
             }
 
@@ -66,15 +75,26 @@ export default function ReportsDashboard() {
     return (
         <div className="container mx-auto py-10 px-4 md:px-8 max-w-6xl">
             <HeaderHero
-                title="Reports & Exports"
+                title="RV Master Plan Reports"
                 description="Download your master plan or specific departmental reports. PDF generation works entirely in your browser."
                 imageUrl="/images/page-headers/reports-header.jpg"
             />
 
             {/* Featured Master Plan Export */}
-            <Card className="mb-10 border-slate-200 border-t-4 border-t-slate-800 shadow-md bg-gradient-to-r from-slate-50 to-white">
-                <div className="flex flex-col md:flex-row items-center">
-                    <div className="flex-grow p-6 md:p-8">
+            <Card className="mb-10 border-slate-200 border-t-4 border-t-slate-800 shadow-md bg-gradient-to-r from-slate-50 to-white overflow-hidden">
+                <div className="flex flex-col md:flex-row items-stretch">
+                    {/* Left side image column */}
+                    <div className="relative w-full md:w-[40%] min-h-[250px] md:min-h-full">
+                        <Image
+                            src="/images/forest-sunset.jpg"
+                            alt="Forest Sunset"
+                            fill
+                            className="object-cover object-center"
+                            unoptimized={true}
+                        />
+                    </div>
+                    {/* Right side text column */}
+                    <div className="flex-grow p-6 md:p-8 md:w-[60%] flex flex-col justify-center">
                         <h2 className="text-2xl font-bold text-slate-900 mb-2">Master Plan Compilation</h2>
                         <p className="text-slate-600 mb-6 max-w-xl">
                             Generates a single, comprehensive PDF document containing all of your departmental data. This includes your Purchase Plan, Living Budget, Power Strategy, and Water Usage.

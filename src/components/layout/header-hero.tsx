@@ -20,12 +20,12 @@ export function HeaderHero({ title, description, imageUrl = "/images/logos/RV-Ma
                 />
             </div>
             {/* Overlay */}
-            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="absolute inset-0 bg-white/10"></div>
 
             {/* Title Box */}
-            <div className="absolute left-8 bottom-6 max-w-lg bg-black/40 backdrop-blur-md p-6 rounded-lg border border-white/10">
-                <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">{title}</h1>
-                <p className="text-white/90 text-sm md:text-base leading-relaxed">
+            <div className="absolute left-8 bottom-6 max-w-lg bg-white/70 p-6 rounded-lg border border-white/40 shadow-lg">
+                <h1 className="text-3xl font-bold text-[#2a4f3f] mb-2 tracking-tight">{title}</h1>
+                <p className="text-[#2a4f3f] text-sm md:text-base leading-relaxed font-medium">
                     {description}
                 </p>
             </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { HeaderHero } from "@/components/layout/header-hero";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,17 +9,36 @@ import { Label } from "@/components/ui/label";
 import { useUser, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import { User, Mail, CreditCard, Shield } from "lucide-react";
 import { toast } from "sonner";
+import { getUserProfile, extendSubscription } from "@/app/actions/profiles";
 
 export default function SettingsPage() {
     const { user, isLoaded } = useUser();
+    const [subDate, setSubDate] = useState<string>("Loading...");
+
+    useEffect(() => {
+        const loadProfile = async () => {
+            const res = await getUserProfile();
+            if (res.success && res.data?.subscriptionRenewalDate) {
+                setSubDate(new Date(res.data.subscriptionRenewalDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }));
+            }
+        };
+        loadProfile();
+    }, []);
 
     const handleSaveProfile = (e: React.FormEvent) => {
         e.preventDefault();
         toast.success("Profile updated successfully (Demo Mode)");
     };
 
-    const handleManageSubscription = () => {
-        toast.info("Stripe billing portal integration coming soon!");
+    const handleExtendSubscription = async () => {
+        toast.info("Extending subscription (Demo Mode)...");
+        const res = await extendSubscription();
+        if (res.success && res.date) {
+            setSubDate(res.date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }));
+            toast.success("Subscription extended by 1 year! See Dashboard.");
+        } else {
+            toast.error("Failed to extend subscription.");
+        }
     };
 
     if (!isLoaded) {
@@ -95,41 +115,16 @@ export default function SettingsPage() {
                                 <div className="mb-4">
                                     <p className="text-sm text-slate-500 font-medium">Current Plan</p>
                                     <p className="text-xl font-bold text-slate-800">Pro Member</p>
-                                    <p className="text-xs text-slate-500 mt-1">Billed at $X/mo. Renews on [Date].</p>
+                                    <p className="text-xs text-slate-500 mt-1 pb-1">Billed at $4.99/mo. Renews on <strong>{subDate}</strong>.</p>
                                 </div>
-                                <Button onClick={handleManageSubscription} variant="outline" className="w-full">
-                                    Manage Billing
-                                </Button>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="border border-slate-200">
-                            <CardHeader className="pb-4">
-                                <CardTitle className="flex items-center text-lg">
-                                    <Shield className="mr-2 h-5 w-5 text-slate-500" />
-                                    Security
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-sm text-slate-600 mb-4">
-                                    Manage your password, connected devices, and two-factor authentication.
-                                </p>
-                                {/* We trigger Clerk's built-in User Profile modal for deep security settings */}
-                                <Button
-                                    variant="secondary"
-                                    className="w-full"
-                                    onClick={() => {
-                                        const event = new MouseEvent('click', {
-                                            view: window,
-                                            bubbles: true,
-                                            cancelable: true
-                                        });
-                                        const clerkBtn = document.querySelector('.clerk-user-button-trigger');
-                                        if (clerkBtn) clerkBtn.dispatchEvent(event);
-                                    }}
-                                >
-                                    Open Security Panel
-                                </Button>
+                                <div className="flex flex-col gap-2">
+                                    <Button onClick={handleExtendSubscription} variant="outline" className="w-full bg-[#2a4f3f]/5 hover:bg-[#2a4f3f]/10 text-[#2a4f3f] border-[#2a4f3f]/20">
+                                        Extend Sub by 1 Year (Demo)
+                                    </Button>
+                                    <Button onClick={() => toast.info("Stripe integration coming soon!")} variant="outline" className="w-full">
+                                        Manage Billing
+                                    </Button>
+                                </div>
                             </CardContent>
                         </Card>
 

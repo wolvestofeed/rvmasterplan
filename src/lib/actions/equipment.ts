@@ -33,7 +33,7 @@ export async function addEquipment(data: {
 
     // Both setup and power pages rely on this table
     revalidatePath('/calculators/setup');
-    revalidatePath('/calculators/power');
+    revalidatePath('/calculators/power/system');
     return id;
 }
 
@@ -43,5 +43,5 @@ export async function deleteEquipment(id: string) {
 
     await db.delete(equipment).where(eq(equipment.id, id));
     revalidatePath('/calculators/setup');
-    revalidatePath('/calculators/power');
+    revalidatePath('/calculators/power/system');
 }
