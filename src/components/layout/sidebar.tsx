@@ -73,7 +73,10 @@ export function Sidebar() {
                             </div>
                             <Link
                                 href="/admin"
-                                className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:bg-[#e6ecd9] hover:text-slate-900 transition-colors"
+                                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${pathname === '/admin'
+                                    ? "bg-blue-100/50 text-blue-700 font-semibold"
+                                    : "text-slate-600 hover:bg-[#e6ecd9] hover:text-slate-900"
+                                    }`}
                             >
                                 <ShieldAlert className="h-4 w-4" />
                                 Admin Panel
@@ -89,7 +92,14 @@ export function Sidebar() {
                         <UserButton afterSignOutUrl="/" />
                         <div className="flex flex-col">
                             <span className="text-sm font-semibold text-slate-800">{user?.fullName || 'User'}</span>
-                            <span className="text-xs text-slate-500">Subscriber</span>
+                            {user?.publicMetadata?.role === 'admin' ? (
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
+                                    <ShieldAlert className="h-3 w-3" />
+                                    Admin
+                                </span>
+                            ) : (
+                                <span className="text-xs text-slate-500">Subscriber</span>
+                            )}
                         </div>
                     </div>
                 </SignedIn>
