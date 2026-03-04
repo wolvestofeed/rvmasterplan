@@ -15,7 +15,7 @@ import {
     Users, ShieldAlert, Settings, AlertTriangle, Server,
     Trash2, ToggleLeft, RefreshCcw, ExternalLink, Search, ChevronDown, ChevronUp
 } from "lucide-react";
-import { getAdminStats, getAllUsers, toggleUserSubscription, deleteUser, seedAdminUser, syncAdminDemoData } from "@/app/actions/admin";
+import { getAdminStats, getAllUsers, toggleUserSubscription, deleteUser, publishToDemo } from "@/app/actions/admin";
 
 // --- Mock Error Logs ---
 const mockErrorLogs = [
@@ -458,37 +458,26 @@ export default function AdminPage() {
                                 </div>
 
                                 <div className="mt-6 pt-4 border-t border-slate-100">
-                                    <p className="text-sm font-medium text-slate-800 mb-2">Database Actions</p>
+                                    <p className="text-sm font-medium text-slate-800 mb-2">Data Sync & Management</p>
                                     <Button
                                         className="bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white w-full"
                                         onClick={async () => {
-                                            const res = await seedAdminUser();
+                                            if (!confirm("This will overwrite the public demo data with your current live database. Proceed?")) return;
+                                            const res = await publishToDemo();
                                             if (res.success) {
-                                                toast.success(res.message || "Admin user seeded!");
+                                                toast.success(res.message);
                                                 loadData();
                                             } else {
-                                                toast.error(res.error || "Failed to seed admin user");
+                                                toast.error(res.error || "Failed to publish demo data");
                                             }
                                         }}
                                     >
-                                        Seed Admin Account (Robert Bogatin)
+                                        <RefreshCcw className="w-4 h-4 mr-2" />
+                                        Publish to Demo Mode
                                     </Button>
-                                    <p className="text-xs text-slate-500 mt-1">Creates admin_robert with full demo data replica</p>
-                                    <Button
-                                        className="bg-blue-600 hover:bg-blue-700 text-white w-full mt-3"
-                                        onClick={async () => {
-                                            const res = await syncAdminDemoData();
-                                            if (res.success) {
-                                                toast.success(res.message || "Full demo data synced!");
-                                                loadData();
-                                            } else {
-                                                toast.error(res.error || "Sync failed");
-                                            }
-                                        }}
-                                    >
-                                        Sync Full Demo Data (RV, Solar, Budget, Water)
-                                    </Button>
-                                    <p className="text-xs text-slate-500 mt-1">Populates all DB tables: vehicle, power, water, budget, equipment w/ specs</p>
+                                    <p className="text-xs text-slate-500 mt-2">
+                                        Takes a snapshot of your current database and pushes it to the public <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-600">demo_user</code> account.
+                                    </p>
                                 </div>
                             </CardContent>
                         </Card>
