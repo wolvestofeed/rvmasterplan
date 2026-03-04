@@ -96,6 +96,47 @@ export const eventsAndLogs = pgTable('events_and_logs', {
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// --- Budget: Incomes & Expenses ---
+export const incomes = pgTable('incomes', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').references(() => users.id).notNull(),
+    source: text('source').notNull(),
+    amount: numeric('amount').default('0'),
+    isFixed: boolean('is_fixed').default(false),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const expenses = pgTable('expenses', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').references(() => users.id).notNull(),
+    name: text('name').notNull(),
+    category: text('category'),
+    amount: numeric('amount').default('0'),
+    isFixed: boolean('is_fixed').default(false),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// --- Water Activities & Tank Logs ---
+export const waterActivities = pgTable('water_activities', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').references(() => users.id).notNull(),
+    name: text('name').notNull(),
+    category: text('category').notNull(),
+    gallonsPerUse: numeric('gallons_per_use').default('0'),
+    timesPerDay: numeric('times_per_day').default('0'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const tankLogs = pgTable('tank_logs', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').references(() => users.id).notNull(),
+    date: text('date').notNull(),
+    type: text('type').notNull(),
+    tank: text('tank').notNull(),
+    volume: numeric('volume').default('0'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 // --- Relations ---
 export const usersRelations = relations(users, ({ one, many }) => ({
     profile: one(userProfiles, {

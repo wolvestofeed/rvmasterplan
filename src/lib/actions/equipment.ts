@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '../db';
-import { equipment } from '../db/schema';
+import { equipmentItems } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
@@ -10,7 +10,7 @@ export async function getEquipment() {
     const { userId } = await auth();
     if (!userId) return [];
 
-    return await db.select().from(equipment).where(eq(equipment.userId, userId));
+    return await db.select().from(equipmentItems).where(eq(equipmentItems.userId, userId));
 }
 
 export async function addEquipment(data: {
@@ -22,16 +22,16 @@ export async function addEquipment(data: {
     if (!userId) throw new Error("Unauthorized");
 
     const id = Date.now().toString();
-    await db.insert(equipment).values({
+    await db.insert(equipmentItems).values({
         id,
         userId,
-        ...data,
+        name: data.name,
+        category: data.category,
         cost: data.cost ? String(data.cost) : null,
-        watts: data.watts ? String(data.watts) : null,
-        hoursPerDay: data.hoursPerDay ? String(data.hoursPerDay) : null,
+        weight: '0',
+        notes: data.watts ? `${data.watts}W, ${data.hoursPerDay || 0}h/day` : null,
     });
 
-    // Both setup and power pages rely on this table
     revalidatePath('/calculators/setup');
     revalidatePath('/calculators/power/system');
     return id;
@@ -41,7 +41,7 @@ export async function deleteEquipment(id: string) {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
 
-    await db.delete(equipment).where(eq(equipment.id, id));
+    await db.delete(equipmentItems).where(eq(equipmentItems.id, id));
     revalidatePath('/calculators/setup');
     revalidatePath('/calculators/power/system');
 }
