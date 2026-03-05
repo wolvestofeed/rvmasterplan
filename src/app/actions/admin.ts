@@ -5,6 +5,7 @@ import { users, userProfiles, documents, equipmentItems, eventsAndLogs, rvVehicl
 import { eq, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { systemSettings } from "@/lib/db/schema";
 
 // --- Admin Stats ---
 export async function getAdminStats() {
@@ -31,6 +32,49 @@ export async function getAdminStats() {
     } catch (error) {
         console.error("Error fetching admin stats:", error);
         return { success: false, error: "Failed to load stats" };
+    }
+}
+
+// --- Get System Settings ---
+export async function getSystemSettings() {
+    try {
+        let settings = await db.query.systemSettings.findFirst({
+            where: eq(systemSettings.id, "global")
+        });
+
+        if (!settings) {
+            const [newSettings] = await db.insert(systemSettings).values({
+                id: "global"
+            }).returning();
+            settings = newSettings;
+        }
+
+        return { success: true, data: settings };
+    } catch (error) {
+        console.error("Error fetching system settings:", error);
+        return { success: false, error: "Failed to load settings" };
+    }
+}
+
+// --- Update System Settings ---
+export async function updateSystemSettings(updates: Partial<typeof systemSettings.$inferInsert>) {
+    try {
+        const { userId } = await auth();
+        if (!userId) return { success: false, error: "Unauthorized" };
+
+        const client = await clerkClient();
+        const user = await client.users.getUser(userId);
+        if (user.publicMetadata?.role !== "admin") return { success: false, error: "Unauthorized" };
+
+        await db.update(systemSettings)
+            .set({ ...updates, updatedAt: new Date() })
+            .where(eq(systemSettings.id, "global"));
+
+        revalidatePath("/", "layout");
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating system settings:", error);
+        return { success: false, error: "Failed to update settings" };
     }
 }
 

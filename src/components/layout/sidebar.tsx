@@ -20,17 +20,17 @@ import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/n
 
 const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "RV Purchase Calculator", href: "/calculators/purchase", icon: Calculator },
-    { name: "RV Setup Budget", href: "/calculators/setup", icon: Wallet },
-    { name: "RV Living Budget", href: "/calculators/budget", icon: Banknote },
+    { name: "RV Purchase Calculator", href: "/calculators/purchase", icon: Calculator, featureKey: "purchase_calculator" },
+    { name: "RV Setup Budget", href: "/calculators/setup", icon: Wallet, featureKey: "setup_budget" },
+    { name: "RV Living Budget", href: "/calculators/budget", icon: Banknote, featureKey: "living_budget" },
     { name: "Power and Solar Calculator", href: "/calculators/power/system", icon: Sun },
-    { name: "Water Calculator", href: "/calculators/water", icon: Droplets },
-    { name: "Documents", href: "/documents", icon: FileText },
+    { name: "Water Calculator", href: "/calculators/water", icon: Droplets, featureKey: "water_calculator" },
+    { name: "Documents", href: "/documents", icon: FileText, featureKey: "document_manager" },
     { name: "Reports", href: "/reports/master", icon: PieChart },
     { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function Sidebar() {
+export function Sidebar({ featureFlags = {} }: { featureFlags?: Record<string, boolean> }) {
     const pathname = usePathname();
     const { user } = useUser();
 
@@ -50,22 +50,24 @@ export function Sidebar() {
                 </div>
 
                 <nav className="px-4 space-y-1">
-                    {navItems.map((item) => {
-                        const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                        return (
-                            <Link
-                                key={item.name}
-                                href={item.href}
-                                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
-                                    ? "bg-blue-100/50 text-blue-700 font-semibold"
-                                    : "text-slate-600 hover:bg-[#e6ecd9] hover:text-slate-900"
-                                    }`}
-                            >
-                                <item.icon className="h-4 w-4" />
-                                {item.name}
-                            </Link>
-                        );
-                    })}
+                    {navItems
+                        .filter(item => !item.featureKey || featureFlags[item.featureKey] !== false)
+                        .map((item) => {
+                            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                            return (
+                                <Link
+                                    key={item.name}
+                                    href={item.href}
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
+                                        ? "bg-blue-100/50 text-blue-700 font-semibold"
+                                        : "text-slate-600 hover:bg-[#e6ecd9] hover:text-slate-900"
+                                        }`}
+                                >
+                                    <item.icon className="h-4 w-4" />
+                                    {item.name}
+                                </Link>
+                            );
+                        })}
                     {user?.publicMetadata?.role === 'admin' && (
                         <>
                             <div className="mt-8 mb-2 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">

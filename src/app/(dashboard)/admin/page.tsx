@@ -15,7 +15,10 @@ import {
     Users, ShieldAlert, Settings, AlertTriangle, Server,
     Trash2, ToggleLeft, RefreshCcw, ExternalLink, Search, ChevronDown, ChevronUp
 } from "lucide-react";
-import { getAdminStats, getAllUsers, toggleUserSubscription, deleteUser, publishToDemo } from "@/app/actions/admin";
+import {
+    getAdminStats, getAllUsers, toggleUserSubscription, deleteUser, publishToDemo,
+    getSystemSettings, updateSystemSettings
+} from "@/app/actions/admin";
 
 // --- Mock Error Logs ---
 const mockErrorLogs = [
@@ -54,13 +57,17 @@ export default function AdminPage() {
         }
     }, [clerkLoaded, clerkUser, router]);
 
-    // Settings state (in-memory for demo)
+    // Settings state
     const [demoMode, setDemoMode] = useState(true);
     const [defaultSubDays, setDefaultSubDays] = useState(30);
-    const [featureSolarCapture, setFeatureSolarCapture] = useState(true);
-    const [featureDocuments, setFeatureDocuments] = useState(true);
-    const [featureWaterCalc, setFeatureWaterCalc] = useState(true);
     const [maintenanceMode, setMaintenanceMode] = useState(false);
+    const [featureFlags, setFeatureFlags] = useState<Record<string, boolean>>({
+        "solar_capture": true,
+        "document_manager": true,
+        "water_calculator": true,
+        "budget_calculator": true,
+        "purchase_calculator": true
+    });
 
     useEffect(() => {
         loadData();
@@ -68,10 +75,35 @@ export default function AdminPage() {
 
     const loadData = async () => {
         setIsLoading(true);
-        const [statsRes, usersRes] = await Promise.all([getAdminStats(), getAllUsers()]);
+        const [statsRes, usersRes, settingsRes] = await Promise.all([
+            getAdminStats(),
+            getAllUsers(),
+            getSystemSettings()
+        ]);
+
         if (statsRes.success && statsRes.data) setStats(statsRes.data);
         if (usersRes.success && usersRes.data) setUsers(usersRes.data as AdminUser[]);
+
+        if (settingsRes.success && settingsRes.data) {
+            setDemoMode(settingsRes.data.demoMode ?? true);
+            setMaintenanceMode(settingsRes.data.maintenanceMode ?? false);
+            setDefaultSubDays(settingsRes.data.defaultSubDays ?? 30);
+            if (settingsRes.data.featureFlags) {
+                setFeatureFlags(settingsRes.data.featureFlags as Record<string, boolean>);
+            }
+        }
         setIsLoading(false);
+    };
+
+    const handleSettingChange = async (updates: any) => {
+        const res = await updateSystemSettings(updates);
+        if (res.success) {
+            toast.success("Settings updated successfully.");
+            // loadData(); // Optimistic updates are already handled by the UI checks
+        } else {
+            toast.error("Failed to update settings.");
+            loadData(); // Revert on failure
+        }
     };
 
     const handleToggleSub = async (userId: string) => {
@@ -294,7 +326,10 @@ export default function AdminPage() {
                                     </div>
                                     <Switch
                                         checked={demoMode}
-                                        onCheckedChange={(v) => { setDemoMode(v); toast.success(`Demo mode ${v ? 'enabled' : 'disabled'}`); }}
+                                        onCheckedChange={(v) => {
+                                            setDemoMode(v);
+                                            handleSettingChange({ demoMode: v });
+                                        }}
                                     />
                                 </div>
 
@@ -305,7 +340,10 @@ export default function AdminPage() {
                                     </div>
                                     <Switch
                                         checked={maintenanceMode}
-                                        onCheckedChange={(v) => { setMaintenanceMode(v); toast.success(`Maintenance mode ${v ? 'ON' : 'OFF'}`); }}
+                                        onCheckedChange={(v) => {
+                                            setMaintenanceMode(v);
+                                            handleSettingChange({ maintenanceMode: v });
+                                        }}
                                     />
                                 </div>
 
@@ -320,7 +358,7 @@ export default function AdminPage() {
                                             onChange={e => setDefaultSubDays(Number(e.target.value))}
                                         />
                                         <span className="text-sm text-slate-500">days</span>
-                                        <Button size="sm" variant="outline" onClick={() => toast.success(`Default sub set to ${defaultSubDays} days`)}>
+                                        <Button size="sm" variant="outline" onClick={() => handleSettingChange({ defaultSubDays })}>
                                             Save
                                         </Button>
                                     </div>
@@ -335,18 +373,25 @@ export default function AdminPage() {
                             </CardHeader>
                             <CardContent className="pt-6 space-y-6">
                                 {[
-                                    { label: "Solar Capture Logging", desc: "Enable solar capture tab on Power page", state: featureSolarCapture, setter: setFeatureSolarCapture },
-                                    { label: "Document Manager", desc: "Enable document upload and management", state: featureDocuments, setter: setFeatureDocuments },
-                                    { label: "Water Calculator", desc: "Enable the water usage calculator", state: featureWaterCalc, setter: setFeatureWaterCalc },
-                                ].map((flag, i) => (
-                                    <div key={i} className="flex items-center justify-between">
+                                    { key: "solar_capture", label: "Solar Capture Logging", desc: "Enable solar capture tab on Power page" },
+                                    { key: "purchase_calculator", label: "RV Purchase Calculator", desc: "Enable the RV Purchase calculator tab" },
+                                    { key: "setup_budget", label: "RV Setup Budget", desc: "Enable the Setup Cost budgeting tool" },
+                                    { key: "living_budget", label: "RV Living Budget", desc: "Enable the monthly living budget calculator" },
+                                    { key: "water_calculator", label: "Water Calculator", desc: "Enable the water usage calculator" },
+                                    { key: "document_manager", label: "Document Manager", desc: "Enable document upload and management" },
+                                ].map((flag) => (
+                                    <div key={flag.key} className="flex items-center justify-between">
                                         <div>
                                             <Label className="text-sm font-medium text-slate-800">{flag.label}</Label>
                                             <p className="text-xs text-slate-500 mt-0.5">{flag.desc}</p>
                                         </div>
                                         <Switch
-                                            checked={flag.state}
-                                            onCheckedChange={(v) => { flag.setter(v); toast.success(`${flag.label}: ${v ? 'ON' : 'OFF'}`); }}
+                                            checked={featureFlags[flag.key] ?? true}
+                                            onCheckedChange={(v) => {
+                                                const updatedFlags = { ...featureFlags, [flag.key]: v };
+                                                setFeatureFlags(updatedFlags);
+                                                handleSettingChange({ featureFlags: updatedFlags });
+                                            }}
                                         />
                                     </div>
                                 ))}

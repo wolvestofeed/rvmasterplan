@@ -163,3 +163,19 @@ export const rvVehiclesRelations = relations(rvVehicles, ({ one }) => ({
         references: [waterSystems.rvId]
     })
 }));
+
+// --- Settings ---
+export const systemSettings = pgTable('system_settings', {
+    id: text('id').primaryKey(), // e.g. 'global'
+    demoMode: boolean('demo_mode').default(true),
+    maintenanceMode: boolean('maintenance_mode').default(false),
+    defaultSubDays: integer('default_sub_days').default(30),
+    featureFlags: jsonb('feature_flags').$type<Record<string, boolean>>().default({
+        "solar_capture": true,
+        "document_manager": true,
+        "water_calculator": true,
+        "budget_calculator": true,
+        "purchase_calculator": true
+    }),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { userProfiles } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { getSystemSettings } from "@/app/actions/admin";
 export default async function DashboardLayout({
     children,
 }: {
@@ -31,9 +32,12 @@ export default async function DashboardLayout({
         }
     }
 
+    const { data: settings } = await getSystemSettings();
+    const featureFlags = settings?.featureFlags as Record<string, boolean> | undefined;
+
     return (
         <div className="flex min-h-screen bg-[#f8fbf5]">
-            <Sidebar />
+            <Sidebar featureFlags={featureFlags || {}} />
             <main className="flex-1 ml-64 bg-[#f8fbf5] relative">
                 <div className="max-w-6xl mx-auto pb-12">
                     {children}

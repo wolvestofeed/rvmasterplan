@@ -32,6 +32,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
 import { formatNumber } from "@/lib/utils";
+import { getSystemSettings } from "@/app/actions/admin";
 
 import {
     ElectricalDevice,
@@ -97,8 +98,19 @@ export default function PowerStrategyPage() {
     const [equipmentModalOpen, setEquipmentModalOpen] = useState(false);
     const [logFilterMonth, setLogFilterMonth] = useState<string>('all');
     const [estimatedDeviceWeight, setEstimatedDeviceWeight] = useState<number>(20);
+    const [featureSolarCapture, setFeatureSolarCapture] = useState(true);
 
-    useEffect(() => { setIsClient(true); }, []);
+    useEffect(() => {
+        setIsClient(true);
+        const fetchSettings = async () => {
+            const { success, data } = await getSystemSettings();
+            if (success && data?.featureFlags) {
+                const flags = data.featureFlags as Record<string, boolean>;
+                setFeatureSolarCapture(flags["solar_capture"] ?? true);
+            }
+        };
+        fetchSettings();
+    }, []);
 
     const deviceForm = useForm<DeviceFormValues>({
         resolver: zodResolver(deviceSchema) as any,
@@ -395,10 +407,10 @@ export default function PowerStrategyPage() {
             </Card>
 
             <Tabs defaultValue="load">
-                <TabsList className="mb-6 grid w-full grid-cols-3 max-w-lg">
+                <TabsList className="mb-6 grid w-full max-w-lg" style={{ gridTemplateColumns: featureSolarCapture ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)' }}>
                     <TabsTrigger value="load">Electrical Load</TabsTrigger>
                     <TabsTrigger value="solar">Solar Equipment</TabsTrigger>
-                    <TabsTrigger value="capture">Solar Capture</TabsTrigger>
+                    {featureSolarCapture && <TabsTrigger value="capture">Solar Capture</TabsTrigger>}
                 </TabsList>
 
                 <TabsContent value="load" className="space-y-6">
@@ -786,143 +798,145 @@ export default function PowerStrategyPage() {
                 </TabsContent>
 
                 {/* Solar Capture Tab */}
-                <TabsContent value="capture" className="space-y-6">
-                    <div className="grid lg:grid-cols-3 gap-6">
-                        {/* Log Entry Form */}
-                        <Card className="p-6 lg:col-span-1">
-                            <h3 className="text-lg font-medium text-slate-800 mb-4">
-                                {editingLogId ? 'Edit Log Entry' : 'Log Solar Capture'}
-                            </h3>
-                            {editingLogId && (
-                                <Button variant="outline" size="sm" className="mb-2" onClick={() => { setEditingLogId(null); solarLogForm.reset({ date: new Date().toISOString().split('T')[0], weatherCondition: 'Sunny', sunHours: 0, generatedWh: 0 }); }}>Cancel Edit</Button>
-                            )}
-                            <Form {...solarLogForm}>
-                                <form onSubmit={solarLogForm.handleSubmit(onSolarLogSubmit)} className="space-y-4">
-                                    <FormField control={solarLogForm.control} name="date" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Date</FormLabel>
-                                            <FormControl><Input type="date" {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                    <FormField control={solarLogForm.control} name="weatherCondition" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Weather Condition</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                                <SelectContent>
-                                                    {(['Sunny', 'Partly Cloudy', 'Cloudy', 'Overcast', 'Bad Weather'] as WeatherCondition[]).map(w =>
-                                                        <SelectItem key={w} value={w}>{getWeatherEmoji(w)} {w}</SelectItem>
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                    <FormField control={solarLogForm.control} name="sunHours" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Direct Sun Hours</FormLabel>
-                                            <FormControl><Input type="number" step="0.5" placeholder="e.g. 5.5" {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                    <FormField control={solarLogForm.control} name="generatedWh" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Actual Wh Generated</FormLabel>
-                                            <FormControl><Input type="number" step="1" placeholder="e.g. 3200" {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                    <Button type="submit" className="w-full bg-amber-600 hover:bg-amber-700 text-white">
-                                        {editingLogId ? <><PencilIcon className="mr-2 h-4 w-4" /> Update Entry</> : <><PlusIcon className="mr-2 h-4 w-4" /> Log Entry</>}
-                                    </Button>
-                                </form>
-                            </Form>
-                        </Card>
-
-                        {/* Log History */}
-                        <Card className="p-6 lg:col-span-2">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-medium text-slate-800">
-                                    Capture History
+                {featureSolarCapture && (
+                    <TabsContent value="capture" className="space-y-6">
+                        <div className="grid lg:grid-cols-3 gap-6">
+                            {/* Log Entry Form */}
+                            <Card className="p-6 lg:col-span-1">
+                                <h3 className="text-lg font-medium text-slate-800 mb-4">
+                                    {editingLogId ? 'Edit Log Entry' : 'Log Solar Capture'}
                                 </h3>
-                                <Select value={logFilterMonth} onValueChange={setLogFilterMonth}>
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="Filter by month" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Months</SelectItem>
-                                        {getAvailableMonths().map(m => (
-                                            <SelectItem key={m} value={m}>
-                                                {new Date(m + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                                {editingLogId && (
+                                    <Button variant="outline" size="sm" className="mb-2" onClick={() => { setEditingLogId(null); solarLogForm.reset({ date: new Date().toISOString().split('T')[0], weatherCondition: 'Sunny', sunHours: 0, generatedWh: 0 }); }}>Cancel Edit</Button>
+                                )}
+                                <Form {...solarLogForm}>
+                                    <form onSubmit={solarLogForm.handleSubmit(onSolarLogSubmit)} className="space-y-4">
+                                        <FormField control={solarLogForm.control} name="date" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Date</FormLabel>
+                                                <FormControl><Input type="date" {...field} /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                        <FormField control={solarLogForm.control} name="weatherCondition" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Weather Condition</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                                    <SelectContent>
+                                                        {(['Sunny', 'Partly Cloudy', 'Cloudy', 'Overcast', 'Bad Weather'] as WeatherCondition[]).map(w =>
+                                                            <SelectItem key={w} value={w}>{getWeatherEmoji(w)} {w}</SelectItem>
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                        <FormField control={solarLogForm.control} name="sunHours" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Direct Sun Hours</FormLabel>
+                                                <FormControl><Input type="number" step="0.5" placeholder="e.g. 5.5" {...field} /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                        <FormField control={solarLogForm.control} name="generatedWh" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Actual Wh Generated</FormLabel>
+                                                <FormControl><Input type="number" step="1" placeholder="e.g. 3200" {...field} /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                        <Button type="submit" className="w-full bg-amber-600 hover:bg-amber-700 text-white">
+                                            {editingLogId ? <><PencilIcon className="mr-2 h-4 w-4" /> Update Entry</> : <><PlusIcon className="mr-2 h-4 w-4" /> Log Entry</>}
+                                        </Button>
+                                    </form>
+                                </Form>
+                            </Card>
 
-                            {/* Summary Stats */}
-                            {getFilteredLogs().length > 0 && (
-                                <div className="grid grid-cols-3 gap-3 mb-4">
-                                    <div className="bg-amber-50 p-3 rounded-lg text-center border border-amber-100">
-                                        <div className="text-xs text-slate-500 mb-1">Avg Daily</div>
-                                        <div className="font-bold text-lg text-amber-700">
-                                            {formatNumber(Math.round(getFilteredLogs().reduce((s, l) => s + l.generatedWh, 0) / getFilteredLogs().length))} Wh
-                                        </div>
-                                    </div>
-                                    <div className="bg-emerald-50 p-3 rounded-lg text-center border border-emerald-100">
-                                        <div className="text-xs text-slate-500 mb-1">Best Day</div>
-                                        <div className="font-bold text-lg text-emerald-700">
-                                            {formatNumber(Math.max(...getFilteredLogs().map(l => l.generatedWh)))} Wh
-                                        </div>
-                                    </div>
-                                    <div className="bg-blue-50 p-3 rounded-lg text-center border border-blue-100">
-                                        <div className="text-xs text-slate-500 mb-1">Avg Sun Hrs</div>
-                                        <div className="font-bold text-lg text-blue-700">
-                                            {(getFilteredLogs().reduce((s, l) => s + l.sunHours, 0) / getFilteredLogs().length).toFixed(1)}h
-                                        </div>
-                                    </div>
+                            {/* Log History */}
+                            <Card className="p-6 lg:col-span-2">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-medium text-slate-800">
+                                        Capture History
+                                    </h3>
+                                    <Select value={logFilterMonth} onValueChange={setLogFilterMonth}>
+                                        <SelectTrigger className="w-[180px]">
+                                            <SelectValue placeholder="Filter by month" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Months</SelectItem>
+                                            {getAvailableMonths().map(m => (
+                                                <SelectItem key={m} value={m}>
+                                                    {new Date(m + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
-                            )}
 
-                            {/* Log Entries */}
-                            {getFilteredLogs().length === 0 ? (
-                                <p className="text-sm text-slate-500">No solar capture logs {logFilterMonth !== 'all' ? 'for this month' : 'yet'}. Start logging your daily generation!</p>
-                            ) : (
-                                <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                                    {getFilteredLogs()
-                                        .sort((a, b) => b.date.localeCompare(a.date))
-                                        .map(log => (
-                                            <div key={log.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100 group">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="text-2xl">{getWeatherEmoji(log.weatherCondition)}</div>
-                                                    <div>
-                                                        <div className="font-medium text-slate-800">
-                                                            {new Date(log.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                                                        </div>
-                                                        <div className="text-xs text-slate-500">
-                                                            {log.weatherCondition} • {log.sunHours}h sun
+                                {/* Summary Stats */}
+                                {getFilteredLogs().length > 0 && (
+                                    <div className="grid grid-cols-3 gap-3 mb-4">
+                                        <div className="bg-amber-50 p-3 rounded-lg text-center border border-amber-100">
+                                            <div className="text-xs text-slate-500 mb-1">Avg Daily</div>
+                                            <div className="font-bold text-lg text-amber-700">
+                                                {formatNumber(Math.round(getFilteredLogs().reduce((s, l) => s + l.generatedWh, 0) / getFilteredLogs().length))} Wh
+                                            </div>
+                                        </div>
+                                        <div className="bg-emerald-50 p-3 rounded-lg text-center border border-emerald-100">
+                                            <div className="text-xs text-slate-500 mb-1">Best Day</div>
+                                            <div className="font-bold text-lg text-emerald-700">
+                                                {formatNumber(Math.max(...getFilteredLogs().map(l => l.generatedWh)))} Wh
+                                            </div>
+                                        </div>
+                                        <div className="bg-blue-50 p-3 rounded-lg text-center border border-blue-100">
+                                            <div className="text-xs text-slate-500 mb-1">Avg Sun Hrs</div>
+                                            <div className="font-bold text-lg text-blue-700">
+                                                {(getFilteredLogs().reduce((s, l) => s + l.sunHours, 0) / getFilteredLogs().length).toFixed(1)}h
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Log Entries */}
+                                {getFilteredLogs().length === 0 ? (
+                                    <p className="text-sm text-slate-500">No solar capture logs {logFilterMonth !== 'all' ? 'for this month' : 'yet'}. Start logging your daily generation!</p>
+                                ) : (
+                                    <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                                        {getFilteredLogs()
+                                            .sort((a, b) => b.date.localeCompare(a.date))
+                                            .map(log => (
+                                                <div key={log.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100 group">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="text-2xl">{getWeatherEmoji(log.weatherCondition)}</div>
+                                                        <div>
+                                                            <div className="font-medium text-slate-800">
+                                                                {new Date(log.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                                                            </div>
+                                                            <div className="text-xs text-slate-500">
+                                                                {log.weatherCondition} • {log.sunHours}h sun
+                                                            </div>
                                                         </div>
                                                     </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <div className="font-bold text-slate-700 mr-2">{formatNumber(log.generatedWh)} <span className="text-xs font-normal">Wh</span></div>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => editSolarLog(log.id)}>
+                                                            <PencilIcon className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => deleteSolarLog(log.id)}>
+                                                            <TrashIcon className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-1">
-                                                    <div className="font-bold text-slate-700 mr-2">{formatNumber(log.generatedWh)} <span className="text-xs font-normal">Wh</span></div>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => editSolarLog(log.id)}>
-                                                        <PencilIcon className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => deleteSolarLog(log.id)}>
-                                                        <TrashIcon className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                </div>
-                            )}
-                        </Card>
-                    </div>
-                </TabsContent>
+                                            ))}
+                                    </div>
+                                )}
+                            </Card>
+                        </div>
+                    </TabsContent>
+                )}
             </Tabs>
 
-        </div >
+        </div>
     );
 }
