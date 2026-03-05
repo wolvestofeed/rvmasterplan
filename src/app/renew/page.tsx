@@ -3,11 +3,44 @@
 import { HeaderHero } from "@/components/layout/header-hero";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { SignOutButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { AlertCircle, ArrowRight, LogOut, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { AlertCircle, ArrowRight, LogOut, CheckCircle2, Key } from "lucide-react";
 
 export default function RenewPage() {
+    const [accessCode, setAccessCode] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleApplyCode = async () => {
+        if (!accessCode.trim()) {
+            toast.error("Please enter an access code");
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const res = await fetch("/api/apply-code", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: accessCode.trim() }),
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                toast.success("Trial activated! Redirecting...");
+                window.location.href = "/dashboard";
+            } else {
+                toast.error(data.error || "Invalid access code");
+            }
+        } catch (error) {
+            toast.error("Failed to verify code");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
     return (
         <div className="min-h-screen bg-[#f8fbf5] flex flex-col items-center justify-center p-4">
             <div className="w-full max-w-2xl">
@@ -68,6 +101,32 @@ export default function RenewPage() {
                                     Subscribe Annually
                                 </Button>
                             </div>
+                        </div>
+
+                        {/* Registration Code Section */}
+                        <div className="bg-slate-50 p-5 rounded-xl border border-slate-100 mt-6">
+                            <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-2 mb-3">
+                                <Key className="w-4 h-4 text-slate-500" /> Have a Registration Code?
+                            </h4>
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="Enter your VIP code..."
+                                    value={accessCode}
+                                    onChange={(e) => setAccessCode(e.target.value)}
+                                    className="bg-white"
+                                />
+                                <Button
+                                    onClick={handleApplyCode}
+                                    disabled={isSubmitting}
+                                    variant="outline"
+                                    className="shrink-0 border-[#2a4f3f] text-[#2a4f3f] hover:bg-[#f8fbf5]"
+                                >
+                                    {isSubmitting ? "Verifying..." : "Apply Trial Code"}
+                                </Button>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-2">
+                                Valid registration codes unlock a 30-day free trial with full feature access.
+                            </p>
                         </div>
 
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-100">
