@@ -8,9 +8,9 @@ import { revalidatePath } from 'next/cache';
 
 export async function getEquipment() {
     const { userId } = await auth();
-    if (!userId) return [];
+    const activeId = userId || "demo_user";
 
-    return await db.select().from(equipmentItems).where(eq(equipmentItems.userId, userId));
+    return await db.select().from(equipmentItems).where(eq(equipmentItems.userId, activeId));
 }
 
 export async function addEquipment(data: {
@@ -19,12 +19,13 @@ export async function addEquipment(data: {
     watts?: number, hoursPerDay?: number, runsOnInverter?: boolean
 }) {
     const { userId } = await auth();
-    if (!userId) throw new Error("Unauthorized");
+    const activeId = userId || "demo_user";
+    if (!userId || activeId === "demo_user") throw new Error("Saving is disabled in Demo Mode.");
 
     const id = Date.now().toString();
     await db.insert(equipmentItems).values({
         id,
-        userId,
+        userId: activeId,
         name: data.name,
         category: data.category,
         cost: data.cost ? String(data.cost) : null,
@@ -39,7 +40,7 @@ export async function addEquipment(data: {
 
 export async function deleteEquipment(id: string) {
     const { userId } = await auth();
-    if (!userId) throw new Error("Unauthorized");
+    if (!userId || userId === "demo_user") throw new Error("Saving is disabled in Demo Mode.");
 
     await db.delete(equipmentItems).where(eq(equipmentItems.id, id));
     revalidatePath('/calculators/setup');

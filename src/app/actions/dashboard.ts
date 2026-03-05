@@ -3,8 +3,7 @@
 import { db } from "@/lib/db";
 import { documents, eventsAndLogs, equipmentItems, userProfiles, users } from "@/lib/db/schema";
 import { eq, isNotNull, gte } from "drizzle-orm";
-
-const FALLBACK_USER_ID = "guest_user";
+import { auth } from "@clerk/nextjs/server";
 
 export type DashboardEvent = {
     id: string;
@@ -18,11 +17,14 @@ export type DashboardEvent = {
 
 export async function getDashboardEvents(): Promise<{ success: boolean; data?: DashboardEvent[]; error?: string }> {
     try {
+        const { userId } = await auth();
+        const activeId = userId || "demo_user";
+
         const aggregatedEvents: DashboardEvent[] = [];
 
         // 1. Fetch upcoming Document Renewals
         const docs = await db.query.documents.findMany({
-            where: eq(documents.userId, FALLBACK_USER_ID),
+            where: eq(documents.userId, activeId),
         });
 
         docs.forEach(doc => {
@@ -43,7 +45,7 @@ export async function getDashboardEvents(): Promise<{ success: boolean; data?: D
 
         // 2. Fetch Manually Scheduled Events (Maintenance, Reminders)
         const events = await db.query.eventsAndLogs.findMany({
-            where: eq(eventsAndLogs.userId, FALLBACK_USER_ID)
+            where: eq(eventsAndLogs.userId, activeId)
         });
 
         events.forEach(evt => {
@@ -63,7 +65,7 @@ export async function getDashboardEvents(): Promise<{ success: boolean; data?: D
 
         // 3. Fetch Equipment Purchase Deadlines
         const items = await db.query.equipmentItems.findMany({
-            where: eq(equipmentItems.userId, FALLBACK_USER_ID)
+            where: eq(equipmentItems.userId, activeId)
         });
 
         items.forEach(item => {
@@ -83,7 +85,7 @@ export async function getDashboardEvents(): Promise<{ success: boolean; data?: D
 
         // 4. Fetch User Subscription Renewal
         const profile = await db.query.userProfiles.findFirst({
-            where: eq(userProfiles.userId, FALLBACK_USER_ID)
+            where: eq(userProfiles.userId, activeId)
         });
 
         if (profile?.subscriptionRenewalDate) {

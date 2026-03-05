@@ -4,15 +4,15 @@ import { db } from "@/lib/db";
 import { equipmentItems, users } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
 import { eq, desc } from "drizzle-orm";
-
-const FALLBACK_USER_ID = "guest_user";
+import { auth } from "@clerk/nextjs/server";
 
 export async function getEquipmentItems() {
     try {
-        await ensureGuestUser();
+        const { userId } = await auth();
+        const activeId = userId || "demo_user";
 
         const items = await db.query.equipmentItems.findMany({
-            where: eq(equipmentItems.userId, FALLBACK_USER_ID),
+            where: eq(equipmentItems.userId, activeId),
             orderBy: [desc(equipmentItems.createdAt)]
         });
 
@@ -34,11 +34,15 @@ export async function addEquipmentItem(data: {
     notes?: string;
 }) {
     try {
-        await ensureGuestUser();
+        const { userId } = await auth();
+        const activeId = userId || "demo_user";
+        if (!userId || activeId === "demo_user") {
+            return { success: false, error: "Saving is disabled in Demo Mode." };
+        }
 
         const newItem = await db.insert(equipmentItems).values({
             id: Math.random().toString(36).substring(2, 10),
-            userId: FALLBACK_USER_ID,
+            userId: activeId,
             name: data.name,
             category: data.category,
             priority: data.priority,
@@ -68,6 +72,11 @@ export async function updateEquipmentItem(id: string, data: {
     notes?: string;
 }) {
     try {
+        const { userId } = await auth();
+        if (!userId || userId === "demo_user") {
+            return { success: false, error: "Saving is disabled in Demo Mode." };
+        }
+
         const updatedItem = await db.update(equipmentItems)
             .set({
                 name: data.name,
@@ -92,26 +101,16 @@ export async function updateEquipmentItem(id: string, data: {
 
 export async function deleteEquipmentItem(id: string) {
     try {
+        const { userId } = await auth();
+        if (!userId || userId === "demo_user") {
+            return { success: false, error: "Saving is disabled in Demo Mode." };
+        }
+
         await db.delete(equipmentItems).where(eq(equipmentItems.id, id));
         revalidatePath("/calculators/setup");
         return { success: true };
     } catch (error) {
         console.error("Error deleting equipment item:", error);
         return { success: false, error: "Failed to delete equipment item" };
-    }
-}
-
-
-// --- Utility for Demo Mode ---
-async function ensureGuestUser() {
-    const existing = await db.query.users.findFirst({
-        where: eq(users.id, FALLBACK_USER_ID)
-    });
-
-    if (!existing) {
-        await db.insert(users).values({
-            id: FALLBACK_USER_ID,
-            email: "guest@rvmasterplan.com"
-        });
     }
 }

@@ -4,17 +4,15 @@ import { db } from "@/lib/db";
 import { documents, users } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-
-// Temporary fallback userId for demo mode if full auth isn't wired up to database yet
-const FALLBACK_USER_ID = "guest_user";
+import { auth } from "@clerk/nextjs/server";
 
 export async function getDocuments() {
     try {
-        // Ensure the dummy guest user exists so foreign keys don't fail
-        await ensureGuestUser();
+        const { userId } = await auth();
+        const activeId = userId || "demo_user";
 
         const results = await db.query.documents.findMany({
-            where: eq(documents.userId, FALLBACK_USER_ID),
+            where: eq(documents.userId, activeId),
             orderBy: [desc(documents.createdAt)]
         });
 
@@ -33,14 +31,18 @@ export async function addDocument(data: {
     renewalCost?: string | null;
 }) {
     try {
-        await ensureGuestUser();
+        const { userId } = await auth();
+        const activeId = userId || "demo_user";
+        if (!userId || activeId === "demo_user") {
+            return { success: false, error: "Saving is disabled in Demo Mode." };
+        }
 
         // Convert "10.50" string to numeric string for Postgres "numeric" column
         const costStr = data.renewalCost ? parseFloat(data.renewalCost).toString() : null;
 
         const newDoc = await db.insert(documents).values({
             id: Math.random().toString(36).substring(2, 10),
-            userId: FALLBACK_USER_ID,
+            userId: activeId,
             title: data.title,
             fileType: data.fileType,
             fileUrl: data.fileUrl,
@@ -58,26 +60,16 @@ export async function addDocument(data: {
 
 export async function deleteDocument(id: string) {
     try {
+        const { userId } = await auth();
+        if (!userId || userId === "demo_user") {
+            return { success: false, error: "Saving is disabled in Demo Mode." };
+        }
+
         await db.delete(documents).where(eq(documents.id, id));
         revalidatePath("/documents");
         return { success: true };
     } catch (error) {
         console.error("Error deleting document:", error);
         return { success: false, error: "Failed to delete document" };
-    }
-}
-
-
-// --- Utility for Demo Mode ---
-async function ensureGuestUser() {
-    const existing = await db.query.users.findFirst({
-        where: eq(users.id, FALLBACK_USER_ID)
-    });
-
-    if (!existing) {
-        await db.insert(users).values({
-            id: FALLBACK_USER_ID,
-            email: "guest@rvmasterplan.com"
-        });
     }
 }

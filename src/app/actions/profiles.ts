@@ -4,16 +4,16 @@ import { db } from "@/lib/db";
 import { userProfiles, users } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
-
-const FALLBACK_USER_ID = "guest_user";
+import { auth } from "@clerk/nextjs/server";
 
 export async function getUserProfile() {
     try {
-        await ensureGuestUser();
+        const { userId } = await auth();
+        const activeId = userId || "demo_user";
 
         // Fetch or create profile
         let profile = await db.query.userProfiles.findFirst({
-            where: eq(userProfiles.userId, FALLBACK_USER_ID)
+            where: eq(userProfiles.userId, activeId)
         });
 
         if (!profile) {
@@ -23,7 +23,7 @@ export async function getUserProfile() {
 
             const newProfiles = await db.insert(userProfiles).values({
                 id: Math.random().toString(36).substring(2, 10),
-                userId: FALLBACK_USER_ID,
+                userId: activeId,
                 subscriptionStatus: 'active',
                 subscriptionRenewalDate: defaultDate
             }).returning();
@@ -39,7 +39,11 @@ export async function getUserProfile() {
 
 export async function extendSubscription() {
     try {
-        await ensureGuestUser();
+        const { userId } = await auth();
+        const activeId = userId || "demo_user";
+        if (!userId || activeId === "demo_user") {
+            return { success: false, error: "Subscriptions disabled in Demo Mode." };
+        }
 
         const res = await getUserProfile();
         if (res.success && res.data) {
@@ -49,7 +53,7 @@ export async function extendSubscription() {
 
             await db.update(userProfiles)
                 .set({ subscriptionRenewalDate: current, subscriptionStatus: 'active' })
-                .where(eq(userProfiles.userId, FALLBACK_USER_ID));
+                .where(eq(userProfiles.userId, activeId));
 
             revalidatePath("/settings");
             revalidatePath("/dashboard");
@@ -59,19 +63,5 @@ export async function extendSubscription() {
     } catch (error) {
         console.error("Error extending subscription:", error);
         return { success: false, error: "Failed to extend" };
-    }
-}
-
-// --- Utility for Demo Mode ---
-async function ensureGuestUser() {
-    const existing = await db.query.users.findFirst({
-        where: eq(users.id, FALLBACK_USER_ID)
-    });
-
-    if (!existing) {
-        await db.insert(users).values({
-            id: FALLBACK_USER_ID,
-            email: "guest@rvmasterplan.com"
-        });
     }
 }
