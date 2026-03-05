@@ -11,6 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { getSolarEquipment } from "@/app/actions/power";
+import { getUserProfile, updateDashboardHeroImage } from "@/app/actions/profiles";
+import { UploadButton } from "@/lib/uploadthing";
+import { Camera } from "lucide-react";
 
 // --- Mock Data for Dashboard ---
 const expenseData = [
@@ -59,6 +62,7 @@ export default function Dashboard() {
   const [newEventDesc, setNewEventDesc] = useState("");
 
   const [computedEquipmentWeight, setComputedEquipmentWeight] = useState(estimatedDeviceWeight);
+  const [heroImage, setHeroImage] = useState<string | null>(null);
 
   const fetchEvents = async () => {
     const res = await getDashboardEvents();
@@ -76,9 +80,17 @@ export default function Dashboard() {
     }
   };
 
+  const fetchProfile = async () => {
+    const res = await getUserProfile();
+    if (res.success && res.data) {
+      setHeroImage(res.data.dashboardHeroImage);
+    }
+  };
+
   useEffect(() => {
     fetchEvents();
     fetchEquipmentWeight();
+    fetchProfile();
   }, []);
 
   const weightData = [
@@ -130,9 +142,36 @@ export default function Dashboard() {
       <HeaderHero
         title="Welcome, Rob Bogatin!"
         description="RV MasterPlan Dashboard | Data Aggregation Overview"
-        imageUrl="/images/page-headers/dashboard-header.jpg"
+        imageUrl={heroImage || "/images/page-headers/dashboard-header.jpg"}
         imageClass="object-cover object-[center_70%]"
-      />
+      >
+        <div className="absolute top-4 right-4 z-10 overflow-hidden rounded-md opacity-30 hover:opacity-100 transition-opacity bg-black/60 p-1 flex items-center justify-center">
+          <UploadButton
+            endpoint="heroImageUploader"
+            onClientUploadComplete={async (res) => {
+              if (res && res.length > 0) {
+                const url = res[0].url;
+                await updateDashboardHeroImage(url);
+                setHeroImage(url);
+                toast.success("Hero image updated!");
+              }
+            }}
+            onUploadError={(error: Error) => {
+              toast.error(`Upload failed: ${error.message}`);
+            }}
+            appearance={{
+              button: "bg-transparent text-white cursor-pointer h-8 px-2 flex gap-2 items-center text-sm outline-none focus-within:ring-0 after:hidden ring-0",
+              allowedContent: "hidden"
+            }}
+            content={{
+              button({ ready }) {
+                if (ready) return <><Camera className="w-4 h-4" /> <span className="hidden sm:inline">Change Photo</span></>;
+                return "Loading...";
+              }
+            }}
+          />
+        </div>
+      </HeaderHero>
 
       {/* KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 mt-6">

@@ -1,18 +1,21 @@
 import Image from "next/image";
+import { ReactNode } from "react";
 
 interface HeaderHeroProps {
     title: string;
     description: string;
-    imageUrl?: string;
+    imageUrl?: string | null;
     imageClass?: string;
+    children?: ReactNode;
 }
 
-export function HeaderHero({ title, description, imageUrl = "/images/logos/RV-MasterPlan_logo-header.jpg", imageClass = "object-cover object-center" }: HeaderHeroProps) {
+export function HeaderHero({ title, description, imageUrl, imageClass = "object-cover object-center", children }: HeaderHeroProps) {
+    const displayImage = imageUrl || "/images/logos/RV-MasterPlan_logo-header.jpg";
     return (
         <div className="relative w-full h-80 rounded-xl overflow-hidden mb-8 mt-6 bg-[#f8fbf5]">
             <div className="absolute inset-0">
                 <Image
-                    src={imageUrl}
+                    src={displayImage}
                     alt={title}
                     fill
                     className={imageClass}
@@ -29,6 +32,9 @@ export function HeaderHero({ title, description, imageUrl = "/images/logos/RV-Ma
                     {description}
                 </p>
             </div>
+
+            {/* Optional children overlay */}
+            {children}
         </div>
     );
 }

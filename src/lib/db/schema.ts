@@ -15,6 +15,7 @@ export const userProfiles = pgTable('user_profiles', {
     subscriptionRenewalDate: timestamp('subscription_renewal_date'),
     firstName: text('first_name'),
     lastName: text('last_name'),
+    dashboardHeroImage: text('dashboard_hero_image'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

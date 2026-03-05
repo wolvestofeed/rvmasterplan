@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
 import { getDocuments, addDocument, deleteDocument } from "@/app/actions/documents";
 import { useEffect } from "react";
+import { useUploadThing } from "@/lib/uploadthing";
 
 // Make sure formatCurrency exists in lib/utils, if not we will just use basic formatting
 
@@ -34,6 +35,8 @@ export default function DocumentsPage() {
     const [renewalDate, setRenewalDate] = useState("");
     const [renewalCost, setRenewalCost] = useState("");
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+    const { startUpload } = useUploadThing("documentUploader");
 
     useEffect(() => {
         loadDocuments();
@@ -66,24 +69,19 @@ export default function DocumentsPage() {
         setIsUploading(true);
 
         try {
-            // 1. Upload to local API route
-            const formData = new FormData();
-            formData.append("file", selectedFile);
+            // 1. Upload to UploadThing
+            const res = await startUpload([selectedFile]);
+            if (!res || res.length === 0) {
+                throw new Error("Upload to third-party storage failed.");
+            }
 
-            const uploadRes = await fetch("/api/documents/upload", {
-                method: "POST",
-                body: formData,
-            });
-
-            const uploadData = await uploadRes.json();
-
-            if (!uploadRes.ok) throw new Error(uploadData.error || "Upload failed");
+            const fileUrl = res[0].url;
 
             // 2. Save metadata to database
             const dbRes = await addDocument({
                 title,
                 fileType: selectedFile.type.includes('pdf') ? 'pdf' : 'image',
-                fileUrl: uploadData.url,
+                fileUrl: fileUrl,
                 renewalDate: renewalDate ? new Date(renewalDate) : null,
                 renewalCost: renewalCost || null
             });

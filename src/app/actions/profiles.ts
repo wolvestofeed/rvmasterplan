@@ -65,3 +65,27 @@ export async function extendSubscription() {
         return { success: false, error: "Failed to extend" };
     }
 }
+
+export async function updateDashboardHeroImage(imageUrl: string) {
+    try {
+        const { userId } = await auth();
+        const activeId = userId || "demo_user";
+
+        if (!userId || activeId === "demo_user") {
+            return { success: false, error: "Image uploads are disabled in Demo Mode." };
+        }
+
+        await db.update(userProfiles)
+            .set({
+                dashboardHeroImage: imageUrl,
+                updatedAt: new Date()
+            })
+            .where(eq(userProfiles.userId, activeId));
+
+        revalidatePath("/dashboard");
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating dashboard hero image:", error);
+        return { success: false, error: "Failed to update dashboard hero image" };
+    }
+}
