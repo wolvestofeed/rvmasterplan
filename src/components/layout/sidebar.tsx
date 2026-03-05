@@ -14,9 +14,10 @@ import {
     FileText,
     PieChart,
     Settings,
-    ShieldAlert
+    ShieldAlert,
+    LogOut
 } from "lucide-react";
-import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, SignOutButton, UserButton, useUser } from "@clerk/nextjs";
 
 const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -90,19 +91,27 @@ export function Sidebar({ featureFlags = {} }: { featureFlags?: Record<string, b
 
             <div className="p-4 border-t border-[#e0e8d5] bg-[#e6ecd9]/30">
                 <SignedIn>
-                    <div className="flex items-center gap-3 mb-4 px-2">
-                        <UserButton afterSignOutUrl="/" />
-                        <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-slate-800">{user?.fullName || 'User'}</span>
-                            {user?.publicMetadata?.role === 'admin' ? (
-                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
-                                    <ShieldAlert className="h-3 w-3" />
-                                    Admin
-                                </span>
-                            ) : (
-                                <span className="text-xs text-slate-500">Subscriber</span>
-                            )}
+                    <div className="flex flex-col gap-3 mb-4 px-2 w-full">
+                        <div className="flex items-center gap-3">
+                            <UserButton afterSignOutUrl="/" />
+                            <div className="flex flex-col">
+                                <span className="text-sm font-semibold text-slate-800">{user?.fullName || 'User'}</span>
+                                {user?.publicMetadata?.role === 'admin' ? (
+                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
+                                        <ShieldAlert className="h-3 w-3" />
+                                        Admin
+                                    </span>
+                                ) : (
+                                    <span className="text-xs text-slate-500">Subscriber</span>
+                                )}
+                            </div>
                         </div>
+                        <SignOutButton>
+                            <button className="w-full flex items-center gap-2 text-slate-600 hover:text-red-700 transition-colors text-sm font-medium py-1.5 px-2 rounded-md hover:bg-red-50">
+                                <LogOut className="w-4 h-4" />
+                                Log Out
+                            </button>
+                        </SignOutButton>
                     </div>
                 </SignedIn>
                 <SignedOut>

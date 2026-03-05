@@ -136,7 +136,7 @@ export default function LandingPage() {
                     {/* Pro Monthly Subscription */}
                     <div className="bg-[#2a4f3f] text-white rounded-2xl shadow-xl relative overflow-hidden flex flex-col h-full ring-2 ring-[#8ca163]">
                         {/* New Uploaded Image as Banner */}
-                        <div className="w-full relative h-[280px] sm:h-[320px] bg-white cursor-pointer hover:opacity-90 transition-opacity" onClick={async () => {
+                        <div className="w-full relative h-[320px] bg-white cursor-pointer hover:opacity-90 transition-opacity" onClick={async () => {
                             const { createCheckoutSession } = await import('@/app/actions/stripe');
                             try {
                                 const { url } = await createCheckoutSession('prod_U5dlLuufA1MNDN', 'month', 500);
@@ -183,13 +183,23 @@ export default function LandingPage() {
                         </div>
                     </div>
 
-                    {/* Pro Annual Subscription - Placeholder */}
+                    {/* Pro Annual Subscription */}
                     <div className="bg-slate-800 text-white rounded-2xl shadow-xl relative overflow-hidden flex flex-col h-full opacity-90 border border-slate-700">
-                        {/* Placeholder for Annual Image */}
-                        <div className="w-full relative h-[280px] sm:h-[320px] bg-slate-900 flex items-center justify-center border-b border-white/10">
-                            <div className="text-center text-slate-500 text-sm p-6">
-                                [Annual Sub Image Placeholder]<br />Coming Soon
-                            </div>
+                        {/* Uploaded Annual Image as Banner */}
+                        <div className="w-full relative h-[320px] bg-white cursor-pointer hover:opacity-90 transition-opacity" onClick={async () => {
+                            const { createCheckoutSession } = await import('@/app/actions/stripe');
+                            try {
+                                const { url } = await createCheckoutSession('prod_U5eAx39CeZ5HmH', 'year', 5000);
+                                window.location.href = url;
+                            } catch (e: any) { alert(e.message); }
+                        }}>
+                            <Image
+                                src="/images/stripe-50-annual.jpg"
+                                alt="Full App Subscription $50 Annually"
+                                fill
+                                className="object-cover object-top"
+                                priority
+                            />
                         </div>
 
                         <div className="p-8 flex flex-col flex-grow">
@@ -202,8 +212,24 @@ export default function LandingPage() {
                                 <li className="flex items-center text-[#8ca163]">✓ Save ~17% annually</li>
                             </ul>
 
-                            <div className="mt-auto">
-                                <Button disabled className="w-full bg-slate-700 text-slate-400 border-0 z-10">Coming Soon</Button>
+                            <div className="mt-auto space-y-3">
+                                <SignedOut>
+                                    <SignUpButton mode="modal">
+                                        <Button className="w-full bg-[#8ca163] hover:bg-[#7a8e52] text-white border-0 z-10">Sign Up First</Button>
+                                    </SignUpButton>
+                                </SignedOut>
+                                <SignedIn>
+                                    <Button
+                                        className="w-full bg-[#8ca163] hover:bg-[#7a8e52] text-white border-0 z-10"
+                                        onClick={async () => {
+                                            const { createCheckoutSession } = await import('@/app/actions/stripe');
+                                            try {
+                                                const { url } = await createCheckoutSession('prod_U5eAx39CeZ5HmH', 'year', 5000);
+                                                window.location.href = url;
+                                            } catch (e: any) { alert(e.message); }
+                                        }}
+                                    >Subscribe $50/yr</Button>
+                                </SignedIn>
                             </div>
                         </div>
                     </div>
