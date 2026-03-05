@@ -5,7 +5,7 @@ import { auth } from "@clerk/nextjs/server";
 const f = createUploadthing();
 
 export const ourFileRouter = {
-    heroImageUploader: f({ image: { maxFileSize: "4MB", maxFileCount: 1 } })
+    heroImageUploader: f({ image: { maxFileSize: "2MB", maxFileCount: 1 } })
         .middleware(async ({ req }) => {
             const { userId } = await auth();
             if (!userId) throw new UploadThingError("Unauthorized");
@@ -20,7 +20,7 @@ export const ourFileRouter = {
             return { uploadedBy: metadata.userId, url: file.url };
         }),
 
-    documentUploader: f({ pdf: { maxFileSize: "8MB", maxFileCount: 1 }, image: { maxFileSize: "4MB", maxFileCount: 1 } })
+    documentUploader: f({ pdf: { maxFileSize: "4MB", maxFileCount: 1 }, image: { maxFileSize: "2MB", maxFileCount: 1 } })
         .middleware(async ({ req }) => {
             const { userId } = await auth();
             if (!userId) throw new UploadThingError("Unauthorized");
