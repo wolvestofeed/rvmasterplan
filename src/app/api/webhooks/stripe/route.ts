@@ -6,7 +6,7 @@ import { userProfiles } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-    apiVersion: "2024-04-10" as any,
+    apiVersion: "2024-04-10" as Stripe.StripeConfig["apiVersion"],
 });
 
 export async function POST(req: Request) {
@@ -21,18 +21,19 @@ export async function POST(req: Request) {
             signature,
             process.env.STRIPE_WEBHOOK_SECRET as string
         );
-    } catch (error: any) {
-        console.error(`Webhook signature verification failed.`, error.message);
-        return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        console.error(`Webhook signature verification failed.`, message);
+        return new NextResponse(`Webhook Error: ${message}`, { status: 400 });
     }
 
     const session = event.data.object as Stripe.Checkout.Session;
 
     if (event.type === "checkout.session.completed") {
         // Retrieve the subscription details from Stripe
-        const subscription = (await stripe.subscriptions.retrieve(
+        const subscription = await stripe.subscriptions.retrieve(
             session.subscription as string
-        )) as any;
+        );
 
         const userId = session.client_reference_id || subscription.metadata.userId;
 
@@ -44,25 +45,28 @@ export async function POST(req: Request) {
         await db.update(userProfiles)
             .set({
                 subscriptionStatus: "active",
+                // @ts-expect-error - Stripe type expansion issue
                 subscriptionRenewalDate: new Date(subscription.current_period_end * 1000),
             })
             .where(eq(userProfiles.userId, userId));
     }
 
     if (event.type === "invoice.payment_succeeded") {
-        const invoice = event.data.object as any;
+        const invoice = event.data.object as Stripe.Invoice;
 
-        if (invoice.subscription) {
-            const subscription = (await stripe.subscriptions.retrieve(
-                invoice.subscription as string
-            )) as any;
-
-            const userId = subscription.metadata.userId;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((invoice as any).subscription) {
+            const subscription = await stripe.subscriptions.retrieve(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (invoice as any).subscription as string
+            );
+            const userId = (subscription as Stripe.Subscription).metadata.userId;
 
             if (userId) {
                 await db.update(userProfiles)
                     .set({
                         subscriptionStatus: "active",
+                        // @ts-expect-error - Stripe type expansion issue
                         subscriptionRenewalDate: new Date(subscription.current_period_end * 1000),
                     })
                     .where(eq(userProfiles.userId, userId));

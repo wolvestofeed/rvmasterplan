@@ -3,10 +3,9 @@
 import Stripe from "stripe";
 import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-    apiVersion: "2024-04-10" as any,
+    apiVersion: "2024-04-10" as Stripe.StripeConfig["apiVersion"],
 });
 
 export async function createCheckoutSession(productId: string, interval: "month" | "year", amountCents: number) {
@@ -48,8 +47,9 @@ export async function createCheckoutSession(productId: string, interval: "month"
         }
 
         return { url: session.url };
-    } catch (error: any) {
-        console.error("Stripe Checkout Error:", error);
-        throw new Error(error.message);
+    } catch (error: unknown) {
+        const e = error as Error;
+        console.error("Stripe Checkout Error:", e);
+        throw new Error(e.message);
     }
 }

@@ -79,7 +79,7 @@ export default function LandingPage() {
                         <h2 className="text-3xl font-bold text-[#2a4f3f] mb-4">Meet Your Guide &sim; Rob</h2>
                         <p className="text-lg text-slate-600">
                             I built this for myself when I moved into a travel trailer last Spring.<br />
-                            It's really helpful, so I thought you might like it too!
+                            It&apos;s really helpful, so I thought you might like it too!
                         </p>
                     </div>
 
@@ -138,7 +138,10 @@ export default function LandingPage() {
                             try {
                                 const { url } = await createCheckoutSession('prod_U5dlLuufA1MNDN', 'month', 500);
                                 window.location.href = url;
-                            } catch (e: any) { alert(e.message); }
+                            } catch (e: unknown) {
+                                const error = e as Error;
+                                alert(error.message);
+                            }
                         }}>
                             <Image
                                 src="/images/thumbs/rvmp-monthly-sub-thumb-web-1.jpg"
@@ -174,7 +177,10 @@ export default function LandingPage() {
                                             try {
                                                 const { url } = await createCheckoutSession('prod_U5dlLuufA1MNDN', 'month', 500);
                                                 window.location.href = url;
-                                            } catch (e: any) { alert(e.message); }
+                                            } catch (e: unknown) {
+                                                const error = e as Error;
+                                                alert(error.message);
+                                            }
                                         }}
                                     >Subscribe $5/mo</Button>
                                 </SignedIn>
@@ -190,7 +196,10 @@ export default function LandingPage() {
                             try {
                                 const { url } = await createCheckoutSession('prod_U5eAx39CeZ5HmH', 'year', 5000);
                                 window.location.href = url;
-                            } catch (e: any) { alert(e.message); }
+                            } catch (e: unknown) {
+                                const error = e as Error;
+                                alert(error.message);
+                            }
                         }}>
                             <Image
                                 src="/images/thumbs/rvmp-annual-sub-thumb-web-1.jpg"
@@ -226,7 +235,10 @@ export default function LandingPage() {
                                             try {
                                                 const { url } = await createCheckoutSession('prod_U5eAx39CeZ5HmH', 'year', 5000);
                                                 window.location.href = url;
-                                            } catch (e: any) { alert(e.message); }
+                                            } catch (e: unknown) {
+                                                const error = e as Error;
+                                                alert(error.message);
+                                            }
                                         }}
                                     >Subscribe $50/yr</Button>
                                 </SignedIn>
