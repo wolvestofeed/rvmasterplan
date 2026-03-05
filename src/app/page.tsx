@@ -15,6 +15,9 @@ export default function LandingPage() {
                         <SignInButton mode="modal">
                             <Button variant="outline" className="bg-white/80 backdrop-blur border-white/40 text-slate-800 hover:bg-white">Log In</Button>
                         </SignInButton>
+                        <Button asChild className="bg-[#8ca163] hover:bg-[#7a8e52] text-white">
+                            <Link href="/free-trial">Free Trial</Link>
+                        </Button>
                         <SignUpButton mode="modal">
                             <Button className="bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white">Subscribe Now</Button>
                         </SignUpButton>
@@ -60,15 +63,18 @@ export default function LandingPage() {
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Button asChild size="lg" className="bg-[#8ca163] hover:bg-[#7a8e52] text-white text-lg px-8 py-6 rounded-full shadow-lg">
-                            <Link href="/dashboard">Try the Demo</Link>
+                            <Link href="/free-trial">Full Free Trial</Link>
                         </Button>
                         <SignedOut>
                             <SignUpButton mode="modal">
-                                <Button size="lg" variant="outline" className="bg-transparent border-2 border-white text-white hover:bg-white/10 text-lg px-8 py-6 rounded-full shadow-lg">
-                                    Create Account
+                                <Button size="lg" className="bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white text-lg px-8 py-6 rounded-full shadow-lg">
+                                    Subscribe Now
                                 </Button>
                             </SignUpButton>
                         </SignedOut>
+                        <Button asChild size="lg" variant="outline" className="bg-transparent border-2 border-white text-white hover:bg-white/20 text-lg px-8 py-6 rounded-full shadow-lg">
+                            <Link href="/dashboard">Guest Demo Mode</Link>
+                        </Button>
                     </div>
                 </div>
             </section>

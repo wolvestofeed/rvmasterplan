@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { users, userProfiles, documents, equipmentItems, eventsAndLogs, rvVehicles, powerSystems, waterSystems, waterActivities, tankLogs, incomes, expenses } from "@/lib/db/schema";
 import { eq, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 
 // --- Admin Stats ---
 export async function getAdminStats() {
@@ -105,7 +106,15 @@ export async function deleteUser(userId: string) {
 
 // --- Publish Data to Demo Mode ---
 export async function publishToDemo() {
-    const ADMIN_ID = "admin_robert";
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    // Verify they are an admin
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    if (user.publicMetadata?.role !== "admin") return { success: false, error: "Unauthorized" };
+
+    const ADMIN_ID = userId;
     const DEMO_ID = "demo_user";
 
     try {
