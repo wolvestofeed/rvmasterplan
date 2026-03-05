@@ -116,44 +116,96 @@ export default function LandingPage() {
 
             {/* Pricing / Demo Explanation */}
             <section className="py-20 bg-[#f1f6ea] px-6">
-                <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12">
+                <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-8 items-stretch">
 
-                    <div className="bg-white p-10 rounded-2xl shadow-sm border border-[#e0e8d5]">
-                        <h3 className="text-2xl font-bold text-slate-800 mb-4 tracking-tight">Guest Mode</h3>
-                        <p className="text-slate-600 mb-6">
+                    {/* Guest Mode */}
+                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-[#e0e8d5] flex flex-col h-full">
+                        <h3 className="text-xl font-bold text-slate-800 mb-3 tracking-tight">Guest Mode</h3>
+                        <p className="text-slate-600 mb-6 text-sm flex-grow">
                             Get an immediate feel for the calculators. Guest Mode comes pre-loaded with mock data so you can test sliding the tank limits, tweaking the solar array, and generating an example Master Plan PDF.
                         </p>
-                        <ul className="space-y-3 text-sm text-slate-600 border-t pt-6 mb-8">
+                        <ul className="space-y-2 text-sm text-slate-600 border-t pt-4 mb-6">
                             <li className="flex items-center">✓ Access all calculators</li>
-                            <li className="flex items-center">✓ Generate PDF reports</li>
                             <li className="flex items-center text-amber-600 font-medium">⚠️ Data resets when you leave</li>
                         </ul>
-                        <Button asChild variant="outline" className="w-full">
+                        <Button asChild variant="outline" className="w-full mt-auto">
                             <Link href="/dashboard">Try Guest Mode</Link>
                         </Button>
                     </div>
 
-                    <div className="bg-[#2a4f3f] text-white p-10 rounded-2xl shadow-xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-10">
-                            <Image src="/images/logos/rv-masterplan-logo.png" width={150} height={150} alt="Background Logo" />
+                    {/* Pro Monthly Subscription */}
+                    <div className="bg-[#2a4f3f] text-white rounded-2xl shadow-xl relative overflow-hidden flex flex-col h-full ring-2 ring-[#8ca163]">
+                        {/* New Uploaded Image as Banner */}
+                        <div className="w-full relative h-[280px] sm:h-[320px] bg-white cursor-pointer hover:opacity-90 transition-opacity" onClick={async () => {
+                            const { createCheckoutSession } = await import('@/app/actions/stripe');
+                            try {
+                                const { url } = await createCheckoutSession('prod_U5dlLuufA1MNDN', 'month', 500);
+                                window.location.href = url;
+                            } catch (e: any) { alert(e.message); }
+                        }}>
+                            <Image
+                                src="/images/stripe-5-monthly.jpg"
+                                alt="Full App Subscription $5 Monthly"
+                                fill
+                                className="object-contain"
+                            />
                         </div>
-                        <h3 className="text-2xl font-bold mb-4 tracking-tight relative z-10">Pro Subscription</h3>
-                        <p className="text-slate-300 mb-6 relative z-10">
-                            Save your exact RV loadout in the cloud. We securely save your solar panel wattage, tank capacities, and daily living budget. Log in from any device to update your strategy real-time.
-                        </p>
-                        <ul className="space-y-3 text-sm text-slate-200 border-t border-white/20 pt-6 mb-8 relative z-10">
-                            <li className="flex items-center">✓ Custom equipment database</li>
-                            <li className="flex items-center">✓ Saved historical budgets</li>
-                            <li className="flex items-center">✓ Secure cloud synchronization</li>
-                        </ul>
-                        <SignedOut>
-                            <SignUpButton mode="modal">
-                                <Button className="w-full bg-[#8ca163] hover:bg-[#7a8e52] text-white border-0 relative z-10">Subscribe $5/mo</Button>
-                            </SignUpButton>
-                        </SignedOut>
-                        <SignedIn>
-                            <Button disabled variant="outline" className="w-full relative z-10">Currently Subscribed</Button>
-                        </SignedIn>
+
+                        <div className="p-8 flex flex-col flex-grow">
+                            <h3 className="text-xl font-bold mb-3 tracking-tight relative z-10 text-white">Monthly Pro</h3>
+                            <p className="text-slate-300 mb-6 relative z-10 text-sm flex-grow">
+                                Save your exact RV loadout in the cloud. We securely save your solar panel wattage, tank capacities, and daily living budget. Log in from any device to update your strategy real-time.
+                            </p>
+                            <ul className="space-y-2 text-sm text-slate-200 border-t border-white/20 pt-4 mb-6 relative z-10">
+                                <li className="flex items-center">✓ Custom equipment database</li>
+                                <li className="flex items-center">✓ Secure cloud synchronization</li>
+                            </ul>
+
+                            <div className="mt-auto space-y-3">
+                                <SignedOut>
+                                    <SignUpButton mode="modal">
+                                        <Button className="w-full bg-[#8ca163] hover:bg-[#7a8e52] text-white border-0 z-10">Sign Up First</Button>
+                                    </SignUpButton>
+                                </SignedOut>
+                                <SignedIn>
+                                    <Button
+                                        className="w-full bg-[#8ca163] hover:bg-[#7a8e52] text-white border-0 z-10"
+                                        onClick={async () => {
+                                            const { createCheckoutSession } = await import('@/app/actions/stripe');
+                                            try {
+                                                const { url } = await createCheckoutSession('prod_U5dlLuufA1MNDN', 'month', 500);
+                                                window.location.href = url;
+                                            } catch (e: any) { alert(e.message); }
+                                        }}
+                                    >Subscribe $5/mo</Button>
+                                </SignedIn>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Pro Annual Subscription - Placeholder */}
+                    <div className="bg-slate-800 text-white rounded-2xl shadow-xl relative overflow-hidden flex flex-col h-full opacity-90 border border-slate-700">
+                        {/* Placeholder for Annual Image */}
+                        <div className="w-full relative h-[280px] sm:h-[320px] bg-slate-900 flex items-center justify-center border-b border-white/10">
+                            <div className="text-center text-slate-500 text-sm p-6">
+                                [Annual Sub Image Placeholder]<br />Coming Soon
+                            </div>
+                        </div>
+
+                        <div className="p-8 flex flex-col flex-grow">
+                            <h3 className="text-xl font-bold mb-3 tracking-tight relative z-10 text-white">Annual Pro</h3>
+                            <p className="text-slate-300 mb-6 relative z-10 text-sm flex-grow">
+                                Get two months completely free. The ultimate option for full-time nomads who want to set and forget their budget tracking.
+                            </p>
+                            <ul className="space-y-2 text-sm text-slate-200 border-t border-white/20 pt-4 mb-6 relative z-10">
+                                <li className="flex items-center">✓ Everything in Monthly</li>
+                                <li className="flex items-center text-[#8ca163]">✓ Save ~17% annually</li>
+                            </ul>
+
+                            <div className="mt-auto">
+                                <Button disabled className="w-full bg-slate-700 text-slate-400 border-0 z-10">Coming Soon</Button>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
