@@ -53,30 +53,23 @@ export default function LandingPage() {
                     </div>
                 </div>
 
-                {/* Hero Overlay Content */}
                 <div className="relative z-10 text-center px-4 max-w-4xl mx-auto mt-16">
                     <h1 className="text-5xl md:text-7xl font-bold text-white mb-32 drop-shadow-lg tracking-tight">
-                        Your Blueprint<br />for the Open Road.
+                        Master Your Money & Resources<br />on the Open Road
                     </h1>
-                    <p className="text-xl md:text-2xl text-slate-200 mb-10 drop-shadow-md">
-                        The ultimate toolkit to plan, budget, and optimize your full-time RV lifestyle. From solar arrays to water conservation.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <Button asChild size="lg" className="bg-[#8ca163] hover:bg-[#7a8e52] text-white text-lg px-8 py-6 rounded-full shadow-lg">
-                            <Link href="/free-trial">Full Free Trial</Link>
-                        </Button>
-                        <SignedOut>
-                            <SignUpButton mode="modal">
-                                <Button size="lg" className="bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white text-lg px-8 py-6 rounded-full shadow-lg">
-                                    Subscribe Now
-                                </Button>
-                            </SignUpButton>
-                        </SignedOut>
-                        <Button asChild size="lg" variant="outline" className="bg-transparent border-2 border-white text-white hover:bg-white/20 text-lg px-8 py-6 rounded-full shadow-lg">
-                            <Link href="/dashboard">Guest Demo Mode</Link>
-                        </Button>
-                    </div>
+                    <h2 className="text-3xl md:text-4xl font-semibold text-slate-100 mb-10 drop-shadow-md">
+                        All In One Place.
+                    </h2>
                 </div>
+            </section>
+
+            {/* Video Introduction Section */}
+            {/* Narrative Section */}
+            <section className="py-16 px-6 max-w-4xl mx-auto text-center">
+                <h2 className="text-3xl font-bold text-[#2a4f3f] mb-6">The Ultimate Toolkit for Every Road Warrior</h2>
+                <p className="text-lg text-slate-600 leading-relaxed">
+                    RV MasterPlan is for money and resource management, with a complete toolkit of calculators and trackers to forecast your RV loan payments and setup costs, to create the perfect solar system and manage your budget, water, energy, RV weight and waste... all in one place.
+                </p>
             </section>
 
             {/* Video Introduction Section */}
@@ -104,16 +97,6 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* Narrative Section */}
-            <section className="py-16 px-6 max-w-4xl mx-auto text-center border-t border-slate-200 mt-8">
-                <h2 className="text-3xl font-bold text-[#2a4f3f] mb-6">Designed For the Serious Nomads</h2>
-                <p className="text-lg text-slate-600 leading-relaxed mb-8">
-                    The RV MasterPlan is designed around a core philosophy: knowing your numbers means knowing your freedom.
-                    Whether you are boondocking for weeks in the desert or navigating the complexities of financing a new rig,
-                    these calculators adapt to your exact equipment limits and living expenses so you never run out of power, water, or runway.
-                </p>
-            </section>
-
             {/* Pricing / Demo Explanation */}
             <section className="py-20 bg-[#f1f6ea] px-6">
                 <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-8 items-stretch">
@@ -131,13 +114,13 @@ export default function LandingPage() {
                         </Link>
 
                         <div className="p-8 flex flex-col flex-grow">
-                            <h3 className="text-xl font-bold text-slate-800 mb-3 tracking-tight">Guest Mode</h3>
+                            <h3 className="text-xl font-bold text-slate-800 mb-3 tracking-tight">Guest Demo</h3>
                             <p className="text-slate-600 mb-6 text-sm flex-grow">
-                                Get an immediate feel for the calculators. Guest Mode comes pre-loaded with mock data so you can test sliding the tank limits, tweaking the solar array, and generating an example Master Plan PDF.
+                                Explore the full potential of our resource management suite with a pre-loaded rig. Experience how our calculators forecast setup costs and optimize off-grid resources like solar and water before you start your own plan.
                             </p>
                             <ul className="space-y-2 text-sm text-slate-600 border-t pt-4 mb-6">
-                                <li className="flex items-center">✓ Access all calculators</li>
-                                <li className="flex items-center text-amber-600 font-medium">⚠️ Data resets when you leave</li>
+                                <li className="flex items-center">✓ Full access to all calculators</li>
+                                <li className="flex items-center text-amber-600 font-medium">⚠️ Data resets when session ends</li>
                             </ul>
                             <div className="mt-auto">
                                 <Button asChild variant="outline" className="w-full">
@@ -161,18 +144,20 @@ export default function LandingPage() {
                                 src="/images/thumbs/rvmp-monthly-sub-thumb-web-1.jpg"
                                 alt="Full App Subscription $5 Monthly"
                                 fill
-                                className="object-contain"
+                                className="object-fill"
+                                priority
                             />
                         </div>
 
                         <div className="p-8 flex flex-col flex-grow">
                             <h3 className="text-xl font-bold mb-3 tracking-tight relative z-10 text-white">Monthly Pro</h3>
                             <p className="text-slate-300 mb-6 relative z-10 text-sm flex-grow">
-                                Save your exact RV loadout in the cloud. We securely save your solar panel wattage, tank capacities, and daily living budget. Log in from any device to update your strategy real-time.
+                                Take command of your financial and physical freedom. Forecast loan payments, manage monthly budgets, and track every resource—energy, water, waste, and weight—with a custom cloud database built for your exact equipment.
                             </p>
                             <ul className="space-y-2 text-sm text-slate-200 border-t border-white/20 pt-4 mb-6 relative z-10">
-                                <li className="flex items-center">✓ Custom equipment database</li>
-                                <li className="flex items-center">✓ Secure cloud synchronization</li>
+                                <li className="flex items-center">✓ Custom equipment & solar database</li>
+                                <li className="flex items-center">✓ Advanced water, power & weight tracking</li>
+                                <li className="flex items-center">✓ Complete financial & budget planning</li>
                             </ul>
 
                             <div className="mt-auto space-y-3">
@@ -219,11 +204,12 @@ export default function LandingPage() {
                         <div className="p-8 flex flex-col flex-grow">
                             <h3 className="text-xl font-bold mb-3 tracking-tight relative z-10 text-white">Annual Pro</h3>
                             <p className="text-slate-300 mb-6 relative z-10 text-sm flex-grow">
-                                Get two months completely free. The ultimate option for full-time nomads who want to set and forget their budget tracking.
+                                The complete toolkit for long-term road confidence. Optimize every component of your journey—from seasonal power strategies to secure document management—with all your resource and money-management tools in one place.
                             </p>
                             <ul className="space-y-2 text-sm text-slate-200 border-t border-white/20 pt-4 mb-6 relative z-10">
-                                <li className="flex items-center">✓ Everything in Monthly</li>
-                                <li className="flex items-center text-[#8ca163]">✓ Save ~17% annually</li>
+                                <li className="flex items-center">✓ Everything in Monthly Pro</li>
+                                <li className="flex items-center">✓ Secure document & manual vault</li>
+                                <li className="flex items-center text-[#8ca163]">✓ Get 2 months completely free</li>
                             </ul>
 
                             <div className="mt-auto space-y-3">
