@@ -66,11 +66,6 @@ export default function WaterCalculatorPage() {
         percentWaterRemaining: 0
     });
 
-    useEffect(() => {
-        setIsClient(true);
-        loadData();
-    }, []);
-
     const loadData = async () => {
         const [sys, acts, logs] = await Promise.all([
             getWaterSystem(),
@@ -82,16 +77,21 @@ export default function WaterCalculatorPage() {
             setWaterData(sys.data as WaterData);
         }
         if (acts.success && acts.data) {
-            setActivities(acts.data.map((a: any) => ({
+            setActivities(acts.data.map((a: { gallonsPerUse: any; timesPerDay: any }) => ({
                 ...a, gallonsPerUse: Number(a.gallonsPerUse) || 0, timesPerDay: Number(a.timesPerDay) || 0
             })) as WaterActivity[]);
         }
         if (logs.success && logs.data) {
-            setTankLogs(logs.data.map((l: any) => ({
+            setTankLogs(logs.data.map((l: { volume: any }) => ({
                 ...l, volume: Number(l.volume) || 0
             })) as any[]);
         }
     };
+
+    useEffect(() => {
+        setIsClient(true);
+        loadData();
+    }, []);
 
     const calculateUsages = () => {
         let fresh = 0;
@@ -490,7 +490,7 @@ export default function WaterCalculatorPage() {
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-1">
                                                 <Label>Action</Label>
-                                                <Select value={logType} onValueChange={(val: any) => setLogType(val)}>
+                                                <Select value={logType} onValueChange={(val: 'Dump' | 'Fill') => setLogType(val)}>
                                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="Dump">Dump</SelectItem>
@@ -500,7 +500,7 @@ export default function WaterCalculatorPage() {
                                             </div>
                                             <div className="space-y-1">
                                                 <Label>Tank</Label>
-                                                <Select value={logTank} onValueChange={(val: any) => setLogTank(val)}>
+                                                <Select value={logTank} onValueChange={(val: 'Fresh' | 'Gray' | 'Black') => setLogTank(val)}>
                                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="Fresh">Fresh Water</SelectItem>

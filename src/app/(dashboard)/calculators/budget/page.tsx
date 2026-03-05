@@ -416,7 +416,7 @@ export default function RVBudgetPage() {
 
                             <Card className="p-6">
                                 <h3 className="text-lg font-medium text-slate-800 mb-2">Annual Maintenance</h3>
-                                <p className="text-sm text-slate-500 mb-4">A good rule of thumb is 2-3% of your RV's purchase price annually. We'll divide this by 12 for your monthly maintenance budget.</p>
+                                <p className="text-sm text-slate-500 mb-4">A good rule of thumb is 2-3% of your RV&apos;s purchase price annually. We&apos;ll divide this by 12 for your monthly maintenance budget.</p>
                                 <div className="flex gap-2">
                                     <Input type="number" value={maintenanceBudget} onChange={e => setMaintenanceBudget(parseFloat(e.target.value) || 0)} />
                                     <Button variant="outline" onClick={() => toast.success("Maintenance budget updated")}>Set</Button>
@@ -435,7 +435,7 @@ export default function RVBudgetPage() {
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748B' }} />
                                     <YAxis tickFormatter={(val) => `$${val}`} axisLine={false} tickLine={false} tick={{ fill: '#64748B' }} />
-                                    <RechartsTooltip cursor={{ fill: '#F1F5F9' }} formatter={(value: number | undefined) => formatCurrency(value || 0)} />
+                                    <RechartsTooltip cursor={{ fill: '#F1F5F9' }} formatter={(value: number) => formatCurrency(value || 0)} />
                                     <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                     <Bar dataKey="budget" name="Budget Ceiling" fill="#CBD5E1" radius={[4, 4, 0, 0]} />
                                     <Bar dataKey="actual" name="Actual Expenses" fill="#8B5CF6" radius={[4, 4, 0, 0]} />

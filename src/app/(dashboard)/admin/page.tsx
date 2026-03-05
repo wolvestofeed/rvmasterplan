@@ -69,10 +69,6 @@ export default function AdminPage() {
         "purchase_calculator": true
     });
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
     const loadData = async () => {
         setIsLoading(true);
         const [statsRes, usersRes, settingsRes] = await Promise.all([
@@ -95,7 +91,11 @@ export default function AdminPage() {
         setIsLoading(false);
     };
 
-    const handleSettingChange = async (updates: any) => {
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const handleSettingChange = async (updates: Record<string, any>) => {
         const res = await updateSystemSettings(updates);
         if (res.success) {
             toast.success("Settings updated successfully.");
