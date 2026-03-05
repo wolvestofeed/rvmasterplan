@@ -119,18 +119,32 @@ export default function LandingPage() {
                 <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-8 items-stretch">
 
                     {/* Guest Mode */}
-                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-[#e0e8d5] flex flex-col h-full">
-                        <h3 className="text-xl font-bold text-slate-800 mb-3 tracking-tight">Guest Mode</h3>
-                        <p className="text-slate-600 mb-6 text-sm flex-grow">
-                            Get an immediate feel for the calculators. Guest Mode comes pre-loaded with mock data so you can test sliding the tank limits, tweaking the solar array, and generating an example Master Plan PDF.
-                        </p>
-                        <ul className="space-y-2 text-sm text-slate-600 border-t pt-4 mb-6">
-                            <li className="flex items-center">✓ Access all calculators</li>
-                            <li className="flex items-center text-amber-600 font-medium">⚠️ Data resets when you leave</li>
-                        </ul>
-                        <Button asChild variant="outline" className="w-full mt-auto">
-                            <Link href="/dashboard">Try Guest Mode</Link>
-                        </Button>
+                    <div className="bg-white rounded-2xl shadow-sm border border-[#e0e8d5] flex flex-col h-full overflow-hidden">
+                        <Link href="/dashboard" className="w-full relative h-[320px] block cursor-pointer hover:opacity-90 transition-opacity">
+                            <Image
+                                src="/images/thumbs/rvmp-demo-thumb-web-1.jpg"
+                                alt="Guest Mode Demo"
+                                fill
+                                className="object-cover object-top"
+                                priority
+                            />
+                        </Link>
+
+                        <div className="p-8 flex flex-col flex-grow">
+                            <h3 className="text-xl font-bold text-slate-800 mb-3 tracking-tight">Guest Mode</h3>
+                            <p className="text-slate-600 mb-6 text-sm flex-grow">
+                                Get an immediate feel for the calculators. Guest Mode comes pre-loaded with mock data so you can test sliding the tank limits, tweaking the solar array, and generating an example Master Plan PDF.
+                            </p>
+                            <ul className="space-y-2 text-sm text-slate-600 border-t pt-4 mb-6">
+                                <li className="flex items-center">✓ Access all calculators</li>
+                                <li className="flex items-center text-amber-600 font-medium">⚠️ Data resets when you leave</li>
+                            </ul>
+                            <div className="mt-auto">
+                                <Button asChild variant="outline" className="w-full">
+                                    <Link href="/dashboard">Try Guest Mode</Link>
+                                </Button>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Pro Monthly Subscription */}
@@ -144,7 +158,7 @@ export default function LandingPage() {
                             } catch (e: any) { alert(e.message); }
                         }}>
                             <Image
-                                src="/images/stripe-5-monthly.jpg"
+                                src="/images/thumbs/rvmp-monthly-sub-thumb-web-1.jpg"
                                 alt="Full App Subscription $5 Monthly"
                                 fill
                                 className="object-contain"
@@ -194,7 +208,7 @@ export default function LandingPage() {
                             } catch (e: any) { alert(e.message); }
                         }}>
                             <Image
-                                src="/images/stripe-50-annual.jpg"
+                                src="/images/thumbs/rvmp-annual-sub-thumb-web-1.jpg"
                                 alt="Full App Subscription $50 Annually"
                                 fill
                                 className="object-cover object-top"
