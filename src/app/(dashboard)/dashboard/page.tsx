@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { mockGenericSolarEquipment } from "@/data/mockData";
+import { getSolarEquipment } from "@/app/actions/power";
 
 // --- Mock Data for Dashboard ---
 const expenseData = [
@@ -28,17 +28,7 @@ const expenseData = [
   { month: "Dec", budget: 500, actual: 800 },
 ];
 
-const solarEquipmentWeight = mockGenericSolarEquipment.reduce((total, item) => total + ((item.weight || 0) * item.quantity), 0);
 const estimatedDeviceWeight = 20; // Demo default from Power page
-const computedEquipmentWeight = solarEquipmentWeight + estimatedDeviceWeight;
-
-const weightData = [
-  { name: "Base Vehicle", value: 4850, color: "#e11d48" }, // Red
-  { name: "Payload", value: 460, color: "#fbbf24" }, // Amber
-  { name: "Towable", value: 0, color: "#10b981" }, // Green
-  { name: "Water", value: 350, color: "#3b82f6" }, // Blue
-  { name: "Equipment", value: Math.round(computedEquipmentWeight), color: "#8b5cf6" }, // Purple
-];
 
 const recentActivity = [
   { id: 1, title: "Setup Item Purchased", desc: "Purchased 'Weight Dist & Sway Control Kit' ($649.99) - added 75 lbs.", date: "Today, 10:24 AM", icon: CheckCircle, color: "text-emerald-500" },
@@ -68,6 +58,8 @@ export default function Dashboard() {
   const [newEventDate, setNewEventDate] = useState("");
   const [newEventDesc, setNewEventDesc] = useState("");
 
+  const [computedEquipmentWeight, setComputedEquipmentWeight] = useState(estimatedDeviceWeight);
+
   const fetchEvents = async () => {
     const res = await getDashboardEvents();
     if (res.success && res.data) {
@@ -76,9 +68,26 @@ export default function Dashboard() {
     }
   };
 
+  const fetchEquipmentWeight = async () => {
+    const res = await getSolarEquipment();
+    if (res.success && res.data) {
+      const solarEquipmentWeight = res.data.reduce((total: any, item: any) => total + ((Number(item.weight) || 0) * (Number(item.quantity) || 1)), 0);
+      setComputedEquipmentWeight(solarEquipmentWeight + estimatedDeviceWeight);
+    }
+  };
+
   useEffect(() => {
     fetchEvents();
+    fetchEquipmentWeight();
   }, []);
+
+  const weightData = [
+    { name: "Base Vehicle", value: 4850, color: "#e11d48" }, // Red
+    { name: "Payload", value: 460, color: "#fbbf24" }, // Amber
+    { name: "Towable", value: 0, color: "#10b981" }, // Green
+    { name: "Water", value: 350, color: "#3b82f6" }, // Blue
+    { name: "Equipment", value: Math.round(computedEquipmentWeight), color: "#8b5cf6" }, // Purple
+  ];
 
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();

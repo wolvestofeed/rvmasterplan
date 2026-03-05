@@ -25,7 +25,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Switch } from "@/components/ui/switch";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { SetupItem, SetupItemCategory, SetupItemPriority } from "@/types";
-import { mockSetupItems } from "@/data/mockData";
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
 import { formatCurrency, formatNumber } from "@/lib/utils";

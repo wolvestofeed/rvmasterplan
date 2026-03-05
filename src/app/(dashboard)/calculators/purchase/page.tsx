@@ -19,9 +19,9 @@ import {
 } from "@/lib/utils";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { FinancialData, FinancialSummary } from "@/types";
-import { mockFinancialData } from "@/data/mockData";
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
+import { getFinancialData, updateFinancialData } from "@/app/actions/financials";
 
 const financialSchema = z.object({
     rvType: z.string().min(1, { message: "RV type is required" }),
@@ -47,7 +47,7 @@ type FinancialFormValues = z.infer<typeof financialSchema>;
 
 export default function PurchaseCalculatorPage() {
     const [isClient, setIsClient] = useState(false);
-    useEffect(() => { setIsClient(true); }, []);
+    const [isLoading, setIsLoading] = useState(true);
 
     const defaultValues: FinancialFormValues = {
         rvType: "Travel Trailer",
@@ -56,23 +56,53 @@ export default function PurchaseCalculatorPage() {
         model: "Aspen Trail LE 21RD",
         length: 21,
         weight: 3600,
-        purchasePrice: mockFinancialData.purchasePrice,
-        salesTaxRate: mockFinancialData.salesTaxRate,
-        downPayment: mockFinancialData.downPayment,
-        tradeInValue: mockFinancialData.tradeInValue,
-        loanTerm: mockFinancialData.loanTerm.toString(),
-        interestRate: mockFinancialData.interestRate,
-        creditScore: mockFinancialData.creditScore,
-        registrationFees: mockFinancialData.registrationFees,
-        insurance: mockFinancialData.insurance,
-        extendedWarranty: mockFinancialData.extendedWarranty,
-        accessories: mockFinancialData.accessories,
+        purchasePrice: 0,
+        salesTaxRate: 0,
+        downPayment: 0,
+        tradeInValue: 0,
+        loanTerm: "5",
+        interestRate: 0,
+        creditScore: "Excellent (720+)",
+        registrationFees: 0,
+        insurance: 0,
+        extendedWarranty: 0,
+        accessories: 0,
     };
 
     const form = useForm<FinancialFormValues>({
         resolver: zodResolver(financialSchema) as any,
         defaultValues,
     });
+
+    useEffect(() => {
+        setIsClient(true);
+        const fetchData = async () => {
+            const { success, data } = await getFinancialData();
+            if (success && data) {
+                form.reset({
+                    rvType: "Travel Trailer",
+                    year: "2026",
+                    make: "Dutchmen",
+                    model: "Aspen Trail LE 21RD",
+                    length: 21,
+                    weight: 3600,
+                    purchasePrice: Number(data.purchasePrice),
+                    salesTaxRate: Number(data.salesTaxRate),
+                    downPayment: Number(data.downPayment),
+                    tradeInValue: Number(data.tradeInValue),
+                    loanTerm: data.loanTermYears?.toString() || "5",
+                    interestRate: Number(data.interestRate),
+                    creditScore: data.creditScore || "Excellent (720+)",
+                    registrationFees: Number(data.registrationFees),
+                    insurance: Number(data.insurance),
+                    extendedWarranty: Number(data.extendedWarranty),
+                    accessories: Number(data.accessories),
+                });
+            }
+            setIsLoading(false);
+        };
+        fetchData();
+    }, [form]);
 
     const formValues = form.watch();
 
@@ -110,8 +140,14 @@ export default function PurchaseCalculatorPage() {
         console.error(error);
     }
 
-    const onSubmit = (data: FinancialFormValues) => {
-        toast.success("Calculations saved temporarily for demo mode!");
+    const onSubmit = async (data: FinancialFormValues) => {
+        const loadingToast = toast.loading("Saving calculations...");
+        const result = await updateFinancialData(data);
+        if (result.success) {
+            toast.success("Calculations saved!", { id: loadingToast });
+        } else {
+            toast.error(result.error || "Failed to save", { id: loadingToast });
+        }
     };
 
     const costBreakdownData = [
@@ -133,8 +169,10 @@ export default function PurchaseCalculatorPage() {
                 imageUrl="/images/page-headers/purchase-header.png"
             />
 
-            <div className="flex justify-end mt-2 mb-8">
-                <Button onClick={form.handleSubmit(onSubmit)} className="flex items-center">
+            <div className="flex justify-between items-center mt-2 mb-8">
+                {isLoading && <span className="text-sm text-slate-500">Loading your data...</span>}
+                {!isLoading && <div />}
+                <Button onClick={form.handleSubmit(onSubmit)} className="flex items-center" disabled={isLoading}>
                     <SaveIcon className="mr-2 h-4 w-4" /> Save Calculations
                 </Button>
             </div>

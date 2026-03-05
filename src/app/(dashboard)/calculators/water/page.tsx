@@ -22,11 +22,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { WaterData, WaterActivity, WaterSummary } from "@/types";
-import { mockWaterData, mockWaterActivities } from "@/data/mockData";
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
 import { formatNumber } from "@/lib/utils";
+import { WaterData, WaterActivity, WaterSummary } from "@/types";
+import { getWaterSystem, getWaterActivities, addWaterActivity, updateWaterActivity, deleteWaterActivity, getTankLogs, addTankLog } from "@/app/actions/water";
 const waterActivitySchema = z.object({
     name: z.string().min(1, { message: "Activity name is required" }),
     category: z.string().min(1, { message: "Category is required" }),
@@ -42,8 +42,11 @@ const COLORS = ['#3b82f6', '#14b8a6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e'
 
 export default function WaterCalculatorPage() {
     const [isClient, setIsClient] = useState(false);
-    const [activities, setActivities] = useState<WaterActivity[]>(mockWaterActivities);
-    const [waterData, setWaterData] = useState<WaterData>(mockWaterData);
+    const [activities, setActivities] = useState<WaterActivity[]>([]);
+    const [waterData, setWaterData] = useState<WaterData>({
+        freshWaterCapacity: 40, grayWaterCapacity: 30, blackWaterCapacity: 30,
+        freshWaterLevel: 40, grayWaterLevel: 0, blackWaterLevel: 0, lastFillDate: ""
+    });
     const [editingId, setEditingId] = useState<string | null>(null);
 
     // Tank Logging State
@@ -53,7 +56,7 @@ export default function WaterCalculatorPage() {
     const [logTank, setLogTank] = useState<'Fresh' | 'Gray' | 'Black'>('Gray');
     const [logVolume, setLogVolume] = useState<number>(0);
     const [tankLogs, setTankLogs] = useState<{ id: string, date: string, type: 'Dump' | 'Fill', tank: 'Fresh' | 'Gray' | 'Black', volume: number }[]>([]);
-    const [projectedLevels, setProjectedLevels] = useState({ fresh: mockWaterData.freshWaterCapacity, gray: 0, black: 0 });
+    const [projectedLevels, setProjectedLevels] = useState({ fresh: 40, gray: 0, black: 0 });
 
     const [summary, setSummary] = useState<WaterSummary>({
         dailyUsage: 0,
@@ -63,7 +66,32 @@ export default function WaterCalculatorPage() {
         percentWaterRemaining: 0
     });
 
-    useEffect(() => { setIsClient(true); }, []);
+    useEffect(() => {
+        setIsClient(true);
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        const [sys, acts, logs] = await Promise.all([
+            getWaterSystem(),
+            getWaterActivities(),
+            getTankLogs()
+        ]);
+
+        if (sys.success && sys.data) {
+            setWaterData(sys.data as WaterData);
+        }
+        if (acts.success && acts.data) {
+            setActivities(acts.data.map((a: any) => ({
+                ...a, gallonsPerUse: Number(a.gallonsPerUse) || 0, timesPerDay: Number(a.timesPerDay) || 0
+            })) as WaterActivity[]);
+        }
+        if (logs.success && logs.data) {
+            setTankLogs(logs.data.map((l: any) => ({
+                ...l, volume: Number(l.volume) || 0
+            })) as any[]);
+        }
+    };
 
     const calculateUsages = () => {
         let fresh = 0;
@@ -169,21 +197,28 @@ export default function WaterCalculatorPage() {
         }
     });
 
-    const onSubmitActivity = (data: WaterActivityFormValues) => {
+    const onSubmitActivity = async (data: WaterActivityFormValues) => {
         const activityData = {
             ...data,
             unitType: data.unitType as 'gallons' | 'ounces'
         };
 
+        const loadingId = toast.loading(editingId ? "Updating activity..." : "Adding activity...");
+        let result;
         if (editingId) {
-            setActivities(activities.map(a => a.id === editingId ? { ...activityData, id: editingId } : a));
-            setEditingId(null);
-            toast.success("Activity updated");
+            result = await updateWaterActivity(editingId, activityData);
         } else {
-            setActivities([...activities, { ...activityData, id: Date.now().toString() }]);
-            toast.success("Activity added");
+            result = await addWaterActivity(activityData);
         }
-        form.reset();
+
+        if (result.success) {
+            toast.success(editingId ? "Activity updated" : "Activity added", { id: loadingId });
+            await loadData();
+            setEditingId(null);
+            form.reset();
+        } else {
+            toast.error(result.error || "Failed to save activity", { id: loadingId });
+        }
     };
 
     const editActivity = (id: string) => {
@@ -202,23 +237,40 @@ export default function WaterCalculatorPage() {
         }
     };
 
-    const deleteActivity = (id: string) => {
-        setActivities(activities.filter(a => a.id !== id));
-        toast.success("Activity removed");
+    const deleteActivity = async (id: string) => {
+        const loadingId = toast.loading("Removing activity...");
+        const result = await deleteWaterActivity(id);
+        if (result.success) {
+            toast.success("Activity removed", { id: loadingId });
+            await loadData();
+        } else {
+            toast.error(result.error || "Failed to remove activity", { id: loadingId });
+        }
     };
 
     const saveOverallData = () => {
-        toast.success("Water configuration saved temporarily for demo mode!");
+        toast.info("Tank capacities can be managed in your RV Profile settings.");
     };
 
-    const handleLogTank = (e: React.FormEvent) => {
+    const handleLogTank = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        setTankLogs([{ id: Date.now().toString(), date: logDate, type: logType, tank: logTank, volume: logVolume }, ...tankLogs]);
+        const loadingId = toast.loading("Saving tank log...");
+        const result = await addTankLog({
+            date: logDate,
+            type: logType,
+            tank: logTank,
+            volume: logVolume
+        });
 
-        setIsLogModalOpen(false);
-        setLogVolume(0);
-        toast.success(`Logged ${logType}: ${logVolume} gal from ${logTank} Tank`);
+        if (result.success) {
+            toast.success(`Logged ${logType}: ${logVolume} gal from ${logTank} Tank`, { id: loadingId });
+            await loadData();
+            setIsLogModalOpen(false);
+            setLogVolume(0);
+        } else {
+            toast.error(result.error || "Failed to save tank log", { id: loadingId });
+        }
     };
 
     // Pie chart data by category

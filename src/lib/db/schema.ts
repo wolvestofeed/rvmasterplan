@@ -46,6 +46,41 @@ export const powerSystems = pgTable('power_systems', {
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const electricalDevices = pgTable('electrical_devices', {
+    id: text('id').primaryKey(),
+    rvId: text('rv_id').references(() => rvVehicles.id).notNull(),
+    name: text('name').notNull(),
+    groupType: text('group_type').notNull(), // 'Essential', 'Non-essential'
+    category: text('category').notNull(),
+    watts: numeric('watts').default('0'),
+    hoursPerDay: numeric('hours_per_day').default('0'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const solarEquipment = pgTable('solar_equipment', {
+    id: text('id').primaryKey(),
+    rvId: text('rv_id').references(() => rvVehicles.id).notNull(),
+    make: text('make').notNull(),
+    model: text('model').notNull(),
+    equipmentType: text('equipment_type').notNull(), // 'Generator', 'Battery', 'Solar Panel', etc.
+    specs: text('specs'),
+    quantity: integer('quantity').default(1),
+    price: numeric('price').default('0'),
+    wattage: numeric('wattage').default('0'),
+    weight: numeric('weight').default('0'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const dailySolarLogs = pgTable('daily_solar_logs', {
+    id: text('id').primaryKey(),
+    rvId: text('rv_id').references(() => rvVehicles.id).notNull(),
+    date: text('date').notNull(),
+    weatherCondition: text('weather_condition').notNull(),
+    sunHours: numeric('sun_hours').default('0'),
+    generatedWh: numeric('generated_wh').default('0'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 export const waterSystems = pgTable('water_systems', {
     id: text('id').primaryKey(),
     rvId: text('rv_id').references(() => rvVehicles.id).notNull().unique(),
@@ -116,6 +151,24 @@ export const expenses = pgTable('expenses', {
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// --- Purchase Financials ---
+export const financialData = pgTable('financial_data', {
+    id: text('id').primaryKey(),
+    rvId: text('rv_id').references(() => rvVehicles.id).notNull().unique(),
+    purchasePrice: numeric('purchase_price').default('0'),
+    salesTaxRate: numeric('sales_tax_rate').default('0'),
+    downPayment: numeric('down_payment').default('0'),
+    tradeInValue: numeric('trade_in_value').default('0'),
+    loanTermYears: integer('loan_term_years').default(5),
+    interestRate: numeric('interest_rate').default('0'),
+    creditScore: text('credit_score'),
+    registrationFees: numeric('registration_fees').default('0'),
+    insurance: numeric('insurance').default('0'),
+    extendedWarranty: numeric('extended_warranty').default('0'),
+    accessories: numeric('accessories').default('0'),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // --- Water Activities & Tank Logs ---
 export const waterActivities = pgTable('water_activities', {
     id: text('id').primaryKey(),
@@ -149,7 +202,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     eventsAndLogs: many(eventsAndLogs)
 }));
 
-export const rvVehiclesRelations = relations(rvVehicles, ({ one }) => ({
+export const rvVehiclesRelations = relations(rvVehicles, ({ one, many }) => ({
     user: one(users, {
         fields: [rvVehicles.userId],
         references: [users.id],
@@ -161,7 +214,14 @@ export const rvVehiclesRelations = relations(rvVehicles, ({ one }) => ({
     waterSystem: one(waterSystems, {
         fields: [rvVehicles.id],
         references: [waterSystems.rvId]
-    })
+    }),
+    financials: one(financialData, {
+        fields: [rvVehicles.id],
+        references: [financialData.rvId]
+    }),
+    electricalDevices: many(electricalDevices),
+    solarEquipment: many(solarEquipment),
+    solarLogs: many(dailySolarLogs)
 }));
 
 // --- Settings ---

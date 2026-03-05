@@ -49,7 +49,13 @@ import {
     DeviceGroup,
     SetupItem
 } from "@/types";
-import { mockDevices, mockEnergyData, mockSolarPanels, mockSolarBatteries, mockSolarGenerators, mockSolarInverters, mockGenericSolarEquipment, mockDailySolarLogs, mockSetupItems } from "@/data/mockData";
+
+import {
+    getElectricalDevices, addElectricalDevice, updateElectricalDevice, deleteElectricalDevice,
+    getSolarEquipment, addSolarEquipment, updateSolarEquipment, deleteSolarEquipment,
+    getDailySolarLogs, addDailySolarLog, updateDailySolarLog, deleteDailySolarLog
+} from "@/app/actions/power";
+import { getEquipmentItems } from "@/app/actions/equipment";
 
 const COLORS = ['#3b82f6', '#14b8a6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e', '#ef4444', '#64748b'];
 
@@ -84,14 +90,17 @@ type SolarLogFormValues = z.infer<typeof solarLogSchema>;
 
 export default function PowerStrategyPage() {
     const [isClient, setIsClient] = useState(false);
-    const [devices, setDevices] = useState<ElectricalDevice[]>(mockDevices as ElectricalDevice[]);
-    const [energyData, setEnergyData] = useState<EnergyData>(mockEnergyData as EnergyData);
-    const [panels, setPanels] = useState<SolarPanel[]>(mockSolarPanels as SolarPanel[]);
-    const [batteries, setBatteries] = useState<SolarBattery[]>(mockSolarBatteries as SolarBattery[]);
-    const [generators, setGenerators] = useState<SolarGenerator[]>(mockSolarGenerators as SolarGenerator[]);
-    const [inverters, setInverters] = useState<SolarInverter[]>(mockSolarInverters as SolarInverter[]);
-    const [genericEquipment, setGenericEquipment] = useState<GenericSolarEquipment[]>(mockGenericSolarEquipment as GenericSolarEquipment[]);
-    const [solarLogs, setSolarLogs] = useState<DailySolarLog[]>(mockDailySolarLogs as DailySolarLog[]);
+    const [devices, setDevices] = useState<ElectricalDevice[]>([]);
+    const [energyData, setEnergyData] = useState<EnergyData>({
+        sunHours: 5, avgWattsPerHour: 200, useLogAvgWatts: true, batteryCapacity: 10800, batteryVoltage: 12, solarArray: 800
+    });
+    const [panels, setPanels] = useState<SolarPanel[]>([]);
+    const [batteries, setBatteries] = useState<SolarBattery[]>([]);
+    const [generators, setGenerators] = useState<SolarGenerator[]>([]);
+    const [inverters, setInverters] = useState<SolarInverter[]>([]);
+    const [genericEquipment, setGenericEquipment] = useState<GenericSolarEquipment[]>([]);
+    const [solarLogs, setSolarLogs] = useState<DailySolarLog[]>([]);
+    const [budgetItems, setBudgetItems] = useState<SetupItem[]>([]);
     const [editingDeviceId, setEditingDeviceId] = useState<string | null>(null);
     const [editingEquipmentId, setEditingEquipmentId] = useState<string | null>(null);
     const [editingLogId, setEditingLogId] = useState<string | null>(null);
@@ -100,16 +109,59 @@ export default function PowerStrategyPage() {
     const [estimatedDeviceWeight, setEstimatedDeviceWeight] = useState<number>(20);
     const [featureSolarCapture, setFeatureSolarCapture] = useState(true);
 
+    const loadData = async () => {
+        const [
+            { success: setsSuccess, data: setsData },
+            { success: devSuccess, data: devData },
+            { success: eqSuccess, data: eqData },
+            { success: logSuccess, data: logData },
+            { success: budgetSuccess, data: budgetData }
+        ] = await Promise.all([
+            getSystemSettings(),
+            getElectricalDevices(),
+            getSolarEquipment(),
+            getDailySolarLogs(),
+            getEquipmentItems()
+        ]);
+
+        if (setsSuccess && setsData?.featureFlags) {
+            const flags = setsData.featureFlags as Record<string, boolean>;
+            setFeatureSolarCapture(flags["solar_capture"] ?? true);
+        }
+
+        if (devSuccess && devData) {
+            setDevices(devData.map((d: any) => ({
+                ...d, group: d.groupType, watts: Number(d.watts) || 0, hoursPerDay: Number(d.hoursPerDay) || 0
+            })) as ElectricalDevice[]);
+        }
+
+        if (eqSuccess && eqData) {
+            const parsedEq = eqData.map((e: any) => ({
+                ...e, price: Number(e.price) || 0, wattage: Number(e.wattage) || 0, weight: Number(e.weight) || 0
+            }));
+            setGenericEquipment(parsedEq as GenericSolarEquipment[]);
+            setPanels(parsedEq.filter((e: any) => e.equipmentType === 'Solar Panel') as any);
+            setBatteries(parsedEq.filter((e: any) => e.equipmentType === 'Battery') as any);
+            setGenerators(parsedEq.filter((e: any) => e.equipmentType === 'Generator') as any);
+            setInverters(parsedEq.filter((e: any) => e.equipmentType === 'Inverter') as any);
+        }
+
+        if (logSuccess && logData) {
+            setSolarLogs(logData.map((l: any) => ({
+                ...l, sunHours: Number(l.sunHours) || 0, generatedWh: Number(l.generatedWh) || 0
+            })) as DailySolarLog[]);
+        }
+
+        if (budgetSuccess && budgetData) {
+            setBudgetItems(budgetData.map((b: any) => ({
+                ...b, acquired: b.isAcquired
+            })) as SetupItem[]);
+        }
+    };
+
     useEffect(() => {
         setIsClient(true);
-        const fetchSettings = async () => {
-            const { success, data } = await getSystemSettings();
-            if (success && data?.featureFlags) {
-                const flags = data.featureFlags as Record<string, boolean>;
-                setFeatureSolarCapture(flags["solar_capture"] ?? true);
-            }
-        };
-        fetchSettings();
+        loadData();
     }, []);
 
     const deviceForm = useForm<DeviceFormValues>({
@@ -173,29 +225,37 @@ export default function PowerStrategyPage() {
         return genericEquipment.reduce((total, item) => total + ((item.weight || 0) * item.quantity), 0);
     };
 
-    const onDeviceSubmit = (data: DeviceFormValues) => {
-        if (editingDeviceId) {
-            setDevices(devices.map(d => d.id === editingDeviceId ? { ...d, ...data, category: data.category as DeviceCategory } : d));
+    const onDeviceSubmit = async (data: DeviceFormValues) => {
+        const loadingId = toast.loading(editingDeviceId ? "Updating device..." : "Adding device...");
+        const result = editingDeviceId
+            ? await updateElectricalDevice(editingDeviceId, data)
+            : await addElectricalDevice(data);
+
+        if (result.success) {
+            toast.success(editingDeviceId ? "Device updated!" : "Device added!", { id: loadingId });
+            await loadData();
             setEditingDeviceId(null);
-            toast.success("Device updated");
+            deviceForm.reset({ name: "", group: "Essential", category: "Refrigeration", watts: 0, hoursPerDay: 0 });
         } else {
-            setDevices([...devices, { ...data, id: Date.now().toString(), category: data.category as DeviceCategory }]);
-            toast.success("Device added");
+            toast.error(result.error || "Failed to save device", { id: loadingId });
         }
-        deviceForm.reset({ name: "", group: "Essential", category: "Refrigeration", watts: 0, hoursPerDay: 0 });
     };
 
-    const onEquipmentSubmit = (data: EquipmentFormValues) => {
-        if (editingEquipmentId) {
-            setGenericEquipment(genericEquipment.map(e => e.id === editingEquipmentId ? { ...e, ...data } : e));
+    const onEquipmentSubmit = async (data: EquipmentFormValues) => {
+        const loadingId = toast.loading(editingEquipmentId ? "Updating equipment..." : "Adding equipment...");
+        const result = editingEquipmentId
+            ? await updateSolarEquipment(editingEquipmentId, data)
+            : await addSolarEquipment(data);
+
+        if (result.success) {
+            toast.success(editingEquipmentId ? "Equipment updated!" : "Equipment added!", { id: loadingId });
+            await loadData();
             setEditingEquipmentId(null);
-            toast.success(`${data.equipmentType} updated!`);
+            setEquipmentModalOpen(false);
+            equipmentForm.reset();
         } else {
-            setGenericEquipment([...genericEquipment, { ...data, id: Date.now().toString() }]);
-            toast.success(`${data.equipmentType} added!`);
+            toast.error(result.error || "Failed to save equipment", { id: loadingId });
         }
-        setEquipmentModalOpen(false);
-        equipmentForm.reset();
     };
 
     const editGenericEquipment = (id: string) => {
@@ -216,9 +276,15 @@ export default function PowerStrategyPage() {
         }
     };
 
-    const deleteGenericEquipment = (id: string) => {
-        setGenericEquipment(genericEquipment.filter(e => e.id !== id));
-        toast.success("Equipment removed");
+    const deleteGenericEquipment = async (id: string) => {
+        const loadingId = toast.loading("Removing equipment...");
+        const result = await deleteSolarEquipment(id);
+        if (result.success) {
+            toast.success("Equipment removed", { id: loadingId });
+            await loadData();
+        } else {
+            toast.error(result.error || "Failed to remove equipment", { id: loadingId });
+        }
     };
 
     const onSolarLogSubmit = (data: SolarLogFormValues) => {
@@ -290,45 +356,49 @@ export default function PowerStrategyPage() {
         toast.success("Device removed");
     };
 
-    const importFromSetupBudget = () => {
-        // We already have mockSetupItems. Let's simulate importing them.
-        const energyItems = mockSetupItems.filter(item => item.category === 'ENERGY' && item.acquired);
+    const importFromSetupBudget = async () => {
+        const energyItems = budgetItems.filter((item: SetupItem) => item.category === 'ENERGY' && (item as any).isAcquired);
 
         if (energyItems.length === 0) {
             toast.error("No acquired energy items found in Setup Budget.");
             return;
         }
 
-        let panelsAdded = 0;
-        let generatorsAdded = 0;
+        const loadingId = toast.loading("Importing...");
+        let added = 0;
 
-        const newPanels = [...panels];
-        const newGenerators = [...generators];
-
-        energyItems.forEach(item => {
+        for (const item of energyItems) {
             const name = item.name.toLowerCase();
+            let eqType = "Other";
+            let wattage = 100;
+
             if (name.includes('panel')) {
-                let wattage = 100;
+                eqType = "Solar Panel";
                 const match = name.match(/(\d+)\s*w/i);
                 if (match && match[1]) wattage = parseInt(match[1], 10);
-                newPanels.push({
-                    id: Date.now().toString() + Math.random(),
-                    make: "Imported", model: item.name, wattage, quantity: 1, efficiency: 21, type: "rigid", cellType: "Mono", weight: item.weight || 10
-                });
-                panelsAdded++;
             } else if (name.includes('generator') || name.includes('ecoflow')) {
-                let capacity = 3600;
-                newGenerators.push({
-                    id: Date.now().toString() + Math.random(),
-                    make: "Imported", model: item.name, outputWatts: capacity, batteryCapacityWh: capacity, systemType: "generator", chargeControllerType: "MPPT", rechargeTime120V: 2, rechargeTimeSolar: 4, has12VOutput: true, has30AmpOutput: true, acOutlets: 4, usbPorts: 4, dcPorts: 1, weight: item.weight || 90, quantity: 1
-                });
-                generatorsAdded++;
+                eqType = "Generator";
+                wattage = 3600;
+            } else if (name.includes('battery')) {
+                eqType = "Battery";
+                wattage = 1000;
             }
-        });
 
-        setPanels(newPanels);
-        setGenerators(newGenerators);
-        toast.success(`Imported ${panelsAdded} panels and ${generatorsAdded} generators!`);
+            await addSolarEquipment({
+                make: "Imported",
+                model: item.name,
+                equipmentType: eqType,
+                quantity: 1,
+                price: Number(item.cost) || 0,
+                specs: "Imported from Setup Budget",
+                wattage: wattage,
+                weight: Number(item.weight) || 0
+            });
+            added++;
+        }
+
+        await loadData();
+        toast.success(`Imported ${added} energy items from Setup Budget!`, { id: loadingId });
     };
 
     const saveOverallData = () => {
