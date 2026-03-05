@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_fallback", {
     apiVersion: "2024-04-10" as Stripe.StripeConfig["apiVersion"],
 });
 
