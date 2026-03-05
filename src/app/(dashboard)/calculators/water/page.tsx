@@ -289,7 +289,7 @@ export default function WaterCalculatorPage() {
             <HeaderHero
                 title="Water Usage Calculator"
                 description="Track and optimize your RV water consumption with our interactive calculator."
-                imageUrl="/images/page-headers/water-header.jpg"
+                imageUrl="/images/page-headers/water-page-header.jpg"
             />
 
             {/* Dashboard Summary Cards */}

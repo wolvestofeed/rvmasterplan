@@ -86,6 +86,17 @@ export function Sidebar({ featureFlags = {} }: { featureFlags?: Record<string, b
                             </Link>
                         </>
                     )}
+                    <SignedIn>
+                        <div className="mt-8 mb-2 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                            Session
+                        </div>
+                        <SignOutButton>
+                            <button className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-slate-600 hover:bg-red-50 hover:text-red-700 w-full text-left font-semibold">
+                                <LogOut className="h-4 w-4" />
+                                Log Out
+                            </button>
+                        </SignOutButton>
+                    </SignedIn>
                 </nav>
             </div>
 
