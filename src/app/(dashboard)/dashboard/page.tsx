@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { getSolarEquipment } from "@/app/actions/power";
+import { getSolarEquipment, getElectricalDevices } from "@/app/actions/power";
 import { getUserProfile, updateDashboardHeroImage } from "@/app/actions/profiles";
 import { UploadButton } from "@/lib/uploadthing";
 import { Camera } from "lucide-react";
@@ -64,6 +64,7 @@ export default function Dashboard() {
   const [computedEquipmentWeight, setComputedEquipmentWeight] = useState(estimatedDeviceWeight);
   const [heroImage, setHeroImage] = useState<string | null>(null);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [dailyConsumption, setDailyConsumption] = useState(0);
 
   const fetchEvents = async () => {
     const res = await getDashboardEvents();
@@ -74,10 +75,19 @@ export default function Dashboard() {
   };
 
   const fetchEquipmentWeight = async () => {
-    const res = await getSolarEquipment();
-    if (res.success && res.data) {
-      const solarEquipmentWeight = res.data.reduce((total: any, item: any) => total + ((Number(item.weight) || 0) * (Number(item.quantity) || 1)), 0);
+    const [resSolar, resDevices] = await Promise.all([
+      getSolarEquipment(),
+      getElectricalDevices()
+    ]);
+
+    if (resSolar.success && resSolar.data) {
+      const solarEquipmentWeight = resSolar.data.reduce((total: any, item: any) => total + ((Number(item.weight) || 0) * (Number(item.quantity) || 1)), 0);
       setComputedEquipmentWeight(solarEquipmentWeight + estimatedDeviceWeight);
+    }
+
+    if (resDevices.success && resDevices.data) {
+      const totalConsumption = resDevices.data.reduce((sum: number, d: any) => sum + (Number(d.watts) * Number(d.hoursPerDay) || 0), 0);
+      setDailyConsumption(totalConsumption);
     }
   };
 
@@ -214,8 +224,8 @@ export default function Dashboard() {
         <Card className="border-2 border-[#8ca163] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40">
           <CardContent className="p-4 flex flex-col justify-center">
             <div>
-              <p className="text-sm text-slate-500 font-medium">Avg. Solar Coverage</p>
-              <p className="text-xl font-bold text-[#2a4f3f]">450 <span className="text-sm text-[#8ca163] font-semibold">Wh / Day</span></p>
+              <p className="text-sm text-slate-500 font-medium">Average Solar Consumption</p>
+              <p className="text-xl font-bold text-[#2a4f3f]">{Math.round(dailyConsumption).toLocaleString()} <span className="text-sm text-[#8ca163] font-semibold">Wh / Day</span></p>
             </div>
           </CardContent>
         </Card>
