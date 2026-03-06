@@ -73,3 +73,31 @@ export async function deleteDocument(id: string) {
         return { success: false, error: "Failed to delete document" };
     }
 }
+
+export async function updateDocument(id: string, data: {
+    title: string;
+    renewalDate?: Date | null;
+    renewalCost?: string | null;
+}) {
+    try {
+        const { userId } = await auth();
+        if (!userId || userId === "demo_user") {
+            return { success: false, error: "Saving is disabled in Demo Mode." };
+        }
+
+        const costStr = data.renewalCost ? parseFloat(data.renewalCost).toString() : null;
+
+        await db.update(documents).set({
+            title: data.title,
+            renewalDate: data.renewalDate || null,
+            renewalCost: costStr
+        }).where(eq(documents.id, id));
+
+        revalidatePath("/documents");
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating document:", error);
+        return { success: false, error: "Failed to update document" };
+    }
+}
+

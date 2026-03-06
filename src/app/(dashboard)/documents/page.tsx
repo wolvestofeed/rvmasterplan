@@ -10,9 +10,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { FileText, Image as ImageIcon, Upload, Trash2, Eye, Calendar, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
-import { getDocuments, addDocument, deleteDocument } from "@/app/actions/documents";
+import { getDocuments, addDocument, deleteDocument, updateDocument } from "@/app/actions/documents";
 import { useEffect } from "react";
 import { useUploadThing } from "@/lib/uploadthing";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Pencil } from "lucide-react";
 
 // Make sure formatCurrency exists in lib/utils, if not we will just use basic formatting
 
@@ -35,6 +44,13 @@ export default function DocumentsPage() {
     const [renewalDate, setRenewalDate] = useState("");
     const [renewalCost, setRenewalCost] = useState("");
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingDoc, setEditingDoc] = useState<DocumentItem | null>(null);
+    const [editTitle, setEditTitle] = useState("");
+    const [editRenewalDate, setEditRenewalDate] = useState("");
+    const [editRenewalCost, setEditRenewalCost] = useState("");
+    const [isUpdating, setIsUpdating] = useState(false);
 
     const { startUpload } = useUploadThing("documentUploader");
 
@@ -111,7 +127,46 @@ export default function DocumentsPage() {
             setDocuments(documents.filter(doc => doc.id !== id));
             toast.success("Document removed.");
         } else {
-            toast.error("Failed to delete document.");
+            toast.error(res.error || "Failed to delete document.");
+        }
+    };
+
+    const handleEdit = (doc: DocumentItem) => {
+        setEditingDoc(doc);
+        setEditTitle(doc.title);
+        setEditRenewalDate(doc.renewalDate ? new Date(doc.renewalDate).toISOString().split('T')[0] : "");
+        setEditRenewalCost(doc.renewalCost || "");
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingDoc) return;
+
+        if (!editTitle) {
+            toast.error("Please provide a title for the document.");
+            return;
+        }
+
+        setIsUpdating(true);
+        try {
+            const res = await updateDocument(editingDoc.id, {
+                title: editTitle,
+                renewalDate: editRenewalDate ? new Date(editRenewalDate) : null,
+                renewalCost: editRenewalCost || null
+            });
+
+            if (res.success) {
+                toast.success("Document updated successfully!");
+                setIsEditModalOpen(false);
+                await loadDocuments();
+            } else {
+                toast.error(res.error || "Failed to update document.");
+            }
+        } catch (error: any) {
+            toast.error(error.message || "Something went wrong.");
+        } finally {
+            setIsUpdating(false);
         }
     };
 
@@ -264,11 +319,18 @@ export default function DocumentsPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center justify-center gap-2">
-                                                        {doc.fileUrl && (
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-[#2a4f3f]" onClick={() => handleEdit(doc)}>
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        {doc.fileUrl ? (
                                                             <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-blue-600">
                                                                 <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
                                                                     <Eye className="h-4 w-4" />
                                                                 </a>
+                                                            </Button>
+                                                        ) : (
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 cursor-not-allowed" disabled>
+                                                                <Eye className="h-4 w-4" />
                                                             </Button>
                                                         )}
                                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-red-500" onClick={() => handleDelete(doc.id)}>
@@ -285,6 +347,63 @@ export default function DocumentsPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Edit Modal */}
+            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Edit Document</DialogTitle>
+                        <DialogDescription>
+                            Update the metadata for your document.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleUpdate} className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="editTitle">Document Title *</Label>
+                            <Input
+                                id="editTitle"
+                                value={editTitle}
+                                onChange={(e) => setEditTitle(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="editRenewalDate">Renewal Date (Optional)</Label>
+                            <div className="relative">
+                                <Calendar className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <Input
+                                    id="editRenewalDate"
+                                    type="date"
+                                    className="pl-9"
+                                    value={editRenewalDate}
+                                    onChange={(e) => setEditRenewalDate(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="editRenewalCost">Renewal Cost (Optional)</Label>
+                            <div className="relative">
+                                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <Input
+                                    id="editRenewalCost"
+                                    type="number"
+                                    placeholder="0.00"
+                                    className="pl-9"
+                                    value={editRenewalCost}
+                                    onChange={(e) => setEditRenewalCost(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" className="bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white" disabled={isUpdating}>
+                                {isUpdating ? "Saving..." : "Save Changes"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
