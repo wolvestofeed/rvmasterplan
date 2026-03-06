@@ -401,9 +401,7 @@ export default function PowerStrategyPage() {
         toast.success(`Imported ${added} energy items from Setup Budget!`, { id: loadingId });
     };
 
-    const saveOverallData = () => {
-        toast.success("Power strategy saved temporarily for demo mode!");
-    };
+
 
     // Pie chart data by category 
     const consumptionByCategory = devices.reduce((acc, curr) => {
@@ -430,9 +428,7 @@ export default function PowerStrategyPage() {
                 <Button variant="outline" onClick={importFromSetupBudget} className="flex items-center">
                     <ImportIcon className="mr-2 h-4 w-4" /> Import from Budget
                 </Button>
-                <Button onClick={saveOverallData} className="flex items-center bg-amber-600 hover:bg-amber-700 text-white">
-                    <SaveIcon className="mr-2 h-4 w-4" /> Save Strategy
-                </Button>
+
             </div>
 
             {/* Hero Analytics Dash */}
