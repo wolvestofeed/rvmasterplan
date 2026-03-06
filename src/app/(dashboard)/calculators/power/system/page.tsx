@@ -421,7 +421,7 @@ export default function PowerStrategyPage() {
     return (
         <div className="container mx-auto py-10 px-4 md:px-8 max-w-6xl">
             <HeaderHero
-                title="Power Strategy and Solar Energy"
+                title="Power and Solar System"
                 description="Calculate your electrical load, size your solar array, and estimate your battery runtime."
                 imageUrl="/images/page-headers/power_solar-header.jpg"
             />
