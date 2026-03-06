@@ -33,7 +33,7 @@ export default function LandingPage() {
             {/* Static Image Hero Section */}
             <section className="relative w-full h-[70vh] min-h-[500px] flex items-center justify-center overflow-hidden bg-slate-900">
                 <Image
-                    src="/images/page-headers/landing-header.jpg"
+                    src="/images/page-headers/home-hero-header.jpg"
                     alt="RV MasterPlan Hero"
                     fill
                     className="object-cover opacity-60"
@@ -75,12 +75,22 @@ export default function LandingPage() {
             {/* Video Introduction Section */}
             <section className="bg-[#f8fbf5] py-20 px-4">
                 <div className="max-w-4xl mx-auto">
-                    <div className="text-center mb-10">
-                        <h2 className="text-3xl font-bold text-[#2a4f3f] mb-4">Meet Your Guide &sim; Rob</h2>
-                        <p className="text-lg text-slate-600">
-                            I built this for myself when I moved into a travel trailer last Spring.<br />
-                            It&apos;s really helpful, so I thought you might like it too!
-                        </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-12 mb-12">
+                        <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-xl border-4 border-white">
+                            <Image
+                                src="/images/jrb-grand-canyon-24.jpg"
+                                alt="Rob Bogatin"
+                                fill
+                                className="object-cover"
+                            />
+                        </div>
+                        <div className="text-center md:text-left">
+                            <h2 className="text-3xl font-bold text-[#2a4f3f] mb-4">Meet Your Support Team</h2>
+                            <p className="text-lg text-slate-600">
+                                Hey there! Thank you for checking out RV MasterPlan. I&apos;ve spent a lot of time in the backcountry and I love visiting America&apos;s most iconic, geographic and culturally rich destinations. I built this App for myself when I moved into a travel trailer
+                                last Spring. It&apos;s really helpful, so I thought you might like it too! Rob
+                            </p>
+                        </div>
                     </div>
 
                     <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-white bg-black">
@@ -260,7 +270,7 @@ export default function LandingPage() {
                         className="object-contain filter brightness-0 invert"
                     />
                     <div className="text-slate-400 text-sm text-center md:text-left">
-                        © {new Date().getFullYear()} Robert Bogatin. The Wolves to Feed.<br />
+                        © {new Date().getFullYear()} Wolves to Feed Publishing<br />
                         All rights reserved.
                     </div>
                 </div>

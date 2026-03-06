@@ -419,20 +419,18 @@ export default function RVSetupBudgetPage() {
                                         return (
                                             <div
                                                 key={item.id}
-                                                className={`p-4 flex flex-col sm:flex-row gap-4 sm:items-center justify-between transition-all duration-200 ${isEditing
+                                                className={`p-4 flex items-center justify-between transition-all duration-200 ${isEditing
                                                     ? 'bg-purple-50 border-l-4 border-purple-500 rounded-r-md'
                                                     : item.acquired ? 'bg-slate-50/50 opacity-80' : 'hover:bg-slate-50'
                                                     }`}
                                             >
-
-                                                <div className="flex items-start gap-3">
+                                                <div className="flex items-center gap-3">
                                                     <button
                                                         onClick={() => toggleAcquired(item.id)}
-                                                        className={`mt-1 rounded-full p-0.5 transition-colors ${item.acquired ? 'text-teal-500 hover:text-teal-600' : 'text-slate-300 hover:text-slate-400'}`}
+                                                        className={`rounded-full p-0.5 transition-colors ${item.acquired ? 'text-teal-500 hover:text-teal-600' : 'text-slate-300 hover:text-slate-400'}`}
                                                     >
                                                         {item.acquired ? <CheckCircle2Icon className="h-6 w-6" /> : <CircleIcon className="h-6 w-6" />}
                                                     </button>
-
                                                     <div>
                                                         <div className={`font-medium ${isEditing ? 'text-purple-900' : item.acquired ? 'text-slate-500 line-through decoration-slate-300' : 'text-slate-800'}`}>
                                                             {item.name} {isEditing && <span className="text-xs ml-2 bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full no-underline">Editing</span>}
@@ -452,7 +450,7 @@ export default function RVSetupBudgetPage() {
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center justify-between sm:justify-end gap-6 ml-9 sm:ml-0">
+                                                <div className="flex items-center gap-4">
                                                     <div className={`font-bold text-right min-w-[5rem] ${isEditing ? 'text-purple-700' : item.acquired ? 'text-slate-400' : 'text-slate-700'}`}>
                                                         {formatCurrency(item.cost)}
                                                     </div>

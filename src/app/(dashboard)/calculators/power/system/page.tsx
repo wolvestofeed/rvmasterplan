@@ -601,31 +601,22 @@ export default function PowerStrategyPage() {
                                                 return (
                                                     <div
                                                         key={device.id}
-                                                        className={`p-4 flex flex-col sm:flex-row gap-4 sm:items-center justify-between transition-all duration-200 ${isEditing
+                                                        className={`p-4 flex items-center justify-between transition-all duration-200 ${isEditing
                                                             ? 'bg-purple-50 border-l-4 border-purple-500 rounded-r-md'
                                                             : 'hover:bg-slate-50'
                                                             }`}
                                                     >
-                                                        <div className="flex items-start gap-3">
-                                                            <div>
-                                                                <div className={`font-medium ${isEditing ? 'text-purple-900' : 'text-slate-800'}`}>
-                                                                    {device.name} {isEditing && <span className="text-xs ml-2 bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full">Editing</span>}
-                                                                </div>
-                                                                <div className="flex flex-wrap items-center gap-2 mt-1 text-xs">
-                                                                    <span className={`px-2 py-0.5 rounded-full font-medium ${device.group === 'Essential' ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-600'}`}>
-                                                                        {device.group}
-                                                                    </span>
-                                                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium">
-                                                                        {device.category}
-                                                                    </span>
-                                                                    <span className="text-slate-500">{device.watts}W × {device.hoursPerDay}h</span>
-                                                                </div>
+                                                        <div>
+                                                            <div className={`font-medium ${isEditing ? 'text-purple-900' : 'text-slate-800'}`}>
+                                                                {device.name} {isEditing && <span className="text-xs ml-2 bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full">Editing</span>}
+                                                            </div>
+                                                            <div className="text-sm text-slate-500">
+                                                                {device.group} • {device.category} • {device.watts}W × {device.hoursPerDay}h
                                                             </div>
                                                         </div>
-
-                                                        <div className="flex items-center justify-between sm:justify-end gap-6 sm:ml-0">
-                                                            <div className="text-right">
-                                                                <div className={`font-bold ${isEditing ? 'text-purple-700' : 'text-slate-700'}`}>{formatNumber(device.watts * device.hoursPerDay)} <span className="text-xs font-normal">Wh/d</span></div>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className={`font-bold text-right min-w-[3rem] ${isEditing ? 'text-purple-700' : 'text-cyan-700'}`}>
+                                                                {formatNumber(device.watts * device.hoursPerDay)} <span className="text-xs font-normal">Wh/d</span>
                                                             </div>
                                                             <div className="flex gap-1">
                                                                 <Button

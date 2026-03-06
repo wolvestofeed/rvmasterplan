@@ -1,13 +1,13 @@
 import type { NextConfig } from "next";
+import path from "path";
 
-const nextConfig = {
-  /* config options here */
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-} as any;
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
+};
 
 export default nextConfig;

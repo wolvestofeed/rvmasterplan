@@ -136,6 +136,12 @@ export default function RVBudgetPage() {
         setBudgets(budgets.map(b => (b.month === selectedMonth && b.year === currentYear) ? { ...b, budgetedAmount: val } : b));
     };
 
+    const applyBudgetToAllMonths = () => {
+        const currentTarget = budgets.find(b => b.month === selectedMonth && b.year === currentYear)?.budgetedAmount || 0;
+        setBudgets(budgets.map(b => ({ ...b, budgetedAmount: currentTarget })));
+        toast.success(`Set ${formatCurrency(currentTarget)} as target for all 12 months`);
+    };
+
     const autoPopulateFixedCosts = () => {
         // Generate mock costs based on purchase calculator loan logic
         const mockLoan = 450;
@@ -222,7 +228,7 @@ export default function RVBudgetPage() {
 
                 <TabsContent value="expenses" className="space-y-6">
                     <div className="grid lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-1">
+                        <div className="lg:col-span-1 space-y-6">
                             <Card className="p-6 sticky top-6">
                                 <h3 className="text-lg font-medium text-slate-800 mb-4">{editingExpense ? "Edit" : "Add"} Expense</h3>
                                 <Form {...form}>
@@ -294,6 +300,12 @@ export default function RVBudgetPage() {
                                     </form>
                                 </Form>
                             </Card>
+
+                            <Card className="p-6">
+                                <h3 className="text-lg font-medium text-slate-800 mb-2">Auto-Populate Fixed Costs</h3>
+                                <p className="text-sm text-slate-500 mb-4">Automatically fill your ledger with recurring monthly costs like your RV Loan, Insurance, Registration, and Maintenance averages.</p>
+                                <Button onClick={autoPopulateFixedCosts} variant="secondary" className="w-full">Populate 12-Month Averages</Button>
+                            </Card>
                         </div>
 
                         <div className="lg:col-span-2">
@@ -317,33 +329,23 @@ export default function RVBudgetPage() {
                                                 return (
                                                     <div
                                                         key={exp.id}
-                                                        className={`p-4 flex flex-col sm:flex-row gap-4 sm:items-center justify-between transition-all duration-200 ${isEditing
+                                                        className={`p-4 flex items-center justify-between transition-all duration-200 ${isEditing
                                                             ? 'bg-purple-50 border-l-4 border-purple-500 rounded-r-md'
                                                             : 'hover:bg-slate-50'
                                                             }`}
                                                     >
-                                                        <div className="flex items-start gap-3">
-                                                            <div>
-                                                                <div className={`font-medium ${isEditing ? 'text-purple-900' : 'text-slate-800'}`}>
-                                                                    {exp.name} {isEditing && <span className="text-xs ml-2 bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full">Editing</span>}
-                                                                </div>
-                                                                <div className="flex flex-wrap items-center gap-2 mt-1 text-xs">
-                                                                    <span className={`px-2 py-0.5 rounded-full font-medium ${exp.group === 'Essential' ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-600'}`}>
-                                                                        {exp.group}
-                                                                    </span>
-                                                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium">
-                                                                        {exp.category}
-                                                                    </span>
-                                                                    <span className="text-slate-500">{exp.quantity} @ {formatCurrency(exp.costPerItem)}</span>
-                                                                </div>
+                                                        <div>
+                                                            <div className={`font-medium ${isEditing ? 'text-purple-900' : 'text-slate-800'}`}>
+                                                                {exp.name} {isEditing && <span className="text-xs ml-2 bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full">Editing</span>}
+                                                            </div>
+                                                            <div className="text-sm text-slate-500">
+                                                                {exp.group} • {exp.category} • {exp.quantity}x {formatCurrency(exp.costPerItem)}
                                                             </div>
                                                         </div>
 
-                                                        <div className="flex items-center justify-between sm:justify-end gap-6 sm:ml-0">
-                                                            <div className="text-right">
-                                                                <div className={`font-bold ${isEditing ? 'text-purple-700' : 'text-slate-700'}`}>
-                                                                    {formatCurrency(calculateTotal(exp))}
-                                                                </div>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className={`font-bold text-right min-w-[5rem] ${isEditing ? 'text-purple-700' : 'text-slate-700'}`}>
+                                                                {formatCurrency(calculateTotal(exp))}
                                                             </div>
                                                             <div className="flex gap-1">
                                                                 <Button
@@ -373,18 +375,28 @@ export default function RVBudgetPage() {
                 <TabsContent value="planning" className="space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
                         <Card className="p-6">
-                            <h3 className="text-lg font-medium text-slate-800 mb-4">{MONTH_NAMES[selectedMonth - 1]} Target Budget</h3>
+                            <h3 className="text-lg font-medium text-slate-800 mb-4">{MONTH_NAMES[selectedMonth - 1]} Monthly Target Budget</h3>
                             <p className="text-sm text-slate-500 mb-6">Set your monthly budget target for RV expenses. This gives you a ceiling to compare your actual expenses against.</p>
 
                             <div className="space-y-4">
                                 <div className="flex flex-col gap-2">
-                                    <Label>Budget Amount ($)</Label>
-                                    <Input
-                                        type="number"
-                                        value={getMonthBudget()?.budgetedAmount || ""}
-                                        onChange={handleUpdateBudget}
-                                        className="text-lg font-medium h-12"
-                                    />
+                                    <Label>Monthly Budget Amount ($)</Label>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            type="number"
+                                            value={getMonthBudget()?.budgetedAmount || ""}
+                                            onChange={handleUpdateBudget}
+                                            className="text-lg font-medium h-12"
+                                        />
+                                        <Button
+                                            variant="outline"
+                                            onClick={applyBudgetToAllMonths}
+                                            className="h-12 border-purple-200 text-purple-700 hover:bg-purple-50"
+                                            title="Apply this amount to all 12 months"
+                                        >
+                                            Apply to All Months
+                                        </Button>
+                                    </div>
                                 </div>
 
                                 <div className="bg-slate-50 p-4 rounded-lg mt-6 border border-slate-100 space-y-3">
@@ -435,7 +447,7 @@ export default function RVBudgetPage() {
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748B' }} />
                                     <YAxis tickFormatter={(val) => `$${val}`} axisLine={false} tickLine={false} tick={{ fill: '#64748B' }} />
-                                    <RechartsTooltip cursor={{ fill: '#F1F5F9' }} formatter={(value: number) => formatCurrency(value || 0)} />
+                                    <RechartsTooltip cursor={{ fill: '#F1F5F9' }} formatter={(value: any) => formatCurrency(Number(value) || 0)} />
                                     <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                     <Bar dataKey="budget" name="Budget Ceiling" fill="#CBD5E1" radius={[4, 4, 0, 0]} />
                                     <Bar dataKey="actual" name="Actual Expenses" fill="#8B5CF6" radius={[4, 4, 0, 0]} />

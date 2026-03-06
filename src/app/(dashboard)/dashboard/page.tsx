@@ -63,6 +63,7 @@ export default function Dashboard() {
 
   const [computedEquipmentWeight, setComputedEquipmentWeight] = useState(estimatedDeviceWeight);
   const [heroImage, setHeroImage] = useState<string | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   const fetchEvents = async () => {
     const res = await getDashboardEvents();
@@ -84,6 +85,7 @@ export default function Dashboard() {
     const res = await getUserProfile();
     if (res.success && res.data) {
       setHeroImage(res.data.dashboardHeroImage);
+      setIsDemoMode(res.data.userId === "demo_user" || res.data.userId.startsWith("guest_"));
     }
   };
 
@@ -140,7 +142,7 @@ export default function Dashboard() {
   return (
     <div className="container mx-auto py-10 px-4 md:px-8 max-w-6xl">
       <HeaderHero
-        title="Welcome, Rob Bogatin!"
+        title={isDemoMode ? "Welcome, Visitor!" : "Welcome, Rob Bogatin!"}
         description="RV MasterPlan Dashboard | Data Aggregation Overview"
         imageUrl={heroImage || "/images/page-headers/dashboard-header.jpg"}
         imageClass="object-cover object-[center_70%]"
