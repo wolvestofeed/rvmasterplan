@@ -144,7 +144,7 @@ export default function Dashboard() {
       <HeaderHero
         title={isDemoMode ? "Welcome, Visitor!" : "Welcome, Rob Bogatin!"}
         description="RV MasterPlan Dashboard | Data Aggregation Overview"
-        imageUrl={heroImage || "/images/page-headers/dashboard-header.jpg"}
+        imageUrl={heroImage || (isDemoMode ? "/images/page-headers/demo-dashboard-header.jpg" : "/images/page-headers/dashboard-header.jpg")}
         imageClass="object-cover object-[center_70%]"
       >
         <div className="absolute top-4 right-4 z-10 overflow-hidden rounded-md opacity-30 hover:opacity-100 transition-opacity bg-black/60 p-1 flex items-center justify-center">
