@@ -23,12 +23,27 @@ export default async function DashboardLayout({
                 where: eq(userProfiles.userId, userId)
             });
 
+            const planType = profile?.planType || 'full';
             const isExpired = !profile?.subscriptionRenewalDate || new Date(profile.subscriptionRenewalDate) < new Date();
             const isInactive = profile?.subscriptionStatus !== "active";
 
             if (isExpired || isInactive) {
                 redirect("/renew");
             }
+
+            const { data: settings } = await getSystemSettings();
+            const featureFlags = settings?.featureFlags as Record<string, boolean> | undefined;
+
+            return (
+                <div className="flex min-h-screen bg-[#f8fbf5]">
+                    <Sidebar featureFlags={featureFlags || {}} planType={planType} />
+                    <main className="flex-1 ml-64 bg-[#f8fbf5] relative">
+                        <div className="max-w-6xl mx-auto pb-12">
+                            {children}
+                        </div>
+                    </main>
+                </div>
+            );
         }
     }
 
@@ -37,7 +52,7 @@ export default async function DashboardLayout({
 
     return (
         <div className="flex min-h-screen bg-[#f8fbf5]">
-            <Sidebar featureFlags={featureFlags || {}} />
+            <Sidebar featureFlags={featureFlags || {}} planType="full" />
             <main className="flex-1 ml-64 bg-[#f8fbf5] relative">
                 <div className="max-w-6xl mx-auto pb-12">
                     {children}

@@ -12,6 +12,7 @@ export const userProfiles = pgTable('user_profiles', {
     id: text('id').primaryKey(),
     userId: text('user_id').references(() => users.id).notNull().unique(),
     subscriptionStatus: text('subscription_status').default('inactive'), // 'active', 'inactive', 'admin'
+    planType: text('plan_type').default('full'), // 'full', 'starter'
     subscriptionRenewalDate: timestamp('subscription_renewal_date'),
     firstName: text('first_name'),
     lastName: text('last_name'),
@@ -149,6 +150,12 @@ export const expenses = pgTable('expenses', {
     category: text('category'),
     amount: numeric('amount').default('0'),
     isFixed: boolean('is_fixed').default(false),
+    isFuelEvent: boolean('is_fuel_event').default(false),
+    isPropaneEvent: boolean('is_propane_event').default(false),
+    gallons: numeric('gallons'),
+    odometerReading: integer('odometer_reading'),
+    isHitched: boolean('is_hitched').default(false),
+    stateLocation: text('state_location'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

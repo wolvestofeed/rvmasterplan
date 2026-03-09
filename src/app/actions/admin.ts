@@ -1,7 +1,11 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { users, userProfiles, documents, equipmentItems, eventsAndLogs, rvVehicles, powerSystems, waterSystems, waterActivities, tankLogs, incomes, expenses } from "@/lib/db/schema";
+import {
+    users, userProfiles, documents, equipmentItems, eventsAndLogs, rvVehicles,
+    powerSystems, waterSystems, waterActivities, tankLogs, incomes, expenses,
+    electricalDevices, solarEquipment, dailySolarLogs, financialData
+} from "@/lib/db/schema";
 import { eq, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
@@ -176,8 +180,13 @@ export async function publishToDemo() {
             where: eq(rvVehicles.userId, DEMO_ID)
         });
         if (existingDemoRV) {
-            await db.delete(powerSystems).where(eq(powerSystems.rvId, existingDemoRV.id));
-            await db.delete(waterSystems).where(eq(waterSystems.rvId, existingDemoRV.id));
+            const rvId = existingDemoRV.id;
+            await db.delete(powerSystems).where(eq(powerSystems.rvId, rvId));
+            await db.delete(waterSystems).where(eq(waterSystems.rvId, rvId));
+            await db.delete(electricalDevices).where(eq(electricalDevices.rvId, rvId));
+            await db.delete(solarEquipment).where(eq(solarEquipment.rvId, rvId));
+            await db.delete(dailySolarLogs).where(eq(dailySolarLogs.rvId, rvId));
+            await db.delete(financialData).where(eq(financialData.rvId, rvId));
             await db.delete(rvVehicles).where(eq(rvVehicles.userId, DEMO_ID));
         }
 
@@ -191,10 +200,15 @@ export async function publishToDemo() {
         const adminExp = await db.query.expenses.findMany({ where: eq(expenses.userId, ADMIN_ID) });
         const adminRV = await db.query.rvVehicles.findFirst({ where: eq(rvVehicles.userId, ADMIN_ID) });
 
-        let powerSys, waterSys;
+        let powerSys, waterSys, electricDevs, solarEquip, solarLogs, financials;
         if (adminRV) {
-            powerSys = await db.query.powerSystems.findFirst({ where: eq(powerSystems.rvId, adminRV.id) });
-            waterSys = await db.query.waterSystems.findFirst({ where: eq(waterSystems.rvId, adminRV.id) });
+            const rvId = adminRV.id;
+            powerSys = await db.query.powerSystems.findFirst({ where: eq(powerSystems.rvId, rvId) });
+            waterSys = await db.query.waterSystems.findFirst({ where: eq(waterSystems.rvId, rvId) });
+            electricDevs = await db.query.electricalDevices.findMany({ where: eq(electricalDevices.rvId, rvId) });
+            solarEquip = await db.query.solarEquipment.findMany({ where: eq(solarEquipment.rvId, rvId) });
+            solarLogs = await db.query.dailySolarLogs.findMany({ where: eq(dailySolarLogs.rvId, rvId) });
+            financials = await db.query.financialData.findFirst({ where: eq(financialData.rvId, rvId) });
         }
 
         // 3. Insert as Demo Data
@@ -220,17 +234,37 @@ export async function publishToDemo() {
 
         if (adminRV) {
             const newRvId = crypto.randomUUID();
-            const { id, createdAt, updatedAt, ...rvData } = adminRV as any;
+            const { id: _, createdAt: __, updatedAt: ___, ...rvData } = adminRV as any;
             await db.insert(rvVehicles).values({ id: newRvId, ...rvData, userId: DEMO_ID });
 
             if (powerSys) {
-                const { id: _, rvId: __, createdAt: ___, updatedAt: ____, ...pData } = powerSys as any;
+                const { id: _, rvId: __, updatedAt: ___, ...pData } = powerSys as any;
                 await db.insert(powerSystems).values({ id: crypto.randomUUID(), rvId: newRvId, ...pData });
             }
             if (waterSys) {
-                const { id: _, rvId: __, createdAt: ___, updatedAt: ____, ...wData } = waterSys as any;
+                const { id: _, rvId: __, updatedAt: ___, ...wData } = waterSys as any;
                 await db.insert(waterSystems).values({ id: crypto.randomUUID(), rvId: newRvId, ...wData });
             }
+            if (financials) {
+                const { id: _, rvId: __, updatedAt: ___, ...fData } = financials as any;
+                await db.insert(financialData).values({ id: crypto.randomUUID(), rvId: newRvId, ...fData });
+            }
+
+            // Clone collections
+            const cloneRvArray = (dataArray: any[]) => {
+                return dataArray.map((row) => {
+                    const { id, createdAt, updatedAt, rvId, ...rest } = row as any;
+                    return {
+                        ...rest,
+                        id: crypto.randomUUID(),
+                        rvId: newRvId
+                    };
+                });
+            };
+
+            if (electricDevs && electricDevs.length > 0) await db.insert(electricalDevices).values(cloneRvArray(electricDevs));
+            if (solarEquip && solarEquip.length > 0) await db.insert(solarEquipment).values(cloneRvArray(solarEquip));
+            if (solarLogs && solarLogs.length > 0) await db.insert(dailySolarLogs).values(cloneRvArray(solarLogs));
         }
 
         revalidatePath("/", "layout");

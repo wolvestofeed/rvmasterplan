@@ -8,7 +8,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_fallback", {
     apiVersion: "2024-04-10" as Stripe.StripeConfig["apiVersion"],
 });
 
-export async function createCheckoutSession(productId: string, interval: "month" | "year", amountCents: number) {
+export async function createCheckoutSession(productId: string, interval: "month" | "year" | null, amountCents: number) {
     const { userId } = await auth();
     if (!userId || userId === "demo_user") {
         throw new Error("You must be logged in to subscribe.");
@@ -16,6 +16,9 @@ export async function createCheckoutSession(productId: string, interval: "month"
 
     const headerList = await headers();
     const origin = headerList.get("origin") || "http://localhost:3000";
+
+    const isOneTime = interval === null || productId === 'prod_U761gS5q8ey7b7';
+    const mode = isOneTime ? "payment" : "subscription";
 
     try {
         const session = await stripe.checkout.sessions.create({
@@ -25,21 +28,27 @@ export async function createCheckoutSession(productId: string, interval: "month"
                     price_data: {
                         currency: "usd",
                         product: productId,
-                        recurring: { interval },
+                        ...(isOneTime ? {} : { recurring: { interval: interval as "month" | "year" } }),
                         unit_amount: amountCents,
                     },
                     quantity: 1,
                 },
             ],
-            mode: "subscription",
-            success_url: `${origin}/dashboard?success=true`,
+            mode,
+            success_url: `${origin}/welcome?success=true`,
             cancel_url: `${origin}/?canceled=true`,
             client_reference_id: userId,
-            subscription_data: {
-                metadata: {
-                    userId,
+            ...(isOneTime ? {} : {
+                subscription_data: {
+                    metadata: {
+                        userId,
+                    },
                 },
-            },
+            }),
+            metadata: {
+                userId,
+                isOneTime: String(isOneTime)
+            }
         });
 
         if (!session.url) {

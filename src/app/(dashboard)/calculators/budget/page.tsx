@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
 import { formatCurrency, formatNumber } from "@/lib/utils";
+import { ReceiptScanner } from "@/components/expenses/ReceiptScanner";
 
 import {
     ExpenseItem,
@@ -53,8 +54,11 @@ const expenseSchema = z.object({
 });
 type ExpenseFormValues = z.infer<typeof expenseSchema>;
 
+import { getUserProfile } from "@/app/actions/profiles";
+
 export default function RVBudgetPage() {
     const [isClient, setIsClient] = useState(false);
+    const [planType, setPlanType] = useState<string | null>(null);
 
     const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
     const [currentYear] = useState<number>(new Date().getFullYear());
@@ -67,6 +71,15 @@ export default function RVBudgetPage() {
 
     useEffect(() => {
         setIsClient(true);
+
+        async function checkAccess() {
+            const res = await getUserProfile();
+            if (res.success && res.data) {
+                setPlanType(res.data.planType || 'full');
+            }
+        }
+        checkAccess();
+
         // Initialize default empty budgets
         const initialBudgets = [];
         for (let m = 1; m <= 12; m++) {
@@ -173,6 +186,40 @@ export default function RVBudgetPage() {
 
     if (!isClient) return null;
 
+    if (planType === 'starter') {
+        return (
+            <div className="container mx-auto py-20 px-4 text-center max-w-2xl">
+                <Card className="p-12 border-2 border-dashed border-amber-200 bg-amber-50">
+                    <CardHeader>
+                        <DollarSign className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+                        <CardTitle className="text-3xl font-bold text-amber-900">Pro Feature Restricted</CardTitle>
+                        <CardDescription className="text-lg text-amber-800">
+                            The full <strong>RV Living Budget</strong> suite is only available to Monthly and Annual Pro subscribers.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-amber-700">
+                            Your Starter Pack gives you full access to all <strong>Setup & Build</strong> features (Purchase Calculator, Solar & Power, Water Systems) for 90 days.
+                        </p>
+                        <p className="text-amber-700 font-medium">
+                            To unlock expense tracking, fuel economy, and intelligent budgeting, please consider upgrading to a Pro plan.
+                        </p>
+                    </CardContent>
+                    <CardFooter className="flex flex-col gap-4">
+                        <Button asChild className="w-full bg-amber-600 hover:bg-amber-700 text-white py-6 text-lg font-bold">
+                            <Link href="/renew">Upgrade to Pro</Link>
+                        </Button>
+                        <Button variant="ghost" asChild>
+                            <Link href="/dashboard" className="flex items-center gap-2">
+                                <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+                            </Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
+        );
+    }
+
     return (
         <div className="container mx-auto py-10 px-4 md:px-8 max-w-6xl">
             <HeaderHero
@@ -181,7 +228,11 @@ export default function RVBudgetPage() {
                 imageUrl="/images/page-headers/living-budget-header.jpg"
             />
 
-            <div className="flex flex-col md:flex-row md:items-center justify-end mt-2 mb-8 gap-4">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mt-2 mb-8 gap-4">
+                <div className="w-full md:w-64">
+                    <ReceiptScanner planType={planType || 'full'} />
+                </div>
+
                 <div className="flex items-center gap-3">
                     <Label className="text-sm font-medium">Viewing Month:</Label>
                     <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>

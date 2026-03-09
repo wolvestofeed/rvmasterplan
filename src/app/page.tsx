@@ -53,13 +53,13 @@ export default function LandingPage() {
                     </div>
                 </div>
 
-                <div className="relative z-10 text-center px-4 max-w-4xl mx-auto mt-16">
-                    <h1 className="text-5xl md:text-7xl font-bold text-white mb-32 drop-shadow-lg tracking-tight">
-                        Master Your Money & Resources<br />on the Open Road
+                <div className="relative z-10 text-center px-4 max-w-4xl mx-auto pt-32">
+                    <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 drop-shadow-lg tracking-tight">
+                        Master Your RV Money & Resources,<br />Maximize Your Freedom
                     </h1>
-                    <h2 className="text-3xl md:text-4xl font-semibold text-slate-100 mb-10 drop-shadow-md">
-                        All In One Place.
-                    </h2>
+                    <p className="text-xl md:text-2xl text-slate-200 drop-shadow-md">
+                        Off-grid life management . . . all in one place.
+                    </p>
                 </div>
             </section>
 
@@ -68,7 +68,7 @@ export default function LandingPage() {
             <section className="py-16 px-6 max-w-4xl mx-auto text-center">
                 <h2 className="text-3xl font-bold text-[#2a4f3f] mb-6">The Ultimate Toolkit for Every Road Warrior</h2>
                 <p className="text-lg text-slate-600 leading-relaxed">
-                    RV MasterPlan is for money and resource management, with a complete toolkit of calculators and trackers to forecast your RV loan payments and setup costs, to create the perfect solar system and manage your budget, water, energy, RV weight and waste... all in one place.
+                    RV MasterPlan is for money and resource management, with a complete toolkit of calculators and trackers to forecast your RV loan payments and setup costs, to create the perfect solar and energy system and to manage your budgets, water, energy, fuel, weight and waste... all in one place.
                 </p>
             </section>
 
@@ -109,33 +109,90 @@ export default function LandingPage() {
 
             {/* Pricing / Demo Explanation */}
             <section className="py-20 bg-[#f1f6ea] px-6">
-                <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-8 items-stretch">
+                <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8 items-stretch">
 
                     {/* Guest Mode */}
                     <div className="bg-white rounded-2xl shadow-sm border border-[#e0e8d5] flex flex-col h-full overflow-hidden">
                         <Link href="/dashboard" className="w-full relative h-[320px] block cursor-pointer hover:opacity-90 transition-opacity">
                             <Image
-                                src="/images/thumbs/rvmp-demo-thumb-web-1.jpg"
+                                src="/images/thumbs/rvmp-home-demo-header2-web.jpg"
                                 alt="Guest Mode Demo"
                                 fill
-                                className="object-cover object-top"
+                                className="object-contain"
                                 priority
                             />
                         </Link>
 
                         <div className="p-8 flex flex-col flex-grow">
-                            <h3 className="text-xl font-bold text-slate-800 mb-3 tracking-tight">Guest Demo</h3>
-                            <p className="text-slate-600 mb-6 text-sm flex-grow">
-                                Explore the full potential of our resource management suite with a pre-loaded rig. Experience how our calculators forecast setup costs and optimize off-grid resources like solar and water before you start your own plan.
+                            <h3 className="text-xl font-bold text-slate-800 mb-3 tracking-tight">Full Demo Mode</h3>
+                            <p className="text-black mb-6 text-sm flex-grow">
+                                Explore the full potential of RV MasterPlan's resource management suite with a pre-loaded rig and setup data. Experience how our calculators forecast setup costs and optimize off-grid resources before you start your own plan.
                             </p>
                             <ul className="space-y-2 text-sm text-slate-600 border-t pt-4 mb-6">
-                                <li className="flex items-center">✓ Full access to all calculators</li>
-                                <li className="flex items-center text-amber-600 font-medium">⚠️ Data resets when session ends</li>
+                                <li className="flex items-center text-black font-medium">✓ Full access to all calculators</li>
+                                <li className="flex items-center text-black font-medium">✓ Pre-loaded RV MasterPlan data</li>
+                                <li className="flex items-center text-black font-medium">⚠️ Data resets when session ends</li>
                             </ul>
                             <div className="mt-auto">
                                 <Button asChild variant="outline" className="w-full">
                                     <Link href="/dashboard">Try Guest Mode</Link>
                                 </Button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Starter Pack - One Time Purchase */}
+                    <div className="bg-[#4a90e2] text-white rounded-2xl shadow-xl relative overflow-hidden flex flex-col h-full border border-blue-400">
+                        <div className="w-full relative aspect-video bg-white cursor-pointer hover:opacity-90 transition-opacity" onClick={async () => {
+                            const { createCheckoutSession } = await import('@/app/actions/stripe');
+                            try {
+                                const { url } = await createCheckoutSession('prod_U761gS5q8ey7b7', null, 2000);
+                                window.location.href = url;
+                            } catch (e: unknown) {
+                                const error = e as Error;
+                                alert(error.message);
+                            }
+                        }}>
+                            <Image
+                                src="/images/thumbs/rvmp-starter-bundle-thumb.jpg"
+                                alt="Starter Pack"
+                                fill
+                                className="object-contain"
+                                priority
+                            />
+                        </div>
+
+                        <div className="p-8 flex flex-col flex-grow">
+                            <h3 className="text-xl font-bold mb-3 tracking-tight text-white">Starter Pack $20</h3>
+                            <p className="text-white mb-6 text-sm flex-grow">
+                                Perfect for the "setting up" phase. Get 3 months of one-time access to build your RV MasterPlan: forecast your energy demands and build your solar array, optimize your water and devices, plan your budgets, and more before you hit the road.
+                            </p>
+                            <ul className="space-y-2 text-sm text-blue-100 border-t border-white/20 pt-4 mb-6">
+                                <li className="flex items-center text-white font-medium">✓ 3 Months limited App access</li>
+                                <li className="flex items-center text-white font-medium">✓ Full Access to Setup and Build features</li>
+                                <li className="flex items-center text-white font-medium">✓ No recurring billing</li>
+                            </ul>
+                            <div className="mt-auto">
+                                <SignedOut>
+                                    <SignUpButton mode="modal">
+                                        <Button className="w-full bg-[#8ca163] hover:bg-[#7a8e52] text-white">Sign Up to Buy</Button>
+                                    </SignUpButton>
+                                </SignedOut>
+                                <SignedIn>
+                                    <Button
+                                        className="w-full bg-[#8ca163] hover:bg-[#7a8e52] text-white"
+                                        onClick={async () => {
+                                            const { createCheckoutSession } = await import('@/app/actions/stripe');
+                                            try {
+                                                const { url } = await createCheckoutSession('prod_U761gS5q8ey7b7', null, 2000);
+                                                window.location.href = url;
+                                            } catch (e: unknown) {
+                                                const error = e as Error;
+                                                alert(error.message);
+                                            }
+                                        }}
+                                    >Buy Now $20</Button>
+                                </SignedIn>
                             </div>
                         </div>
                     </div>
@@ -146,7 +203,7 @@ export default function LandingPage() {
                         <div className="w-full relative h-[320px] bg-white cursor-pointer hover:opacity-90 transition-opacity" onClick={async () => {
                             const { createCheckoutSession } = await import('@/app/actions/stripe');
                             try {
-                                const { url } = await createCheckoutSession('prod_U5dlLuufA1MNDN', 'month', 500);
+                                const { url } = await createCheckoutSession('prod_U5dlLuufA1MNDN', 'month', 1000);
                                 window.location.href = url;
                             } catch (e: unknown) {
                                 const error = e as Error;
@@ -154,23 +211,23 @@ export default function LandingPage() {
                             }
                         }}>
                             <Image
-                                src="/images/thumbs/rvmp-monthly-sub-thumb-web-1.jpg"
-                                alt="Full App Subscription $5 Monthly"
+                                src="/images/thumbs/rvmp-home-monthly-header2-web.jpg"
+                                alt="Full App Subscription $10 Monthly"
                                 fill
-                                className="object-fill"
+                                className="object-contain"
                                 priority
                             />
                         </div>
 
                         <div className="p-8 flex flex-col flex-grow">
-                            <h3 className="text-xl font-bold mb-3 tracking-tight relative z-10 text-white">Monthly Pro</h3>
-                            <p className="text-slate-300 mb-6 relative z-10 text-sm flex-grow">
-                                Take command of your financial and physical freedom. Forecast loan payments, manage monthly budgets, and track every resource—energy, water, waste, and weight—with a custom cloud database built for your exact equipment.
+                            <h3 className="text-xl font-bold mb-3 tracking-tight relative z-10 text-white">Monthly Pro $10/mo</h3>
+                            <p className="text-white mb-6 relative z-10 text-sm flex-grow">
+                                Take command of your financial and physical freedom. Forecast loan payments, manage monthly budgets, and track every resource - energy, water, fuel, waste, and weight — with a custom cloud database built for your exact equipment and lifestyle needs.
                             </p>
                             <ul className="space-y-2 text-sm text-slate-200 border-t border-white/20 pt-4 mb-6 relative z-10">
-                                <li className="flex items-center">✓ Custom equipment & solar database</li>
-                                <li className="flex items-center">✓ Advanced water, power & weight tracking</li>
-                                <li className="flex items-center">✓ Complete financial & budget planning</li>
+                                <li className="flex items-center text-white font-medium">✓ Photo to Expense Capture</li>
+                                <li className="flex items-center text-white font-medium">✓ Advanced water, power & weight tracking</li>
+                                <li className="flex items-center text-white font-medium">✓ Complete financial & budget planning</li>
                             </ul>
 
                             <div className="mt-auto space-y-3">
@@ -185,14 +242,14 @@ export default function LandingPage() {
                                         onClick={async () => {
                                             const { createCheckoutSession } = await import('@/app/actions/stripe');
                                             try {
-                                                const { url } = await createCheckoutSession('prod_U5dlLuufA1MNDN', 'month', 500);
+                                                const { url } = await createCheckoutSession('prod_U5dlLuufA1MNDN', 'month', 1000);
                                                 window.location.href = url;
                                             } catch (e: unknown) {
                                                 const error = e as Error;
                                                 alert(error.message);
                                             }
                                         }}
-                                    >Subscribe $5/mo</Button>
+                                    >Subscribe $10/mo</Button>
                                 </SignedIn>
                             </div>
                         </div>
@@ -204,7 +261,7 @@ export default function LandingPage() {
                         <div className="w-full relative h-[320px] bg-white cursor-pointer hover:opacity-90 transition-opacity" onClick={async () => {
                             const { createCheckoutSession } = await import('@/app/actions/stripe');
                             try {
-                                const { url } = await createCheckoutSession('prod_U5eAx39CeZ5HmH', 'year', 5000);
+                                const { url } = await createCheckoutSession('prod_U5eAx39CeZ5HmH', 'year', 6000);
                                 window.location.href = url;
                             } catch (e: unknown) {
                                 const error = e as Error;
@@ -212,23 +269,23 @@ export default function LandingPage() {
                             }
                         }}>
                             <Image
-                                src="/images/thumbs/rvmp-annual-sub-thumb-web-1.jpg"
-                                alt="Full App Subscription $50 Annually"
+                                src="/images/thumbs/rvmp-home-annual2-header-web.jpg"
+                                alt="Full App Subscription $60 Annually"
                                 fill
-                                className="object-cover object-top"
+                                className="object-contain"
                                 priority
                             />
                         </div>
 
                         <div className="p-8 flex flex-col flex-grow">
-                            <h3 className="text-xl font-bold mb-3 tracking-tight relative z-10 text-white">Annual Pro</h3>
-                            <p className="text-slate-300 mb-6 relative z-10 text-sm flex-grow">
-                                The complete toolkit for long-term road confidence. Optimize every component of your journey—from seasonal power strategies to secure document management—with all your resource and money-management tools in one place.
+                            <h3 className="text-xl font-bold mb-3 tracking-tight relative z-10 text-white">Annual Pro $60/yr</h3>
+                            <p className="text-white mb-6 relative z-10 text-sm flex-grow">
+                                The complete RV life management App for long-term confidence on the road. Optimize every component of your adventure - from seasonal solar power strategies to secure document management — with all your off - grid resource and money management tools in one place.
                             </p>
                             <ul className="space-y-2 text-sm text-slate-200 border-t border-white/20 pt-4 mb-6 relative z-10">
-                                <li className="flex items-center">✓ Everything in Monthly Pro</li>
-                                <li className="flex items-center">✓ Secure document & manual vault</li>
-                                <li className="flex items-center text-[#8ca163]">✓ Get 2 months completely free</li>
+                                <li className="flex items-center text-white font-medium">✓ Expanded storage for photos and documents</li>
+                                <li className="flex items-center text-white font-medium">✓ Photo to Expense Capture</li>
+                                <li className="flex items-center text-white font-medium">✓ 50% discount on Monthly Pro</li>
                             </ul>
 
                             <div className="mt-auto space-y-3">
@@ -243,14 +300,14 @@ export default function LandingPage() {
                                         onClick={async () => {
                                             const { createCheckoutSession } = await import('@/app/actions/stripe');
                                             try {
-                                                const { url } = await createCheckoutSession('prod_U5eAx39CeZ5HmH', 'year', 5000);
+                                                const { url } = await createCheckoutSession('prod_U5eAx39CeZ5HmH', 'year', 6000);
                                                 window.location.href = url;
                                             } catch (e: unknown) {
                                                 const error = e as Error;
                                                 alert(error.message);
                                             }
                                         }}
-                                    >Subscribe $50/yr</Button>
+                                    >Subscribe $60/yr</Button>
                                 </SignedIn>
                             </div>
                         </div>

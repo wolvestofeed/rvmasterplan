@@ -30,25 +30,41 @@ export async function POST(req: Request) {
     const session = event.data.object as Stripe.Checkout.Session;
 
     if (event.type === "checkout.session.completed") {
-        // Retrieve the subscription details from Stripe
-        const subscription = await stripe.subscriptions.retrieve(
-            session.subscription as string
-        );
-
-        const userId = session.client_reference_id || subscription.metadata.userId;
-
+        const userId = session.client_reference_id;
         if (!userId) {
-            return new NextResponse("Webhook Error: No user ID present in metadata", { status: 400 });
+            return new NextResponse("Webhook Error: No user ID present in client_reference_id", { status: 400 });
         }
 
-        // Update the user's database profile to activate subscription
-        await db.update(userProfiles)
-            .set({
-                subscriptionStatus: "active",
-                // @ts-expect-error - Stripe type expansion issue
-                subscriptionRenewalDate: new Date(subscription.current_period_end * 1000),
-            })
-            .where(eq(userProfiles.userId, userId));
+        const isOneTime = session.metadata?.isOneTime === 'true';
+        const starterProductId = 'prod_U761gS5q8ey7b7';
+
+        if (isOneTime) {
+            // Logic for "Starter Pack" one-time payment
+            const renewalDate = new Date();
+            renewalDate.setDate(renewalDate.getDate() + 90); // 90 days access
+
+            await db.update(userProfiles)
+                .set({
+                    subscriptionStatus: "active",
+                    planType: "starter",
+                    subscriptionRenewalDate: renewalDate,
+                })
+                .where(eq(userProfiles.userId, userId));
+        } else {
+            // Logic for recurring subscriptions
+            const subscription = await stripe.subscriptions.retrieve(
+                session.subscription as string
+            );
+
+            await db.update(userProfiles)
+                .set({
+                    subscriptionStatus: "active",
+                    planType: "full",
+                    // @ts-expect-error - Stripe type expansion issue
+                    subscriptionRenewalDate: new Date(subscription.current_period_end * 1000),
+                })
+                .where(eq(userProfiles.userId, userId));
+        }
     }
 
     if (event.type === "invoice.payment_succeeded") {

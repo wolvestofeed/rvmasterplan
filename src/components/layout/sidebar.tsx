@@ -15,7 +15,8 @@ import {
     PieChart,
     Settings,
     ShieldAlert,
-    LogOut
+    LogOut,
+    Fuel
 } from "lucide-react";
 import { SignedIn, SignedOut, SignInButton, SignOutButton, UserButton, useUser } from "@clerk/nextjs";
 
@@ -24,6 +25,7 @@ const navItems = [
     { name: "RV Purchase Calculator", href: "/calculators/purchase", icon: Calculator, featureKey: "purchase_calculator" },
     { name: "RV Setup Budget", href: "/calculators/setup", icon: Wallet, featureKey: "setup_budget" },
     { name: "RV Living Budget", href: "/calculators/budget", icon: Banknote, featureKey: "living_budget" },
+    { name: "Fuel Economy", href: "/fuel-economy", icon: Fuel },
     { name: "Power and Solar Calculator", href: "/calculators/power/system", icon: Sun },
     { name: "Water Calculator", href: "/calculators/water", icon: Droplets, featureKey: "water_calculator" },
     { name: "Documents", href: "/documents", icon: FileText, featureKey: "document_manager" },
@@ -31,9 +33,11 @@ const navItems = [
     { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function Sidebar({ featureFlags = {} }: { featureFlags?: Record<string, boolean> }) {
+export function Sidebar({ featureFlags = {}, planType = 'full' }: { featureFlags?: Record<string, boolean>, planType?: string }) {
     const pathname = usePathname();
     const { user } = useUser();
+
+    const isStarter = planType === 'starter';
 
     return (
         <div className="w-64 bg-[#f1f6ea] h-screen fixed left-0 top-0 border-r border-[#e0e8d5] flex flex-col justify-between overflow-y-auto">
@@ -52,7 +56,13 @@ export function Sidebar({ featureFlags = {} }: { featureFlags?: Record<string, b
 
                 <nav className="px-4 space-y-1">
                     {navItems
-                        .filter(item => !item.featureKey || featureFlags[item.featureKey] !== false)
+                        .filter(item => {
+                            // Hide specific items for Starter Pack
+                            if (isStarter && (item.name === "RV Living Budget" || item.name === "Fuel Economy")) {
+                                return false;
+                            }
+                            return !item.featureKey || featureFlags[item.featureKey] !== false;
+                        })
                         .map((item) => {
                             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                             return (
