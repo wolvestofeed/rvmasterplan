@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { getSolarEquipment, getElectricalDevices } from "@/app/actions/power";
+import { getWaterActivities } from "@/app/actions/water";
 import { getUserProfile, updateDashboardHeroImage } from "@/app/actions/profiles";
 import { UploadButton } from "@/lib/uploadthing";
 import { Camera } from "lucide-react";
@@ -65,6 +66,7 @@ export default function Dashboard() {
   const [heroImage, setHeroImage] = useState<string | null>(null);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [dailyConsumption, setDailyConsumption] = useState(0);
+  const [dailyWater, setDailyWater] = useState(0);
 
   const fetchEvents = async () => {
     const res = await getDashboardEvents();
@@ -74,10 +76,11 @@ export default function Dashboard() {
     }
   };
 
-  const fetchEquipmentWeight = async () => {
-    const [resSolar, resDevices] = await Promise.all([
+  const fetchDashboardData = async () => {
+    const [resSolar, resDevices, resWater] = await Promise.all([
       getSolarEquipment(),
-      getElectricalDevices()
+      getElectricalDevices(),
+      getWaterActivities()
     ]);
 
     if (resSolar.success && resSolar.data) {
@@ -88,6 +91,11 @@ export default function Dashboard() {
     if (resDevices.success && resDevices.data) {
       const totalConsumption = resDevices.data.reduce((sum: number, d: any) => sum + (Number(d.watts) * Number(d.hoursPerDay) || 0), 0);
       setDailyConsumption(totalConsumption);
+    }
+
+    if (resWater.success && resWater.data) {
+      const totalWater = resWater.data.reduce((sum: number, act: any) => sum + (Number(act.gallonsPerUse) * Number(act.timesPerDay) || 0), 0);
+      setDailyWater(totalWater);
     }
   };
 
@@ -101,7 +109,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchEvents();
-    fetchEquipmentWeight();
+    fetchDashboardData();
     fetchProfile();
   }, []);
 
@@ -209,7 +217,7 @@ export default function Dashboard() {
         <Card className="border-2 border-[#8ca163] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40">
           <CardContent className="p-4 flex flex-col justify-center">
             <p className="text-sm text-slate-500 font-medium">Avg Daily Water</p>
-            <p className="text-xl font-bold text-[#2a4f3f]">4.2 gal</p>
+            <p className="text-xl font-bold text-[#2a4f3f]">{dailyWater.toFixed(1)} gal</p>
           </CardContent>
         </Card>
 
