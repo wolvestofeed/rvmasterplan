@@ -78,7 +78,7 @@ export default function LandingPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-12 mb-12">
                         <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-xl border-4 border-white">
                             <Image
-                                src="/images/jrb-grand-canyon-24.jpg"
+                                src="/images/rv-photos/jrb-grand-canyon-24.jpg"
                                 alt="Rob Bogatin"
                                 fill
                                 className="object-cover"

@@ -86,7 +86,7 @@ export default function ReportsDashboard() {
                     {/* Left side image column */}
                     <div className="relative w-full md:w-[40%] min-h-[250px] md:min-h-full">
                         <Image
-                            src="/images/forest-sunset.jpg"
+                            src="/images/rv-photos/forest-sunset.jpg"
                             alt="Forest Sunset"
                             fill
                             className="object-cover object-center"

@@ -9,9 +9,9 @@ import { auth } from "@clerk/nextjs/server";
 export async function getWaterSystem() {
     try {
         const { userId } = await auth();
-        if (!userId) return { success: false, error: "Unauthorized" };
+        const activeId = userId || "demo_user";
 
-        const rvs = await db.select().from(rvVehicles).where(eq(rvVehicles.userId, userId)).limit(1);
+        const rvs = await db.select().from(rvVehicles).where(eq(rvVehicles.userId, activeId)).limit(1);
         if (!rvs.length) return { success: false, error: "No RV profile found" };
         const rvId = rvs[0].id;
 
@@ -81,9 +81,9 @@ export async function updateWaterSystem(data: { freshCapacityGal: number, grayCa
 export async function getWaterActivities() {
     try {
         const { userId } = await auth();
-        if (!userId) return { success: false, error: "Unauthorized" };
+        const activeId = userId || "demo_user";
 
-        const results = await db.select().from(waterActivities).where(eq(waterActivities.userId, userId));
+        const results = await db.select().from(waterActivities).where(eq(waterActivities.userId, activeId));
         return { success: true, data: results };
     } catch (error) {
         console.error("Error fetching water activities:", error);
@@ -155,9 +155,9 @@ export async function deleteWaterActivity(id: string) {
 export async function getTankLogs() {
     try {
         const { userId } = await auth();
-        if (!userId) return { success: false, error: "Unauthorized" };
+        const activeId = userId || "demo_user";
 
-        const results = await db.select().from(tankLogs).where(eq(tankLogs.userId, userId));
+        const results = await db.select().from(tankLogs).where(eq(tankLogs.userId, activeId));
         return { success: true, data: results };
     } catch (error) {
         console.error("Error fetching tank logs:", error);
