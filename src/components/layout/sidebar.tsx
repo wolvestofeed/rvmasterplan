@@ -18,7 +18,7 @@ import {
     LogOut,
     Fuel
 } from "lucide-react";
-import { SignedIn, SignedOut, SignInButton, SignOutButton, UserButton, useUser } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, UserButton, useUser, useAuth } from "@clerk/nextjs";
 
 const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -36,8 +36,15 @@ const navItems = [
 export function Sidebar({ featureFlags = {}, planType = 'full' }: { featureFlags?: Record<string, boolean>, planType?: string }) {
     const pathname = usePathname();
     const { user } = useUser();
+    const { signOut } = useAuth();
 
     const isStarter = planType === 'starter';
+
+    const handleLogout = () => {
+        // Clear session flag so SessionGuard doesn't interfere
+        sessionStorage.removeItem("rvmp-session-active");
+        signOut({ redirectUrl: "/" });
+    };
 
     return (
         <div className="w-64 bg-[#f1f6ea] h-screen fixed left-0 top-0 border-r border-[#e0e8d5] flex flex-col justify-between overflow-y-auto">
@@ -100,12 +107,13 @@ export function Sidebar({ featureFlags = {}, planType = 'full' }: { featureFlags
                         <div className="mt-8 mb-2 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                             Session
                         </div>
-                        <SignOutButton>
-                            <button className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-slate-600 hover:bg-red-50 hover:text-red-700 w-full text-left font-semibold">
-                                <LogOut className="h-4 w-4" />
-                                Log Out
-                            </button>
-                        </SignOutButton>
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-slate-600 hover:bg-red-50 hover:text-red-700 w-full text-left font-semibold"
+                        >
+                            <LogOut className="h-4 w-4" />
+                            Log Out
+                        </button>
                     </SignedIn>
                 </nav>
             </div>
@@ -127,12 +135,13 @@ export function Sidebar({ featureFlags = {}, planType = 'full' }: { featureFlags
                                 )}
                             </div>
                         </div>
-                        <SignOutButton>
-                            <button className="w-full flex items-center gap-2 text-slate-600 hover:text-red-700 transition-colors text-sm font-medium py-1.5 px-2 rounded-md hover:bg-red-50">
-                                <LogOut className="w-4 h-4" />
-                                Log Out
-                            </button>
-                        </SignOutButton>
+                        <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-2 text-slate-600 hover:text-red-700 transition-colors text-sm font-medium py-1.5 px-2 rounded-md hover:bg-red-50"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            Log Out
+                        </button>
                     </div>
                 </SignedIn>
                 <SignedOut>

@@ -28,6 +28,7 @@ import { SetupItem, SetupItemCategory, SetupItemPriority } from "@/types";
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
 import { formatCurrency, formatNumber } from "@/lib/utils";
+import { KpiValue } from "@/components/ui/kpi-value";
 import { getEquipmentItems, addEquipmentItem, updateEquipmentItem, deleteEquipmentItem } from "@/app/actions/equipment";
 
 const CATEGORIES: SetupItemCategory[] = [
@@ -243,19 +244,19 @@ export default function RVSetupBudgetPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
                         <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Total Estimated Cost</div>
-                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatCurrency(summary.totalCost)}</div>
+                        <KpiValue>{formatCurrency(summary.totalCost)}</KpiValue>
                     </div>
                     <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
                         <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Spent / Acquired</div>
-                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatCurrency(summary.acquiredCost)}</div>
+                        <KpiValue>{formatCurrency(summary.acquiredCost)}</KpiValue>
                     </div>
                     <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
                         <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Remaining to Purchase</div>
-                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatCurrency(summary.remainingCost)}</div>
+                        <KpiValue>{formatCurrency(summary.remainingCost)}</KpiValue>
                     </div>
                     <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
                         <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Added Weight</div>
-                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatNumber(summary.totalWeight, 1)} lbs</div>
+                        <KpiValue>{formatNumber(summary.totalWeight, 1)} lbs</KpiValue>
                     </div>
                 </div>
             </Card>

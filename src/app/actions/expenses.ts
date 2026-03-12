@@ -17,6 +17,7 @@ export async function saveExpense(data: {
     isHitched?: boolean;
     stateLocation?: string;
     date?: string;
+    receiptUrl?: string;
 }) {
     const { userId } = await auth();
 
@@ -38,6 +39,7 @@ export async function saveExpense(data: {
         odometerReading: data.odometerReading,
         isHitched: data.isHitched || false,
         stateLocation: data.stateLocation,
+        receiptUrl: data.receiptUrl,
     });
 
     revalidatePath("/calculators/budget");

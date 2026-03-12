@@ -20,6 +20,13 @@ export async function createCheckoutSession(productId: string, interval: "month"
     const isOneTime = interval === null || productId === 'prod_U761gS5q8ey7b7';
     const mode = isOneTime ? "payment" : "subscription";
 
+    // Bypass Stripe in development mode
+    if (process.env.NODE_ENV !== "production") {
+        console.log(`[DEV MODE] Bypassing Stripe Checkout for ${productId} (${mode})`);
+        // Simulate a successful checkout return
+        return { url: `${origin}/welcome?success=true` };
+    }
+
     try {
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ["card"],

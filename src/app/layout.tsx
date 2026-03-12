@@ -22,6 +22,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { DemoAuthProvider } from "@/components/auth/demo-provider";
 import { ClerkProvider } from "@clerk/nextjs";
+import { SessionGuard } from "@/components/auth/session-guard";
 
 export default function RootLayout({
   children,
@@ -34,6 +35,7 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#f8fbf5]`}
         >
+          <SessionGuard />
           <DemoAuthProvider>
             <TooltipProvider>
               {children}

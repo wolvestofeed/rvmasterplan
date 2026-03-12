@@ -23,8 +23,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
+import { KpiValue } from "@/components/ui/kpi-value";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import { ReceiptScanner } from "@/components/expenses/ReceiptScanner";
+import { getExpenses, addExpense, deleteExpense, getTargetBudgets, setTargetBudget, updateExpense, batchAddExpenses } from "@/lib/actions/budget";
+import { getFinancialData } from "@/app/actions/financials";
 
 import {
     ExpenseItem,
@@ -38,10 +41,10 @@ const MONTH_NAMES = [
     'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-const CATEGORY_BY_GROUP: Record<string, ExpenseCategory[]> = {
-    'Essential': ['Campground', 'Water', 'Propane', 'Food', 'Personal Supplies', 'RV Supplies', 'Legal', 'Financial', 'Maintenance', 'Other'],
+const CATEGORY_BY_GROUP: Record<string, string[]> = {
+    'Essential': ['Campground', 'Water', 'Propane', 'Gasoline', 'Food', 'Personal Supplies', 'RV Supplies', 'Legal', 'Financial', 'Maintenance', 'Other'],
     'Non-essential': ['Campground', 'Recreation', 'Work', 'Personal Supplies', 'RV Supplies', 'Other'],
-    'All Categories': ['Campground', 'Water', 'Propane', 'Food', 'Personal Supplies', 'RV Supplies', 'Legal', 'Financial', 'Recreation', 'Work', 'Maintenance', 'Other']
+    'All Categories': ['Campground', 'Water', 'Propane', 'Gasoline', 'Food', 'Personal Supplies', 'RV Supplies', 'Legal', 'Financial', 'Recreation', 'Work', 'Maintenance', 'Other']
 };
 
 const expenseSchema = z.object({
@@ -49,8 +52,10 @@ const expenseSchema = z.object({
     group: z.enum(['Essential', 'Non-essential'] as const),
     category: z.string().min(1),
     costPerItem: z.coerce.number().min(0),
-    quantity: z.coerce.number().min(1),
-    tax: z.coerce.number().min(0),
+    quantity: z.coerce.number().min(1, "Quantity must be at least 1").default(1),
+    tax: z.coerce.number().min(0).default(0),
+    gallons: z.coerce.number().min(0).optional(),
+    odometerReading: z.coerce.number().min(0).optional()
 });
 type ExpenseFormValues = z.infer<typeof expenseSchema>;
 
@@ -69,6 +74,39 @@ export default function RVBudgetPage() {
 
     const [editingExpense, setEditingExpense] = useState<ExpenseItem | null>(null);
 
+    const fetchBudgetData = async () => {
+        const [expData, budData] = await Promise.all([
+            getExpenses(currentYear),
+            getTargetBudgets(currentYear)
+        ]);
+
+        const formattedBudgets = [];
+        for (let m = 1; m <= 12; m++) {
+            const dbBudget = budData.find((b: any) => b.month === m);
+            formattedBudgets.push({ month: m, year: currentYear, budgetedAmount: dbBudget ? Number(dbBudget.amount) : 0 });
+        }
+        setBudgets(formattedBudgets);
+
+        if (expData && expData.length > 0) {
+            const formattedExt = expData.map((e: any) => ({
+                id: e.id,
+                name: e.name,
+                group: 'Essential' as ExpenseGroup, // Defaulting for now as we don't store group
+                category: e.category as ExpenseCategory,
+                costPerItem: Number(e.amount),
+                quantity: 1, // Defaulting as we don't store quantity
+                tax: 0,
+                month: e.month || new Date(e.createdAt).getMonth() + 1,
+                year: e.year || new Date(e.createdAt).getFullYear(),
+                gallons: e.gallons || 0,
+                odometerReading: e.odometerReading || 0
+            }));
+            setExpenses(formattedExt);
+        } else {
+            setExpenses([]);
+        }
+    }
+
     useEffect(() => {
         setIsClient(true);
 
@@ -79,27 +117,12 @@ export default function RVBudgetPage() {
             }
         }
         checkAccess();
-
-        // Initialize default empty budgets
-        const initialBudgets = [];
-        for (let m = 1; m <= 12; m++) {
-            initialBudgets.push({ month: m, year: currentYear, budgetedAmount: 0 });
-        }
-        setBudgets(initialBudgets);
-
-        // Add some mock expenses to populate the demo view
-        setExpenses([
-            { id: "1", name: "State Park Fee", group: "Essential", category: "Campground", costPerItem: 35, quantity: 4, tax: 0, month: new Date().getMonth() + 1, year: currentYear },
-            { id: "2", name: "Groceries", group: "Essential", category: "Food", costPerItem: 120, quantity: 2, tax: 0, month: new Date().getMonth() + 1, year: currentYear },
-            { id: "3", name: "Propane Fill", group: "Essential", category: "Propane", costPerItem: 22, quantity: 1, tax: 0, month: new Date().getMonth() + 1, year: currentYear },
-            { id: "4", name: "Starlink", group: "Non-essential", category: "Work", costPerItem: 150, quantity: 1, tax: 0, month: new Date().getMonth() + 1, year: currentYear },
-            { id: "5", name: "National Parks Pass", group: "Non-essential", category: "Recreation", costPerItem: 80, quantity: 1, tax: 0, month: new Date().getMonth() + 1, year: currentYear }
-        ]);
+        fetchBudgetData();
     }, [currentYear]);
 
     const form = useForm<ExpenseFormValues>({
         resolver: zodResolver(expenseSchema) as any,
-        defaultValues: { name: "", group: "Essential", category: "Campground", costPerItem: 0, quantity: 1, tax: 0 }
+        defaultValues: { name: "", group: "Essential", category: "Campground", costPerItem: 0, quantity: 1, tax: 0, gallons: 0, odometerReading: 0 }
     });
 
     const getFilteredExpenses = () => expenses.filter(e => e.month === selectedMonth && e.year === currentYear);
@@ -119,62 +142,161 @@ export default function RVBudgetPage() {
     const healthScore = Math.max(10, Math.round(100 - (percentUsed * (isBudgetOkay ? 0.15 : 0.9))));
     const healthStatus = healthScore >= 80 ? "Excellent" : healthScore >= 60 ? "Good" : healthScore >= 40 ? "Fair" : "Poor";
 
-    const onExpenseSubmit = (data: ExpenseFormValues) => {
+    const onExpenseSubmit = async (data: ExpenseFormValues) => {
         if (editingExpense) {
-            setExpenses(expenses.map(e => e.id === editingExpense.id ? { ...e, ...data, category: data.category as ExpenseCategory } : e));
-            setEditingExpense(null);
-            toast.success("Expense updated");
+            const totalAmount = data.costPerItem * data.quantity;
+            const finalAmount = totalAmount + (totalAmount * (data.tax / 100));
+
+            try {
+                await updateExpense(editingExpense.id, {
+                    name: data.name,
+                    category: data.category,
+                    amount: finalAmount,
+                    isFixed: false,
+                    month: editingExpense.month,
+                    year: editingExpense.year,
+                    group: data.group,
+                    costPerItem: data.costPerItem,
+                    quantity: data.quantity,
+                    tax: data.tax,
+                    gallons: data.gallons,
+                    odometerReading: data.odometerReading,
+                    isFuelEvent: data.category === 'Gasoline',
+                    isPropaneEvent: data.category === 'Propane'
+                });
+
+                setExpenses(expenses.map(e => e.id === editingExpense.id ? { ...e, ...data, costPerItem: data.costPerItem, quantity: data.quantity, tax: data.tax, category: data.category as ExpenseCategory } : e));
+                setEditingExpense(null);
+                toast.success("Expense updated in database");
+            } catch (e: any) {
+                toast.error(e.message);
+            }
         } else {
-            setExpenses([...expenses, { ...data, category: data.category as ExpenseCategory, id: uuidv4(), month: selectedMonth, year: currentYear }]);
-            toast.success("Expense added");
+            const totalAmount = data.costPerItem * data.quantity;
+            const finalAmount = totalAmount + (totalAmount * (data.tax / 100));
+
+            try {
+                const newId = await addExpense({
+                    name: data.name,
+                    category: data.category,
+                    amount: finalAmount,
+                    isFixed: false,
+                    month: selectedMonth,
+                    year: currentYear,
+                    group: data.group,
+                    costPerItem: data.costPerItem,
+                    quantity: data.quantity,
+                    tax: data.tax,
+                    gallons: data.gallons,
+                    odometerReading: data.odometerReading,
+                    isFuelEvent: data.category === 'Gasoline',
+                    isPropaneEvent: data.category === 'Propane' // Keep structure for future logic if needed
+                });
+
+                setExpenses([...expenses, { ...data, category: data.category as ExpenseCategory, id: newId, month: selectedMonth, year: currentYear }]);
+                toast.success("Expense saved to database");
+            } catch (e: any) {
+                toast.error(e.message);
+            }
         }
-        form.reset({ name: "", group: "Essential", category: "Campground", costPerItem: 0, quantity: 1, tax: 0 });
+        form.reset({ name: "", group: "Essential", category: "Campground", costPerItem: 0, quantity: 1, tax: 0, gallons: 0, odometerReading: 0 });
     };
 
     const editExpense = (exp: ExpenseItem) => {
         setEditingExpense(exp);
-        form.reset({ name: exp.name, group: exp.group, category: exp.category, costPerItem: exp.costPerItem, quantity: exp.quantity, tax: exp.tax });
+        form.reset({ name: exp.name, group: exp.group, category: exp.category, costPerItem: exp.costPerItem, quantity: exp.quantity, tax: exp.tax, gallons: exp.gallons || 0, odometerReading: exp.odometerReading || 0 });
 
         // Auto-scroll the page up so the edit form is visible on mobile devices
         window.scrollTo({ top: 200, behavior: 'smooth' });
     };
 
-    const deleteExpense = (id: string) => {
-        setExpenses(expenses.filter(e => e.id !== id));
-        toast.success("Expense removed");
+    const handleDeleteExpense = async (id: string) => {
+        try {
+            await deleteExpense(id);
+            setExpenses(expenses.filter(e => e.id !== id));
+            toast.success("Expense deleted from database");
+        } catch (e: any) {
+            toast.error(e.message);
+        }
     };
 
-    const handleUpdateBudget = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleUpdateBudget = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = parseFloat(e.target.value) || 0;
         setBudgets(budgets.map(b => (b.month === selectedMonth && b.year === currentYear) ? { ...b, budgetedAmount: val } : b));
+
+        try {
+            await setTargetBudget(selectedMonth, currentYear, val);
+        } catch (e: any) {
+            toast.error(e.message);
+        }
     };
 
-    const applyBudgetToAllMonths = () => {
+    const applyBudgetToAllMonths = async () => {
         const currentTarget = budgets.find(b => b.month === selectedMonth && b.year === currentYear)?.budgetedAmount || 0;
         setBudgets(budgets.map(b => ({ ...b, budgetedAmount: currentTarget })));
-        toast.success(`Set ${formatCurrency(currentTarget)} as target for all 12 months`);
+
+        try {
+            const promises = Array.from({ length: 12 }, (_, i) => i + 1).map(m => setTargetBudget(m, currentYear, currentTarget));
+            await Promise.all(promises);
+            toast.success(`Saved ${formatCurrency(currentTarget)} as target for all 12 months`);
+        } catch (e: any) {
+            toast.error(e.message);
+        }
     };
 
-    const autoPopulateFixedCosts = () => {
-        // Generate mock costs based on purchase calculator loan logic
-        const mockLoan = 450;
-        const mockInsurance = 120;
-        const mockRegistration = 35;
+    const autoPopulateFixedCosts = async () => {
+        // Fetch real financial data from the purchase calculator
+        const finRes = await getFinancialData();
+        let monthlyLoan = 0;
+        let monthlyInsurance = 0;
+        let monthlyRegistration = 0;
+
+        if (finRes.success && finRes.data) {
+            const d = finRes.data;
+            const principal = (Number(d.purchasePrice) || 0) + (Number(d.accessories) || 0) + (Number(d.extendedWarranty) || 0) + (Number(d.registrationFees) || 0) - (Number(d.downPayment) || 0) - (Number(d.tradeInValue) || 0);
+            const rate = (Number(d.interestRate) || 0) / 100 / 12;
+            const months = (d.loanTermYears || 5) * 12;
+
+            if (rate > 0 && principal > 0) {
+                monthlyLoan = Math.round((principal * rate * Math.pow(1 + rate, months)) / (Math.pow(1 + rate, months) - 1) * 100) / 100;
+            } else if (principal > 0) {
+                monthlyLoan = Math.round(principal / months * 100) / 100;
+            }
+
+            monthlyInsurance = Math.round((Number(d.insurance) || 0) / 12 * 100) / 100;
+            monthlyRegistration = Math.round((Number(d.registrationFees) || 0) / 12 * 100) / 100;
+        }
+
+        if (monthlyLoan === 0 && monthlyInsurance === 0 && monthlyRegistration === 0) {
+            toast.error("No financial data found. Please complete the Purchase Calculator first.");
+            return;
+        }
+
         const monthlyMaintenance = maintenanceBudget / 12;
 
         const newExpenses = [...expenses];
+        const toAdd = [];
         for (let m = 1; m <= 12; m++) {
             const monthDeps = newExpenses.filter(e => e.month === m && e.year === currentYear);
             const hasLoan = monthDeps.some(e => e.name === 'RV Loan Payment');
             if (!hasLoan) {
-                newExpenses.push({ id: uuidv4(), name: 'RV Loan Payment', group: 'Essential', category: 'Financial', costPerItem: mockLoan, quantity: 1, tax: 0, month: m, year: currentYear });
-                newExpenses.push({ id: uuidv4(), name: 'RV Insurance', group: 'Essential', category: 'Financial', costPerItem: mockInsurance, quantity: 1, tax: 0, month: m, year: currentYear });
-                newExpenses.push({ id: uuidv4(), name: 'RV Registration', group: 'Essential', category: 'Legal', costPerItem: mockRegistration, quantity: 1, tax: 0, month: m, year: currentYear });
-                newExpenses.push({ id: uuidv4(), name: 'RV Maintenance', group: 'Essential', category: 'Maintenance', costPerItem: monthlyMaintenance, quantity: 1, tax: 0, month: m, year: currentYear });
+                const loanE = { id: uuidv4(), name: 'RV Loan Payment', group: 'Essential', category: 'Financial', costPerItem: monthlyLoan, quantity: 1, tax: 0, month: m, year: currentYear };
+                const insE = { id: uuidv4(), name: 'RV Insurance', group: 'Essential', category: 'Financial', costPerItem: monthlyInsurance, quantity: 1, tax: 0, month: m, year: currentYear };
+                const regE = { id: uuidv4(), name: 'RV Registration', group: 'Essential', category: 'Legal', costPerItem: monthlyRegistration, quantity: 1, tax: 0, month: m, year: currentYear };
+                const mainE = { id: uuidv4(), name: 'RV Maintenance', group: 'Essential', category: 'Maintenance', costPerItem: monthlyMaintenance, quantity: 1, tax: 0, month: m, year: currentYear };
+
+                newExpenses.push(loanE as any, insE as any, regE as any, mainE as any);
+                toAdd.push(loanE, insE, regE, mainE);
             }
         }
-        setExpenses(newExpenses);
-        toast.success("Populated fixed monthly costs across all 12 months!");
+
+        try {
+            await batchAddExpenses(toAdd);
+            setExpenses(newExpenses);
+            toast.success("Populated fixed monthly costs from your Purchase Calculator data!");
+        } catch (e: any) {
+            toast.error(e.message);
+        }
     };
 
     const chartData = MONTH_NAMES.map((name, idx) => {
@@ -246,28 +368,24 @@ export default function RVBudgetPage() {
 
             {/* Summary Dash */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <Card className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] relative overflow-hidden">
-                    <CardHeader className="pb-2 relative z-10 p-0 mb-1"><CardTitle className="text-sm text-slate-500 font-medium">Annual Budget</CardTitle></CardHeader>
-                    <CardContent className="p-0 relative z-10"><div className="text-2xl font-bold text-[#2a4f3f]">{formatCurrency(getAnnualBudgetTotal())}</div></CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] relative overflow-hidden">
-                    <CardHeader className="pb-2 relative z-10 p-0 mb-1"><CardTitle className="text-sm text-slate-500 font-medium">YTD Expenses</CardTitle></CardHeader>
-                    <CardContent className="p-0 relative z-10"><div className="text-2xl font-bold text-[#2a4f3f]">{formatCurrency(getYTDExpenses())}</div></CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] relative overflow-hidden">
-                    <CardHeader className="pb-2 relative z-10 p-0 mb-1"><CardTitle className="text-sm text-slate-500 font-medium">Budget Used</CardTitle></CardHeader>
-                    <CardContent className="p-0 relative z-10">
-                        <div className={`text-2xl font-bold ${!isBudgetOkay ? 'text-red-500' : 'text-[#2a4f3f]'}`}>{formatNumber(percentUsed, 1)}%</div>
-                        <div className="text-xs text-slate-500 mt-1">{isBudgetOkay ? "On track" : "Over budget"}</div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] relative overflow-hidden">
-                    <CardHeader className="pb-2 relative z-10 p-0 mb-1"><CardTitle className="text-sm text-slate-500 font-medium">Financial Health</CardTitle></CardHeader>
-                    <CardContent className="p-0 relative z-10">
-                        <div className="text-2xl font-bold text-[#2a4f3f]">{healthScore}/100</div>
-                        <div className="text-xs text-slate-500 mt-1">{healthStatus}</div>
-                    </CardContent>
-                </Card>
+                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Annual Budget</div>
+                    <KpiValue>{formatCurrency(getAnnualBudgetTotal())}</KpiValue>
+                </div>
+                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">YTD Expenses</div>
+                    <KpiValue>{formatCurrency(getYTDExpenses())}</KpiValue>
+                </div>
+                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Budget Used</div>
+                    <div className={`font-bold text-3xl ${!isBudgetOkay ? 'text-red-500' : 'text-[#2a4f3f]'} relative z-10`}>{formatNumber(percentUsed, 1)}%</div>
+                    <div className="text-xs text-slate-500 mt-1 relative z-10">{isBudgetOkay ? "On track" : "Over budget"}</div>
+                </div>
+                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">YTD to Budget Health</div>
+                    <KpiValue>{healthScore}/100</KpiValue>
+                    <div className="text-xs text-slate-500 mt-1 relative z-10">{healthStatus}</div>
+                </div>
             </div>
 
             <Tabs defaultValue="expenses">
@@ -318,6 +436,40 @@ export default function RVBudgetPage() {
                                                 </FormItem>
                                             )} />
                                         </div>
+
+                                        {(form.watch('category') === 'Gasoline' || form.watch('category') === 'Propane') && (
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="gallons"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Gallons Added</FormLabel>
+                                                            <FormControl>
+                                                                <Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                {form.watch('category') === 'Gasoline' && (
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="odometerReading"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Odometer Reading</FormLabel>
+                                                                <FormControl>
+                                                                    <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                )}
+                                            </div>
+                                        )}
+
                                         <div className="grid grid-cols-2 gap-4">
                                             <FormField control={form.control} name="costPerItem" render={({ field }) => (
                                                 <FormItem>
@@ -407,7 +559,7 @@ export default function RVBudgetPage() {
                                                                 >
                                                                     <PencilIcon className="h-4 w-4" />
                                                                 </Button>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => deleteExpense(exp.id)}>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => handleDeleteExpense(exp.id)}>
                                                                     <TrashIcon className="h-4 w-4" />
                                                                 </Button>
                                                             </div>

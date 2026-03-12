@@ -33,6 +33,19 @@ export const ourFileRouter = {
             console.log("Doc Upload complete for userId:", metadata.userId);
             return { uploadedBy: metadata.userId, url: file.url };
         }),
+    receiptUploader: f({ image: { maxFileSize: "1MB", maxFileCount: 1 } })
+        .middleware(async ({ req }) => {
+            const { userId } = await auth();
+            if (!userId) throw new UploadThingError("Unauthorized");
+            if (userId === "demo_user" || userId.startsWith("guest_")) {
+                throw new UploadThingError("View-only mode restrictions apply");
+            }
+            return { userId };
+        })
+        .onUploadComplete(async ({ metadata, file }) => {
+            console.log("Receipt upload complete for userId:", metadata.userId);
+            return { uploadedBy: metadata.userId, url: file.url };
+        }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

@@ -113,7 +113,7 @@ export default function LandingPage() {
 
                     {/* Guest Mode */}
                     <div className="bg-white rounded-2xl shadow-sm border border-[#e0e8d5] flex flex-col h-full overflow-hidden">
-                        <Link href="/dashboard" className="w-full relative h-[320px] block cursor-pointer hover:opacity-90 transition-opacity">
+                        <Link href="/dashboard" className="w-full relative aspect-video block cursor-pointer hover:opacity-90 transition-opacity">
                             <Image
                                 src="/images/thumbs/rvmp-home-demo-header2-web.jpg"
                                 alt="Guest Mode Demo"
@@ -200,7 +200,7 @@ export default function LandingPage() {
                     {/* Pro Monthly Subscription */}
                     <div className="bg-[#2a4f3f] text-white rounded-2xl shadow-xl relative overflow-hidden flex flex-col h-full ring-2 ring-[#8ca163]">
                         {/* New Uploaded Image as Banner */}
-                        <div className="w-full relative h-[320px] bg-white cursor-pointer hover:opacity-90 transition-opacity" onClick={async () => {
+                        <div className="w-full relative aspect-video bg-white cursor-pointer hover:opacity-90 transition-opacity" onClick={async () => {
                             const { createCheckoutSession } = await import('@/app/actions/stripe');
                             try {
                                 const { url } = await createCheckoutSession('prod_U5dlLuufA1MNDN', 'month', 1000);
@@ -258,7 +258,7 @@ export default function LandingPage() {
                     {/* Pro Annual Subscription */}
                     <div className="bg-slate-800 text-white rounded-2xl shadow-xl relative overflow-hidden flex flex-col h-full opacity-90 border border-slate-700">
                         {/* Uploaded Annual Image as Banner */}
-                        <div className="w-full relative h-[320px] bg-white cursor-pointer hover:opacity-90 transition-opacity" onClick={async () => {
+                        <div className="w-full relative aspect-video bg-white cursor-pointer hover:opacity-90 transition-opacity" onClick={async () => {
                             const { createCheckoutSession } = await import('@/app/actions/stripe');
                             try {
                                 const { url } = await createCheckoutSession('prod_U5eAx39CeZ5HmH', 'year', 6000);

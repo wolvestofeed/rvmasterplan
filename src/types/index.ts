@@ -189,7 +189,10 @@ export interface DailySolarLog {
 
 export type ExpenseGroup = 'Essential' | 'Non-essential';
 export type ExpenseCategory =
-    | 'Campground' | 'Water' | 'Propane' | 'Food' | 'Personal Supplies'
+    | 'Campground' | 'Water'
+    | 'Propane'
+    | 'Gasoline'
+    | 'Food' | 'Personal Supplies'
     | 'RV Supplies' | 'Legal' | 'Financial' | 'Recreation' | 'Work'
     | 'Maintenance' | 'Other';
 
@@ -203,6 +206,10 @@ export interface ExpenseItem {
     tax: number;
     month: number;
     year: number;
+    gallons?: number;
+    odometerReading?: number;
+    isFuelEvent?: boolean;
+    isPropaneEvent?: boolean;
 }
 
 export interface MonthlyBudget {

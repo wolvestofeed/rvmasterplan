@@ -149,6 +149,8 @@ export const expenses = pgTable('expenses', {
     name: text('name').notNull(),
     category: text('category'),
     amount: numeric('amount').default('0'),
+    month: integer('month'),
+    year: integer('year'),
     isFixed: boolean('is_fixed').default(false),
     isFuelEvent: boolean('is_fuel_event').default(false),
     isPropaneEvent: boolean('is_propane_event').default(false),
@@ -156,6 +158,16 @@ export const expenses = pgTable('expenses', {
     odometerReading: integer('odometer_reading'),
     isHitched: boolean('is_hitched').default(false),
     stateLocation: text('state_location'),
+    receiptUrl: text('receipt_url'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const targetBudgets = pgTable('target_budgets', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').references(() => users.id).notNull(),
+    month: integer('month').notNull(),
+    year: integer('year').notNull(),
+    amount: numeric('amount').default('0'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

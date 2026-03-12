@@ -26,8 +26,8 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { KpiValue } from "@/components/ui/kpi-value";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
@@ -104,7 +104,6 @@ export default function PowerStrategyPage() {
     const [editingDeviceId, setEditingDeviceId] = useState<string | null>(null);
     const [editingEquipmentId, setEditingEquipmentId] = useState<string | null>(null);
     const [editingLogId, setEditingLogId] = useState<string | null>(null);
-    const [equipmentModalOpen, setEquipmentModalOpen] = useState(false);
     const [logFilterMonth, setLogFilterMonth] = useState<string>('all');
     const [estimatedDeviceWeight, setEstimatedDeviceWeight] = useState<number>(20);
     const [featureSolarCapture, setFeatureSolarCapture] = useState(true);
@@ -210,8 +209,8 @@ export default function PowerStrategyPage() {
     };
 
     const getTotalBatteryCapacity = () => {
-        const standalone = batteries.reduce((sum, b) => sum + (b.capacityWh * b.quantity), 0);
-        const genBats = generators.reduce((sum, g) => sum + (g.batteryCapacityWh * g.quantity), 0);
+        const standalone = batteries.reduce((sum, b) => sum + (((b as any).wattage || 0) * (b.quantity || 1)), 0);
+        const genBats = generators.reduce((sum, g) => sum + (((g as any).wattage || 0) * (g.quantity || 1)), 0);
         return standalone + genBats;
     };
 
@@ -251,7 +250,6 @@ export default function PowerStrategyPage() {
             toast.success(editingEquipmentId ? "Equipment updated!" : "Equipment added!", { id: loadingId });
             await loadData();
             setEditingEquipmentId(null);
-            setEquipmentModalOpen(false);
             equipmentForm.reset();
         } else {
             toast.error(result.error || "Failed to save equipment", { id: loadingId });
@@ -272,7 +270,7 @@ export default function PowerStrategyPage() {
                 wattage: item.wattage || 0,
                 weight: item.weight || 0
             });
-            setEquipmentModalOpen(true);
+            document.getElementById('power-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     };
 
@@ -347,7 +345,7 @@ export default function PowerStrategyPage() {
         if (dev) {
             setEditingDeviceId(id);
             deviceForm.reset({ name: dev.name, group: dev.group, category: dev.category, watts: dev.watts, hoursPerDay: dev.hoursPerDay });
-            window.scrollTo({ top: 200, behavior: 'smooth' });
+            document.getElementById('power-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     };
 
@@ -437,30 +435,30 @@ export default function PowerStrategyPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
                         <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Daily Consumption</div>
-                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatNumber(getTotalDailyConsumption())} <span className="text-sm font-normal">Wh</span></div>
+                        <KpiValue>{formatNumber(getTotalDailyConsumption())} <span className="text-sm font-normal">Wh</span></KpiValue>
                     </div>
                     <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
                         <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Avg Daily Solar Gen</div>
-                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatNumber(getDailySolarGeneration())} <span className="text-sm font-normal">Wh</span></div>
+                        <KpiValue>{formatNumber(getDailySolarGeneration())} <span className="text-sm font-normal">Wh</span></KpiValue>
                         <div className="text-xs text-slate-400 relative z-10">{solarLogs.length > 0 ? `Based on ${solarLogs.length} log${solarLogs.length > 1 ? 's' : ''}` : 'Static estimate'}</div>
                     </div>
                     <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
                         <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Battery Storage</div>
-                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatNumber(getTotalBatteryCapacity())} <span className="text-sm font-normal">Wh</span></div>
+                        <KpiValue>{formatNumber(getTotalBatteryCapacity())} <span className="text-sm font-normal">Wh</span></KpiValue>
                     </div>
                     <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
                         <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Est. Runtime no Sun</div>
-                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{getBatteryRuntime()} <span className="text-sm font-normal">hrs</span></div>
+                        <KpiValue>{getBatteryRuntime()} <span className="text-sm font-normal">hrs</span></KpiValue>
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-4">
                     <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
                         <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Solar System Weight</div>
-                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatNumber(getTotalSolarSystemWeight())} <span className="text-sm font-normal">lbs</span></div>
+                        <KpiValue>{formatNumber(getTotalSolarSystemWeight())} <span className="text-sm font-normal">lbs</span></KpiValue>
                     </div>
                     <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
                         <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Device Weight</div>
-                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatNumber(estimatedDeviceWeight)} <span className="text-sm font-normal">lbs</span></div>
+                        <KpiValue>{formatNumber(estimatedDeviceWeight)} <span className="text-sm font-normal">lbs</span></KpiValue>
                     </div>
                 </div>
                 <div className="mt-6">
@@ -472,7 +470,7 @@ export default function PowerStrategyPage() {
                 </div>
             </Card>
 
-            <Tabs defaultValue="load">
+            <Tabs defaultValue="load" id="power-tabs">
                 <TabsList className="mb-6 grid w-full max-w-lg" style={{ gridTemplateColumns: featureSolarCapture ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)' }}>
                     <TabsTrigger value="load">Electrical Load</TabsTrigger>
                     <TabsTrigger value="solar">Solar Equipment</TabsTrigger>
@@ -640,21 +638,12 @@ export default function PowerStrategyPage() {
                 </TabsContent>
 
                 <TabsContent value="solar" className="space-y-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold text-slate-800">Solar & Power Equipment</h2>
-                        <Dialog open={equipmentModalOpen} onOpenChange={setEquipmentModalOpen}>
-                            <DialogTrigger asChild>
-                                <Button className="bg-amber-600 hover:bg-amber-700 text-white">
-                                    <PlusIcon className="mr-2 h-4 w-4" /> Add Equipment
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[425px]">
-                                <DialogHeader>
-                                    <DialogTitle>{editingEquipmentId ? 'Edit Equipment' : 'Add Power Equipment'}</DialogTitle>
-                                    <DialogDescription>
-                                        {editingEquipmentId ? 'Update this equipment in your power strategy.' : 'Add a new piece of equipment to your power strategy.'}
-                                    </DialogDescription>
-                                </DialogHeader>
+                    <div className="grid lg:grid-cols-3 gap-6">
+                        <div className="space-y-6 lg:col-span-1">
+                            <Card className="p-6">
+                                <h3 className="text-lg font-medium text-slate-800 mb-4">
+                                    {editingEquipmentId ? "Edit Equipment" : "Add Equipment"}
+                                </h3>
                                 <Form {...equipmentForm}>
                                     <form onSubmit={equipmentForm.handleSubmit(onEquipmentSubmit)} className="space-y-4">
                                         <FormField control={equipmentForm.control} name="equipmentType" render={({ field }) => (
@@ -726,18 +715,22 @@ export default function PowerStrategyPage() {
                                                 </FormItem>
                                             )} />
                                         </div>
-                                        <div className="flex justify-end pt-4 gap-2">
+                                        <div className="flex justify-end gap-2 pt-2">
                                             {editingEquipmentId && (
-                                                <Button type="button" variant="outline" className="w-1/3" onClick={() => { setEditingEquipmentId(null); equipmentForm.reset(); setEquipmentModalOpen(false); }}>Cancel</Button>
+                                                <Button type="button" variant="outline" onClick={() => { setEditingEquipmentId(null); equipmentForm.reset(); }}>
+                                                    Cancel
+                                                </Button>
                                             )}
-                                            <Button type="submit" className={`${editingEquipmentId ? 'w-2/3' : 'w-full'} bg-amber-600 hover:bg-amber-700`}>{editingEquipmentId ? 'Update' : 'Add Component'}</Button>
+                                            <Button type="submit" className="bg-amber-600 hover:bg-amber-700">
+                                                {editingEquipmentId ? "Update Equipment" : "Add Equipment"}
+                                            </Button>
                                         </div>
                                     </form>
                                 </Form>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
+                            </Card>
+                        </div>
 
+                        <div className="lg:col-span-2 space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
                         <Card className="p-6">
                             <h3 className="text-lg font-medium text-slate-800 mb-4">
@@ -745,16 +738,20 @@ export default function PowerStrategyPage() {
                             </h3>
                             {genericEquipment.filter(item => item.equipmentType === 'Solar Panel').length === 0 ? <p className="text-sm text-slate-500">No solar panels configured.</p> : (
                                 <div className="space-y-3">
-                                    {genericEquipment.filter(item => item.equipmentType === 'Solar Panel').map(p => (
-                                        <div key={p.id} className="flex flex-col p-3 bg-slate-50 rounded-lg border border-slate-100 group relative">
+                                    {genericEquipment.filter(item => item.equipmentType === 'Solar Panel').map(p => {
+                                        const isEditing = editingEquipmentId === p.id;
+                                        return (
+                                        <div key={p.id} className={`flex flex-col p-3 rounded-lg border group relative transition-all duration-200 ${isEditing ? 'bg-purple-50 border-l-4 border-purple-500' : 'bg-slate-50 border-slate-100'}`}>
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
-                                                    <div className="font-medium text-slate-800">{p.make} {p.model}</div>
+                                                    <div className={`font-medium ${isEditing ? 'text-purple-900' : 'text-slate-800'}`}>
+                                                        {p.make} {p.model} {isEditing && <span className="text-xs ml-2 bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full">Editing</span>}
+                                                    </div>
                                                     <div className="text-xs text-slate-500">{p.specs ? `${p.specs} • ` : ''}Qty: {p.quantity}{p.weight ? ` • ${p.weight * p.quantity} lbs` : ''}</div>
                                                 </div>
                                                 <div className="flex items-center gap-1">
-                                                    <div className="font-bold text-slate-700 mr-2">${formatNumber(p.price * p.quantity)}</div>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => editGenericEquipment(p.id)}>
+                                                    <div className={`font-bold mr-2 ${isEditing ? 'text-purple-700' : 'text-slate-700'}`}>${formatNumber(p.price * p.quantity)}</div>
+                                                    <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" className={`h-8 w-8 ${isEditing ? 'bg-purple-200 text-purple-700' : 'text-slate-400 hover:text-blue-600'}`} onClick={() => editGenericEquipment(p.id)}>
                                                         <PencilIcon className="h-4 w-4" />
                                                     </Button>
                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => deleteGenericEquipment(p.id)}>
@@ -763,7 +760,8 @@ export default function PowerStrategyPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </Card>
@@ -774,16 +772,20 @@ export default function PowerStrategyPage() {
                             </h3>
                             {genericEquipment.filter(item => item.equipmentType === 'Battery' || item.equipmentType === 'Generator').length === 0 ? <p className="text-sm text-slate-500">No storage configured.</p> : (
                                 <div className="space-y-3">
-                                    {genericEquipment.filter(item => item.equipmentType === 'Generator').map(g => (
-                                        <div key={g.id} className="flex flex-col p-3 bg-slate-50 rounded-lg border border-slate-100 group relative">
+                                    {genericEquipment.filter(item => item.equipmentType === 'Generator').map(g => {
+                                        const isEditing = editingEquipmentId === g.id;
+                                        return (
+                                        <div key={g.id} className={`flex flex-col p-3 rounded-lg border group relative transition-all duration-200 ${isEditing ? 'bg-purple-50 border-l-4 border-purple-500' : 'bg-slate-50 border-slate-100'}`}>
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
-                                                    <div className="font-medium text-slate-800">{g.make} {g.model}</div>
+                                                    <div className={`font-medium ${isEditing ? 'text-purple-900' : 'text-slate-800'}`}>
+                                                        {g.make} {g.model} {isEditing && <span className="text-xs ml-2 bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full">Editing</span>}
+                                                    </div>
                                                     <div className="text-xs text-slate-500">Generator {g.specs ? `• ${g.specs}` : ''} • Qty: {g.quantity}{g.weight ? ` • ${g.weight * g.quantity} lbs` : ''}</div>
                                                 </div>
                                                 <div className="flex items-center gap-1">
-                                                    <div className="font-bold text-slate-700 mr-2">${formatNumber(g.price * g.quantity)}</div>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => editGenericEquipment(g.id)}>
+                                                    <div className={`font-bold mr-2 ${isEditing ? 'text-purple-700' : 'text-slate-700'}`}>${formatNumber(g.price * g.quantity)}</div>
+                                                    <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" className={`h-8 w-8 ${isEditing ? 'bg-purple-200 text-purple-700' : 'text-slate-400 hover:text-blue-600'}`} onClick={() => editGenericEquipment(g.id)}>
                                                         <PencilIcon className="h-4 w-4" />
                                                     </Button>
                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => deleteGenericEquipment(g.id)}>
@@ -792,17 +794,22 @@ export default function PowerStrategyPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
-                                    {genericEquipment.filter(item => item.equipmentType === 'Battery').map(b => (
-                                        <div key={b.id} className="flex flex-col p-3 bg-slate-50 rounded-lg border border-slate-100 group relative">
+                                        );
+                                    })}
+                                    {genericEquipment.filter(item => item.equipmentType === 'Battery').map(b => {
+                                        const isEditing = editingEquipmentId === b.id;
+                                        return (
+                                        <div key={b.id} className={`flex flex-col p-3 rounded-lg border group relative transition-all duration-200 ${isEditing ? 'bg-purple-50 border-l-4 border-purple-500' : 'bg-slate-50 border-slate-100'}`}>
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
-                                                    <div className="font-medium text-slate-800">{b.make} {b.model}</div>
+                                                    <div className={`font-medium ${isEditing ? 'text-purple-900' : 'text-slate-800'}`}>
+                                                        {b.make} {b.model} {isEditing && <span className="text-xs ml-2 bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full">Editing</span>}
+                                                    </div>
                                                     <div className="text-xs text-slate-500">Battery {b.specs ? `• ${b.specs}` : ''} • Qty: {b.quantity}{b.weight ? ` • ${b.weight * b.quantity} lbs` : ''}</div>
                                                 </div>
                                                 <div className="flex items-center gap-1">
-                                                    <div className="font-bold text-slate-700 mr-2">${formatNumber(b.price * b.quantity)}</div>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => editGenericEquipment(b.id)}>
+                                                    <div className={`font-bold mr-2 ${isEditing ? 'text-purple-700' : 'text-slate-700'}`}>${formatNumber(b.price * b.quantity)}</div>
+                                                    <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" className={`h-8 w-8 ${isEditing ? 'bg-purple-200 text-purple-700' : 'text-slate-400 hover:text-blue-600'}`} onClick={() => editGenericEquipment(b.id)}>
                                                         <PencilIcon className="h-4 w-4" />
                                                     </Button>
                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => deleteGenericEquipment(b.id)}>
@@ -811,7 +818,8 @@ export default function PowerStrategyPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </Card>
@@ -829,15 +837,19 @@ export default function PowerStrategyPage() {
                                         <p className="text-sm text-slate-500">No {type === 'Battery' ? 'batteries' : type === 'Other' ? 'other items' : `${type.toLowerCase()}s`} configured.</p>
                                     ) : (
                                         <div className="space-y-3">
-                                            {items.map(item => (
-                                                <div key={item.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100 group relative">
+                                            {items.map(item => {
+                                                const isEditing = editingEquipmentId === item.id;
+                                                return (
+                                                <div key={item.id} className={`flex justify-between items-center p-3 rounded-lg border group relative transition-all duration-200 ${isEditing ? 'bg-purple-50 border-l-4 border-purple-500' : 'bg-slate-50 border-slate-100'}`}>
                                                     <div>
-                                                        <div className="font-medium text-slate-800">{item.make} {item.model}</div>
+                                                        <div className={`font-medium ${isEditing ? 'text-purple-900' : 'text-slate-800'}`}>
+                                                            {item.make} {item.model} {isEditing && <span className="text-xs ml-2 bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full">Editing</span>}
+                                                        </div>
                                                         <div className="text-xs text-slate-500">{item.specs ? `${item.specs} • ` : ''}Qty: {item.quantity}{item.weight ? ` • ${item.weight * item.quantity} lbs` : ''}</div>
                                                     </div>
                                                     <div className="flex items-center gap-1">
-                                                        <div className="font-bold text-slate-700 mr-2">${formatNumber(item.price * item.quantity)}</div>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => editGenericEquipment(item.id)}>
+                                                        <div className={`font-bold mr-2 ${isEditing ? 'text-purple-700' : 'text-slate-700'}`}>${formatNumber(item.price * item.quantity)}</div>
+                                                        <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" className={`h-8 w-8 ${isEditing ? 'bg-purple-200 text-purple-700' : 'text-slate-400 hover:text-blue-600'}`} onClick={() => editGenericEquipment(item.id)}>
                                                             <PencilIcon className="h-4 w-4" />
                                                         </Button>
                                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => deleteGenericEquipment(item.id)}>
@@ -845,12 +857,15 @@ export default function PowerStrategyPage() {
                                                         </Button>
                                                     </div>
                                                 </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </Card>
                             );
                         })}
+                    </div>
+                        </div>
                     </div>
                 </TabsContent>
 

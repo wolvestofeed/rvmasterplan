@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import {
     users, userProfiles, documents, equipmentItems, eventsAndLogs, rvVehicles,
     powerSystems, waterSystems, waterActivities, tankLogs, incomes, expenses,
-    electricalDevices, solarEquipment, dailySolarLogs, financialData
+    electricalDevices, solarEquipment, dailySolarLogs, financialData, targetBudgets
 } from "@/lib/db/schema";
 import { eq, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -174,6 +174,7 @@ export async function publishToDemo() {
         await db.delete(tankLogs).where(eq(tankLogs.userId, DEMO_ID));
         await db.delete(incomes).where(eq(incomes.userId, DEMO_ID));
         await db.delete(expenses).where(eq(expenses.userId, DEMO_ID));
+        await db.delete(targetBudgets).where(eq(targetBudgets.userId, DEMO_ID));
 
         // For RV and its related systems:
         const existingDemoRV = await db.query.rvVehicles.findFirst({
@@ -198,6 +199,7 @@ export async function publishToDemo() {
         const adminTL = await db.query.tankLogs.findMany({ where: eq(tankLogs.userId, ADMIN_ID) });
         const adminInc = await db.query.incomes.findMany({ where: eq(incomes.userId, ADMIN_ID) });
         const adminExp = await db.query.expenses.findMany({ where: eq(expenses.userId, ADMIN_ID) });
+        const adminBudgets = await db.query.targetBudgets.findMany({ where: eq(targetBudgets.userId, ADMIN_ID) });
         const adminRV = await db.query.rvVehicles.findFirst({ where: eq(rvVehicles.userId, ADMIN_ID) });
 
         let powerSys, waterSys, electricDevs, solarEquip, solarLogs, financials;
@@ -231,6 +233,28 @@ export async function publishToDemo() {
         if (adminTL.length > 0) await db.insert(tankLogs).values(cloneData(adminTL));
         if (adminInc.length > 0) await db.insert(incomes).values(cloneData(adminInc));
         if (adminExp.length > 0) await db.insert(expenses).values(cloneData(adminExp));
+        if (adminBudgets.length > 0) await db.insert(targetBudgets).values(cloneData(adminBudgets));
+
+        // Upsert demo user profile with static guest values + admin's hero image
+        const adminProfile = await db.query.userProfiles.findFirst({ where: eq(userProfiles.userId, ADMIN_ID) });
+        const demoProfile = await db.query.userProfiles.findFirst({ where: eq(userProfiles.userId, DEMO_ID) });
+        if (demoProfile) {
+            await db.update(userProfiles).set({
+                firstName: "Welcome",
+                lastName: "Guest!",
+                dashboardHeroImage: adminProfile?.dashboardHeroImage || null,
+            }).where(eq(userProfiles.userId, DEMO_ID));
+        } else {
+            await db.insert(userProfiles).values({
+                id: crypto.randomUUID(),
+                userId: DEMO_ID,
+                subscriptionStatus: "active",
+                planType: "full",
+                firstName: "Welcome",
+                lastName: "Guest!",
+                dashboardHeroImage: adminProfile?.dashboardHeroImage || null,
+            });
+        }
 
         if (adminRV) {
             const newRvId = crypto.randomUUID();

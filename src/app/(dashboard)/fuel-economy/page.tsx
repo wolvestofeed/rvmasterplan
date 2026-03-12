@@ -3,14 +3,17 @@
 import { useEffect, useState } from "react";
 import { HeaderHero } from "@/components/layout/header-hero";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Fuel, TrendingUp, Info, ArrowLeft } from "lucide-react";
+import { Fuel, TrendingUp, ArrowLeft } from "lucide-react";
 import { getUserProfile } from "@/app/actions/profiles";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { KpiValue } from "@/components/ui/kpi-value";
 
 export default function FuelEconomyPage() {
     const [isClient, setIsClient] = useState(false);
     const [planType, setPlanType] = useState<string | null>(null);
+
+    const [fuelLogs, setFuelLogs] = useState<any[]>([]);
 
     useEffect(() => {
         setIsClient(true);
@@ -20,7 +23,30 @@ export default function FuelEconomyPage() {
                 setPlanType(res.data.planType || 'full');
             }
         }
+
+        async function loadFuelData() {
+            try {
+                const year = new Date().getFullYear();
+                const expenses = await import("@/lib/actions/budget").then(m => m.getExpenses(year));
+
+                // Filter and sort chronologically/by odometer
+                const fuels = expenses
+                    .filter((e: any) => e.category === 'Gasoline' && e.odometerReading)
+                    .sort((a: any, b: any) => {
+                        if (a.odometerReading !== b.odometerReading) {
+                            return (a.odometerReading || 0) - (b.odometerReading || 0);
+                        }
+                        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                    });
+
+                setFuelLogs(fuels);
+            } catch (error) {
+                console.error("Failed to load fuel data", error);
+            }
+        }
+
         checkAccess();
+        loadFuelData();
     }, []);
 
     if (!isClient) return null;
@@ -58,57 +84,99 @@ export default function FuelEconomyPage() {
             </div>
         );
     }
+    // Mathematics for Fuel Analytics
+    let averageMPG = "--.-";
+    let costPerMile = "--.--";
+    let avgPricePerGallon = "--.--";
+    let totalGallons = 0;
+
+    if (fuelLogs.length >= 2) {
+        let totalDistance = 0;
+        let totalSpent = 0;
+
+        for (let i = 1; i < fuelLogs.length; i++) {
+            const prev = fuelLogs[i - 1];
+            const curr = fuelLogs[i];
+
+            const distance = (curr.odometerReading || 0) - (prev.odometerReading || 0);
+            if (distance > 0 && curr.gallons > 0) {
+                totalDistance += distance;
+                totalGallons += Number(curr.gallons);
+                totalSpent += Number(curr.amount);
+            }
+        }
+
+        if (totalGallons > 0 && totalDistance > 0) {
+            averageMPG = (totalDistance / totalGallons).toFixed(1);
+            costPerMile = "$" + (totalSpent / totalDistance).toFixed(2);
+            avgPricePerGallon = "$" + (totalSpent / totalGallons).toFixed(2);
+        }
+    }
+
     return (
         <div className="container mx-auto py-10 px-4 md:px-8 max-w-6xl">
             <HeaderHero
                 title="Fuel Economy"
-                description="Track your MPG, fuel costs, and efficiency over time. Data is automatically captured from your receipt scans."
-                imageUrl="/images/page-headers/fuel-economy-header.jpg"
+                description="Track your MPG, fuel costs, propane use, and efficiency over time. Data is automatically captured from your Living Budget fuel logs."
+                imageUrl="/images/page-headers/rvmp-fuel-econ-header.jpg"
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                <Card>
-                    <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Average MPG</CardTitle>
-                        <Fuel className="h-4 w-4 text-muted-foreground ml-auto" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">--.-</div>
-                        <p className="text-xs text-muted-foreground">Based on your last 5 fill-ups</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Cost per Mile</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-muted-foreground ml-auto" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">$ --.--</div>
-                        <p className="text-xs text-muted-foreground">Current monthly average</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-blue-50 border-blue-200">
-                    <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-blue-800">Efficiency Insight</CardTitle>
-                        <Info className="h-4 w-4 text-blue-600 ml-auto" />
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-blue-700">
-                            MPG metrics will appear here once you have at least two fuel receipts with odometer readings.
-                        </p>
-                    </CardContent>
-                </Card>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Average MPG</div>
+                    <KpiValue>{averageMPG}</KpiValue>
+                    <div className="text-xs text-slate-500 mt-1 relative z-10">Based on your logged fill-ups</div>
+                </div>
+                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Cost per Mile</div>
+                    <KpiValue>{costPerMile}</KpiValue>
+                    <div className="text-xs text-slate-500 mt-1 relative z-10">Current average</div>
+                </div>
+                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Avg Price / Gallon</div>
+                    <KpiValue>{avgPricePerGallon}</KpiValue>
+                </div>
+                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Total Tracked</div>
+                    <KpiValue>{totalGallons.toFixed(1)} gal</KpiValue>
+                </div>
             </div>
 
-            <div className="mt-12 text-center py-20 border-2 border-dashed rounded-lg bg-slate-50">
-                <Fuel className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-slate-600">No Fuel Data Yet</h3>
-                <p className="text-slate-500 max-w-xs mx-auto mt-2">
-                    Start by snapping a fuel receipt in the RV Living Budget tab. Be sure to include your odometer reading!
-                </p>
-            </div>
+            {fuelLogs.length < 2 ? (
+                <div className="mt-12 text-center py-20 border-2 border-dashed rounded-lg bg-slate-50">
+                    <Fuel className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-slate-600">Pending Fuel Data</h3>
+                    <p className="text-slate-500 max-w-xs mx-auto mt-2">
+                        We need at least two chronological fuel logs with odometer readings to calculate MPG. You currently have {fuelLogs.length}.
+                    </p>
+                </div>
+            ) : (
+                <div className="mt-12">
+                    <h3 className="text-lg font-bold text-slate-800 mb-4">Recent Fill-ups</h3>
+                    <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-50 border-b text-slate-600 uppercase text-xs">
+                                <tr>
+                                    <th className="px-6 py-4">Date</th>
+                                    <th className="px-6 py-4 text-right">Gallons</th>
+                                    <th className="px-6 py-4 text-right">Odometer</th>
+                                    <th className="px-6 py-4 text-right">Total Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y text-slate-700">
+                                {fuelLogs.slice().reverse().map((log: any, i: number) => (
+                                    <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-6 py-4">{new Date(log.createdAt).toLocaleDateString()}</td>
+                                        <td className="px-6 py-4 text-right font-medium">{Number(log.gallons).toFixed(3)}</td>
+                                        <td className="px-6 py-4 text-right">{log.odometerReading?.toLocaleString() || '--'}</td>
+                                        <td className="px-6 py-4 text-right">${Number(log.amount).toFixed(2)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

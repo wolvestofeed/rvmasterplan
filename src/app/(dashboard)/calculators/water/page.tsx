@@ -25,6 +25,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
 import { formatNumber } from "@/lib/utils";
+import { KpiValue } from "@/components/ui/kpi-value";
 import { WaterData, WaterActivity, WaterSummary } from "@/types";
 import { getWaterSystem, getWaterActivities, addWaterActivity, updateWaterActivity, deleteWaterActivity, getTankLogs, addTankLog } from "@/app/actions/water";
 const waterActivitySchema = z.object({
@@ -100,8 +101,12 @@ export default function WaterCalculatorPage() {
         activities.forEach(act => {
             const daily = act.gallonsPerUse * act.timesPerDay;
             fresh += daily;
-            if (act.name.toLowerCase().includes('toilet') || act.name.toLowerCase().includes('flush')) {
+            const name = act.name.toLowerCase();
+            const category = (act.category || '').toLowerCase();
+            if (name.includes('toilet') || name.includes('flush')) {
                 black += daily;
+            } else if (category === 'drinking' || name.includes('drinking')) {
+                // Drinking water is consumed — it doesn't go down the drain
             } else {
                 gray += daily;
             }
@@ -139,14 +144,18 @@ export default function WaterCalculatorPage() {
 
         const sortedLogs = [...tankLogs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-        // Start simulation 3 days ago if no logs, so the tanks show some partial usage for demonstration
-        let startDateStr;
-        if (sortedLogs.length > 0) {
+        // Start simulation from the last fresh fill date, the first log date, or today (no usage yet)
+        let startDateStr: string | undefined;
+        if (waterData.lastFillDate) {
+            startDateStr = waterData.lastFillDate;
+        } else if (sortedLogs.length > 0) {
             startDateStr = sortedLogs[0].date;
-        } else {
-            const threeDaysAgo = new Date();
-            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-            startDateStr = threeDaysAgo.toISOString().split('T')[0];
+        }
+
+        // If no fill date and no logs, tanks stay at initial state (full fresh, empty gray/black)
+        if (!startDateStr) {
+            setProjectedLevels({ fresh, gray, black });
+            return;
         }
 
         const startDate = new Date(startDateStr + "T00:00:00");
@@ -298,19 +307,19 @@ export default function WaterCalculatorPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
                         <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Daily Usage</div>
-                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatNumber(summary.dailyUsage, 1)} gal</div>
+                        <KpiValue>{formatNumber(summary.dailyUsage, 1)} gal</KpiValue>
                     </div>
                     <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
                         <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Days Until Empty</div>
-                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{summary.daysUntilEmpty}</div>
+                        <KpiValue>{summary.daysUntilEmpty}</KpiValue>
                     </div>
                     <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
                         <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Weekly Usage</div>
-                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{formatNumber(summary.weeklyUsage, 1)} gal</div>
+                        <KpiValue>{formatNumber(summary.weeklyUsage, 1)} gal</KpiValue>
                     </div>
                     <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
                         <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Current Tank Level</div>
-                        <div className="font-bold text-3xl text-[#2a4f3f] relative z-10">{summary.percentWaterRemaining}%</div>
+                        <KpiValue>{summary.percentWaterRemaining}%</KpiValue>
                     </div>
                 </div>
             </Card>
@@ -526,8 +535,8 @@ export default function WaterCalculatorPage() {
                             {tankLogs.length > 0 && (
                                 <div className="mt-4 space-y-2">
                                     <h4 className="text-sm font-medium text-slate-700">Recent Logs</h4>
-                                    <div className="max-h-32 overflow-y-auto space-y-2 pr-1">
-                                        {tankLogs.map(log => (
+                                    <div className="space-y-2">
+                                        {[...tankLogs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (
                                             <div key={log.id} className="text-xs flex justify-between items-center p-2 bg-slate-50 border rounded-md">
                                                 <div>
                                                     <span className="font-medium">{log.date}</span>

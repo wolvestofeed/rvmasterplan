@@ -11,48 +11,24 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { getSolarEquipment, getElectricalDevices } from "@/app/actions/power";
-import { getWaterActivities } from "@/app/actions/water";
+import { getWaterActivities, getWaterSystem, getTankLogs } from "@/app/actions/water";
+import { getFinancialData, getRVVehicle } from "@/app/actions/financials";
+import { getExpenses, getTargetBudgets } from "@/lib/actions/budget";
 import { getUserProfile, updateDashboardHeroImage } from "@/app/actions/profiles";
+import { getDashboardEvents, type DashboardEvent } from "@/app/actions/dashboard";
+import { addManualEvent } from "@/app/actions/events";
+import { useState, useEffect } from "react";
 import { UploadButton } from "@/lib/uploadthing";
 import { Camera } from "lucide-react";
-
-// --- Mock Data for Dashboard ---
-const expenseData = [
-  { month: "Jan", budget: 500, actual: 500 },
-  { month: "Feb", budget: 500, actual: 500 },
-  { month: "Mar", budget: 500, actual: 500 },
-  { month: "Apr", budget: 1500, actual: 800 },
-  { month: "May", budget: 1500, actual: 1300 },
-  { month: "Jun", budget: 1500, actual: 800 },
-  { month: "Jul", budget: 2000, actual: 800 },
-  { month: "Aug", budget: 1500, actual: 800 },
-  { month: "Sep", budget: 850, actual: 800 },
-  { month: "Oct", budget: 500, actual: 500 },
-  { month: "Nov", budget: 500, actual: 800 },
-  { month: "Dec", budget: 500, actual: 800 },
-];
+import { KpiValue } from "@/components/ui/kpi-value";
 
 const estimatedDeviceWeight = 20; // Demo default from Power page
 
-const recentActivity = [
-  { id: 1, title: "Setup Item Purchased", desc: "Purchased 'Weight Dist & Sway Control Kit' ($649.99) - added 75 lbs.", date: "Today, 10:24 AM", icon: CheckCircle, color: "text-emerald-500" },
-  { id: 2, title: "Roof Top Solar System", desc: "Purchased 2 x EcoFlow PV400 ($1,799.00). Added to setup inventory.", date: "Yesterday", icon: Flame, color: "text-amber-500" },
-  { id: 3, title: "Water Tank Maintenance", desc: "Flushed grey & black tanks. Reset monitors.", date: "3 Days Ago", icon: Droplet, color: "text-blue-500" },
-  { id: 4, title: "RV Warranty Registration", desc: "Completed setup tracking for extended warranty.", date: "Last Week", icon: Activity, color: "text-purple-500" },
-  { id: 5, title: "Created Master Plan PDF", desc: "Exported current layout report for sharing.", date: "Last Month", icon: Truck, color: "text-slate-500" }
-];
-import { useState, useEffect } from "react";
-import { getDashboardEvents, type DashboardEvent } from "@/app/actions/dashboard";
-import { addManualEvent } from "@/app/actions/events";
-
-const initialUpcomingEvents = [
-  { id: 2, title: "Tire Pressure Inspection [Placeholder]", desc: "Check PSI across all 4 wheels before long transit.", date: "Apr 05, 2026", color: "text-amber-500", rawDate: new Date("2026-04-05"), source: "event" as any },
-  { id: 3, title: "Seasonal Check [Placeholder]", desc: "De-winterize plumbing systems and hook up water filter.", date: "May 10, 2026", color: "text-emerald-500", rawDate: new Date("2026-05-10"), source: "event" as any },
-  { id: 4, title: "Battery System Maintenance [Placeholder]", desc: "Check voltage and clean LFP terminals.", date: "Jul 15, 2026", color: "text-amber-500", rawDate: new Date("2026-07-15"), source: "event" as any },
-];
-
 export default function Dashboard() {
-  const [events, setEvents] = useState<any[]>(initialUpcomingEvents);
+  // --- State for Dashboard Activity & Events ---
+  const [events, setEvents] = useState<any[]>([]);
+  const [monthlyExpenseData, setMonthlyExpenseData] = useState<any[]>([]);
+  const [activityFeed, setActivityFeed] = useState<any[]>([]);
 
   // Modal State
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -67,25 +43,52 @@ export default function Dashboard() {
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [dailyConsumption, setDailyConsumption] = useState(0);
   const [dailyWater, setDailyWater] = useState(0);
+  const [liability, setLiability] = useState(0);
+  const [remainingBudget, setRemainingBudget] = useState(0);
+  const [totalExpenses, setTotalExpenses] = useState(0);
+  const [totalBatteryCapacity, setTotalBatteryCapacity] = useState(0);
+  const [waterSupplyDays, setWaterSupplyDays] = useState(0);
+  const [healthScore, setHealthScore] = useState(100);
+  const [healthText, setHealthText] = useState("Excellent");
+  const [dryWeight, setDryWeight] = useState(0);
+  const [gvwr, setGvwr] = useState(0);
+  const [profileName, setProfileName] = useState("");
 
   const fetchEvents = async () => {
     const res = await getDashboardEvents();
     if (res.success && res.data) {
-      const combined = [...initialUpcomingEvents, ...res.data].sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
-      setEvents(combined.slice(0, 8)); // Top 8 events
+      setEvents(res.data.slice(0, 8)); // Top 8 events
     }
   };
 
   const fetchDashboardData = async () => {
-    const [resSolar, resDevices, resWater] = await Promise.all([
+    const [resSolar, resDevices, resWater, resWaterSys, resFin, resExp, resInc, resLogs, resRV] = await Promise.all([
       getSolarEquipment(),
       getElectricalDevices(),
-      getWaterActivities()
+      getWaterActivities(),
+      getWaterSystem(),
+      getFinancialData(),
+      getExpenses(new Date().getFullYear()),
+      getTargetBudgets(new Date().getFullYear()),
+      getTankLogs(),
+      getRVVehicle()
     ]);
+
+    if (resRV.success && resRV.data) {
+      setDryWeight(Number(resRV.data.dryWeightLbs) || 0);
+      setGvwr(Number(resRV.data.gvwrLbs) || 0);
+    }
 
     if (resSolar.success && resSolar.data) {
       const solarEquipmentWeight = resSolar.data.reduce((total: any, item: any) => total + ((Number(item.weight) || 0) * (Number(item.quantity) || 1)), 0);
       setComputedEquipmentWeight(solarEquipmentWeight + estimatedDeviceWeight);
+
+      const batteries = resSolar.data.filter((e: any) => e.equipmentType === 'Battery');
+      const generators = resSolar.data.filter((e: any) => e.equipmentType === 'Generator');
+
+      const standalone = batteries.reduce((sum: number, b: any) => sum + ((Number(b.wattage) || 0) * (Number(b.quantity) || 1)), 0);
+      const genBats = generators.reduce((sum: number, g: any) => sum + ((Number(g.wattage) || 0) * (Number(g.quantity) || 1)), 0);
+      setTotalBatteryCapacity(standalone + genBats);
     }
 
     if (resDevices.success && resDevices.data) {
@@ -93,10 +96,159 @@ export default function Dashboard() {
       setDailyConsumption(totalConsumption);
     }
 
+    let currentDailyWater = 0;
     if (resWater.success && resWater.data) {
-      const totalWater = resWater.data.reduce((sum: number, act: any) => sum + (Number(act.gallonsPerUse) * Number(act.timesPerDay) || 0), 0);
-      setDailyWater(totalWater);
+      currentDailyWater = resWater.data.reduce((sum: number, act: any) => sum + (Number(act.gallonsPerUse) * Number(act.timesPerDay) || 0), 0);
+      setDailyWater(currentDailyWater);
     }
+
+    if (resWaterSys.success && resWaterSys.data) {
+      const freshCap = resWaterSys.data.freshWaterCapacity || 40;
+      let fresh = freshCap;
+
+      // Project levels based on tank logs (matching Water Calculator logic)
+      if (resLogs.success && resLogs.data) {
+        const sortedLogs = [...resLogs.data].sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        let startDateStr;
+        if (sortedLogs.length > 0) {
+          startDateStr = sortedLogs[0].date;
+        } else {
+          const threeDaysAgo = new Date();
+          threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+          startDateStr = threeDaysAgo.toISOString().split('T')[0];
+        }
+
+        const startDate = new Date(startDateStr + "T00:00:00");
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const currentDate = new Date(startDate);
+        let logIndex = 0;
+
+        while (currentDate <= today) {
+          const dateStr = currentDate.toISOString().split('T')[0];
+
+          while (logIndex < sortedLogs.length && sortedLogs[logIndex].date === dateStr) {
+            const log = sortedLogs[logIndex] as any;
+            if (log.tank === 'Fresh') {
+              if (log.type === 'Fill') fresh = Math.min(freshCap, fresh + Number(log.volume));
+              if (log.type === 'Dump') fresh = Math.max(0, fresh - Number(log.volume));
+            }
+            logIndex++;
+          }
+
+          fresh = Math.max(0, fresh - currentDailyWater);
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      }
+
+      setWaterSupplyDays(currentDailyWater > 0 ? fresh / currentDailyWater : 999);
+    }
+
+    if (resFin.success && resFin.data) {
+      const d = resFin.data;
+      const principal = (Number(d.purchasePrice) || 0) + (Number(d.accessories) || 0) + (Number(d.extendedWarranty) || 0) + (Number(d.registrationFees) || 0) - (Number(d.downPayment) || 0) - (Number(d.tradeInValue) || 0);
+      setLiability(Math.max(0, principal));
+    }
+
+    let tExp = 0;
+    let tInc = 0;
+    const allActivity: any[] = [];
+
+    if (Array.isArray(resExp)) {
+      tExp = resExp.reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
+      setTotalExpenses(tExp);
+
+      resExp.forEach((e: any) => {
+        // Build activity feed
+        const d = new Date(e.createdAt);
+        allActivity.push({
+          id: `exp_${e.id}`,
+          title: `Expense: ${e.name}`,
+          desc: `Spent $${Number(e.amount).toFixed(2)} in ${e.category || 'General'}`,
+          rawDate: d,
+          date: d.toLocaleDateString("en-US", { month: "short", day: "2-digit" }),
+          icon: ShoppingBag,
+          color: "text-amber-500"
+        });
+      });
+    }
+
+    if (Array.isArray(resInc)) {
+      tInc = resInc.reduce((sum: number, i: any) => sum + (Number(i.amount) || 0), 0);
+    }
+
+    // Generate monthly chart metrics for visual
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const expenseMap = monthNames.map(m => ({ month: m, budget: 0, actual: 0 }));
+
+    if (Array.isArray(resInc)) {
+      resInc.forEach((i: any) => {
+        const mIndex = (Number(i.month) || 1) - 1;
+        if (expenseMap[mIndex]) expenseMap[mIndex].budget += (Number(i.amount) || 0);
+      });
+    }
+
+    if (Array.isArray(resExp)) {
+      resExp.forEach((e: any) => {
+        const mIndex = (Number(e.month) || (new Date(e.createdAt).getMonth() + 1)) - 1;
+        if (expenseMap[mIndex]) expenseMap[mIndex].actual += (Number(e.amount) || 0);
+      });
+    }
+
+    setMonthlyExpenseData(expenseMap);
+
+    // Also add water log activity to feed
+    if (resLogs.success && resLogs.data) {
+      resLogs.data.forEach((log: any) => {
+        if (log.type === 'Dump') {
+          const d = new Date(log.date);
+          allActivity.push({
+            id: `log_${log.id}`,
+            title: `${log.tank} Tank Dumped`,
+            desc: `Disposed of ${log.volume} gallons.`,
+            rawDate: d,
+            date: d.toLocaleDateString("en-US", { month: "short", day: "2-digit" }),
+            icon: Droplet,
+            color: "text-blue-500"
+          });
+        }
+      });
+    }
+
+    // Grab some setup records too, if recently tracked (using logs that match 'Equipment')
+    // Fallback: If no activity, keep array empty.
+    const sortedActivity = allActivity.sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime()).slice(0, 5);
+    setActivityFeed(sortedActivity);
+
+    // Strict Living Budget Math
+    const currentMonthNum = new Date().getMonth() + 1;
+    const currentYear = new Date().getFullYear();
+
+    let monthTarget = 0;
+    if (Array.isArray(resInc)) {
+      const targetRow = resInc.find((i: any) => Number(i.month) === currentMonthNum && Number(i.year) === currentYear);
+      if (targetRow) monthTarget = Number(targetRow.amount) || 0;
+    }
+
+    let monthExpenses = 0;
+    if (Array.isArray(resExp)) {
+      const filteredExps = resExp.filter((e: any) => Number(e.month) === currentMonthNum && Number(e.year) === currentYear);
+      monthExpenses = filteredExps.reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
+    }
+
+    setRemainingBudget(monthTarget - monthExpenses);
+
+    const annualBudget = tInc;
+    const percentUsed = annualBudget > 0 ? (tExp / annualBudget) * 100 : 0;
+    const isBudgetOkay = percentUsed <= 100;
+    const score = Math.max(10, Math.round(100 - (percentUsed * (isBudgetOkay ? 0.15 : 0.9))));
+    setHealthScore(score);
+    if (score >= 80) setHealthText("Excellent");
+    else if (score >= 60) setHealthText("Good");
+    else if (score >= 40) setHealthText("Fair");
+    else setHealthText("Poor");
   };
 
   const fetchProfile = async () => {
@@ -104,6 +256,9 @@ export default function Dashboard() {
     if (res.success && res.data) {
       setHeroImage(res.data.dashboardHeroImage);
       setIsDemoMode(res.data.userId === "demo_user" || res.data.userId.startsWith("guest_"));
+      const first = res.data.firstName || "";
+      const last = res.data.lastName || "";
+      setProfileName(`${first} ${last}`.trim());
     }
   };
 
@@ -113,12 +268,15 @@ export default function Dashboard() {
     fetchProfile();
   }, []);
 
+  const payloadCapacity = gvwr > 0 ? gvwr - dryWeight : 0;
+  const waterWeight = Math.round(dailyWater * waterSupplyDays * 8.34); // gallons * lbs per gallon
+  const availablePayload = Math.max(0, payloadCapacity - computedEquipmentWeight - waterWeight);
+
   const weightData = [
-    { name: "Base Vehicle", value: 4850, color: "#e11d48" }, // Red
-    { name: "Payload", value: 460, color: "#fbbf24" }, // Amber
-    { name: "Towable", value: 0, color: "#10b981" }, // Green
-    { name: "Water", value: 350, color: "#3b82f6" }, // Blue
-    { name: "Equipment", value: Math.round(computedEquipmentWeight), color: "#8b5cf6" }, // Purple
+    { name: "Base Vehicle", value: dryWeight, color: "#e11d48" },
+    { name: "Payload Available", value: availablePayload, color: "#fbbf24" },
+    { name: "Water", value: waterWeight, color: "#3b82f6" },
+    { name: "Equipment", value: Math.round(computedEquipmentWeight), color: "#8b5cf6" },
   ];
 
   const handleAddEvent = async (e: React.FormEvent) => {
@@ -160,8 +318,8 @@ export default function Dashboard() {
   return (
     <div className="container mx-auto py-10 px-4 md:px-8 max-w-6xl">
       <HeaderHero
-        title={isDemoMode ? "Welcome, Visitor!" : "Welcome, Rob Bogatin!"}
-        description="RV MasterPlan Dashboard | Data Aggregation Overview"
+        title={isDemoMode ? "Welcome, Visitor!" : `Welcome, ${profileName || "RV Owner"}!`}
+        description="RV MasterPlan Dashboard"
         imageUrl={heroImage || (isDemoMode ? "/images/page-headers/demo-dashboard-header.jpg" : "/images/page-headers/dashboard-header.jpg")}
         imageClass={isDemoMode ? "object-contain object-center bg-[#f8fbf5]" : "object-cover object-[center_70%]"}
         hideOverlay={isDemoMode}
@@ -194,65 +352,45 @@ export default function Dashboard() {
         </div>
       </HeaderHero>
 
-      {/* KPI Grid */}
+      {/* KPI Grid — grouped by category: Financial, Power, Water */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 mt-6">
-        <Card className="border-2 border-[#2a4f3f] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30">
-          <CardContent className="p-4 flex flex-col justify-center">
-            <p className="text-sm text-slate-500 font-medium">Est Liability</p>
-            <p className="text-2xl font-bold text-[#2a4f3f]">$18,644.00</p>
-          </CardContent>
-        </Card>
-        <Card className="border-2 border-[#8ca163] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40">
-          <CardContent className="p-4 flex flex-col justify-center">
-            <p className="text-sm text-slate-500 font-medium">Remaining Budget</p>
-            <p className="text-2xl font-bold text-[#2a4f3f]">$185.98</p>
-          </CardContent>
-        </Card>
-        <Card className="border-2 border-[#2a4f3f] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30">
-          <CardContent className="p-4 flex flex-col justify-center">
-            <p className="text-sm text-slate-500 font-medium">Avg Daily Power</p>
-            <p className="text-xl font-bold text-[#2a4f3f]">1,695 Wh / Day</p>
-          </CardContent>
-        </Card>
-        <Card className="border-2 border-[#8ca163] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40">
-          <CardContent className="p-4 flex flex-col justify-center">
-            <p className="text-sm text-slate-500 font-medium">Avg Daily Water</p>
-            <p className="text-xl font-bold text-[#2a4f3f]">{dailyWater.toFixed(1)} gal</p>
-          </CardContent>
-        </Card>
+        {/* Row 1: Financial */}
+        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Estimated Liability</div>
+          <KpiValue>${liability.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</KpiValue>
+        </div>
+        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">YTD to Budget Health</div>
+          <KpiValue>{healthText} <span className="text-sm text-[#8ca163] font-semibold">{healthScore}/100</span></KpiValue>
+        </div>
+        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Remaining Monthly Budget</div>
+          <KpiValue>${remainingBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</KpiValue>
+        </div>
+        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">YTD Expenses</div>
+          <KpiValue>${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</KpiValue>
+        </div>
 
-        <Card className="border-2 border-[#2a4f3f] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30">
-          <CardContent className="p-4 flex flex-col justify-center">
-            <div>
-              <p className="text-sm text-slate-500 font-medium">Financial Health</p>
-              <p className="text-xl font-bold text-[#2a4f3f]">Excellent <span className="text-sm text-[#8ca163] font-semibold">90/100</span></p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-2 border-[#8ca163] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40">
-          <CardContent className="p-4 flex flex-col justify-center">
-            <div>
-              <p className="text-sm text-slate-500 font-medium">Average Solar Consumption</p>
-              <p className="text-xl font-bold text-[#2a4f3f]">{Math.round(dailyConsumption).toLocaleString()} <span className="text-sm text-[#8ca163] font-semibold">Wh / Day</span></p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-2 border-[#2a4f3f] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30">
-          <CardContent className="p-4 flex flex-col justify-center">
-            <div>
-              <p className="text-sm text-slate-500 font-medium">Estimated Water Supply</p>
-              <p className="text-xl font-bold text-[#2a4f3f]">12.4 Days <span className="text-sm text-[#8ca163] font-semibold">Available</span></p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-2 border-[#8ca163] shadow-[4px_4px_12px_rgba(0,0,0,0.25)] bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40">
-          <CardContent className="p-4 flex flex-col justify-center">
-            <div>
-              <p className="text-sm text-slate-500 font-medium">YTD Expenses</p>
-              <p className="text-xl font-bold text-[#2a4f3f]">$5,477.37</p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Row 2: Power + Water */}
+        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Average Solar Use</div>
+          <KpiValue>{Math.round(dailyConsumption).toLocaleString()} <span className="text-sm text-[#8ca163] font-semibold">Wh / Day</span></KpiValue>
+        </div>
+        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Estimated Runtime No Sun</div>
+          <KpiValue>
+            {dailyConsumption > 0 ? (totalBatteryCapacity / (dailyConsumption / 24)).toFixed(1) : '∞'} <span className="text-sm font-normal">hrs</span>
+          </KpiValue>
+        </div>
+        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Avg Daily Water Use</div>
+          <KpiValue>{dailyWater.toFixed(1)} gal</KpiValue>
+        </div>
+        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
+          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Estimated Water Supply</div>
+          <KpiValue>{waterSupplyDays === 999 ? "∞" : waterSupplyDays.toFixed(1)} Days <span className="text-sm text-[#8ca163] font-semibold">Available</span></KpiValue>
+        </div>
       </div>
 
       {/* Expense Tracker Chart */}
@@ -264,7 +402,7 @@ export default function Dashboard() {
         <CardContent>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={expenseData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+              <BarChart data={monthlyExpenseData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
@@ -291,15 +429,15 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div className="border-b md:border-b-0 md:border-r border-slate-200 pb-4 md:pb-0 md:pr-4">
               <p className="text-sm text-slate-500">Dry Weight</p>
-              <p className="text-2xl font-bold">4,850 lbs</p>
+              <p className="text-2xl font-bold">{dryWeight.toLocaleString()} lbs</p>
             </div>
             <div className="border-b md:border-b-0 md:border-r border-slate-200 pb-4 md:pb-0 md:pr-4">
               <p className="text-sm text-slate-500">Payload Capacity</p>
-              <p className="text-2xl font-bold">1,910 lbs</p>
+              <p className="text-2xl font-bold">{payloadCapacity.toLocaleString()} lbs</p>
             </div>
             <div>
               <p className="text-sm text-slate-500">GVWR</p>
-              <p className="text-2xl font-bold">6,760 lbs</p>
+              <p className="text-2xl font-bold">{gvwr.toLocaleString()} lbs</p>
             </div>
           </div>
 
@@ -310,17 +448,19 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-sm text-slate-500">Water Weight</p>
-              <p className="text-xl font-bold">350 lbs</p>
+              <p className="text-xl font-bold">{waterWeight.toLocaleString()} lbs</p>
             </div>
             <div>
               <p className="text-sm text-slate-500">Cargo Status</p>
-              <p className="text-xl font-bold text-emerald-600">Normal Range</p>
-              <p className="text-xs text-slate-500">Available payload: 1,310 lbs</p>
+              <p className={`text-xl font-bold ${availablePayload > 200 ? "text-emerald-600" : availablePayload > 0 ? "text-amber-500" : "text-red-600"}`}>
+                {availablePayload > 200 ? "Normal Range" : availablePayload > 0 ? "Near Limit" : "Overweight"}
+              </p>
+              <p className="text-xs text-slate-500">Available payload: {availablePayload.toLocaleString()} lbs</p>
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center mt-8 pt-6 border-t border-slate-100 h-[250px]">
-            <div className="w-full md:w-1/2 h-full">
+          <div className="flex flex-col md:flex-row items-center mt-8 pt-6 border-t border-slate-100 min-h-[300px]">
+            <div className="w-full md:w-1/2 h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -359,25 +499,28 @@ export default function Dashboard() {
 
       {/* Activity and Events Split */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-lg font-bold text-slate-800">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {recentActivity.map((activity, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className={`mt-1 ${activity.color}`}>
-                    <activity.icon className="w-5 h-5" />
+              {activityFeed.length === 0 ? (
+                <p className="text-sm text-slate-500">No recent activity.</p>
+              ) : (
+                activityFeed.map((activity, i) => (
+                  <div key={i} className="flex gap-4">
+                    <div className={`mt-1 ${activity.color}`}>
+                      <activity.icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-800">{activity.title}</h4>
+                      <p className="text-xs text-slate-500 mb-1">{activity.desc}</p>
+                      <p className="text-xs text-slate-400">{activity.date}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-800">{activity.title}</h4>
-                    <p className="text-xs text-slate-500 mb-1">{activity.desc}</p>
-                    <p className="text-xs text-slate-400">{activity.date}</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

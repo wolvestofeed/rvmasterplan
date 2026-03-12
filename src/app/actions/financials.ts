@@ -6,6 +6,22 @@ import { eq } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
+export async function getRVVehicle() {
+    try {
+        const { userId } = await auth();
+        const activeId = userId || "demo_user";
+
+        const rv = await db.query.rvVehicles.findFirst({
+            where: eq(rvVehicles.userId, activeId)
+        });
+
+        if (!rv) return { success: false, error: "RV Profile not found" };
+        return { success: true, data: rv };
+    } catch (error) {
+        return { success: false, error: "Failed to fetch RV vehicle data" };
+    }
+}
+
 export async function getFinancialData() {
     try {
         const { userId } = await auth();
