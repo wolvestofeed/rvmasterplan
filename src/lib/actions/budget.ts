@@ -9,10 +9,7 @@ import { revalidatePath } from 'next/cache';
 export async function getTargetBudgets(year: number) {
     const { userId } = await auth();
     const activeId = userId || "demo_user";
-    console.log(`[DEBUG TARGET BUD] User: ${activeId}, Year: ${year}`);
-
     const res = await db.select().from(targetBudgets).where(and(eq(targetBudgets.userId, activeId), eq(targetBudgets.year, year)));
-    console.log(`[DEBUG TARGET BUD] Result Length: ${res.length}`);
     return res;
 }
 

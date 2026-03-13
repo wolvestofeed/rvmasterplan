@@ -17,7 +17,6 @@ export default async function DashboardLayout({
         const client = await clerkClient();
         const user = await client.users.getUser(userId);
         const role = user.publicMetadata?.role as string | undefined;
-
         if (role !== "admin") {
             const profile = await db.query.userProfiles.findFirst({
                 where: eq(userProfiles.userId, userId)

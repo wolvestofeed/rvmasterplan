@@ -2,12 +2,18 @@ import React from 'react'
 import { Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer'
 import { colors, fonts, shared } from './styles'
 import { pdfImageUrl } from './utils'
+import { PageFooter } from './components/PageFooter'
 
 const styles = StyleSheet.create({
   // ── Page 1: Hero cover ──────────────────────────────────────────
   coverPage: {
     ...shared.page,
     paddingBottom: 0,
+    padding: 0,
+  },
+  coverWrapper: {
+    width: '100%',
+    height: '100%',
   },
   heroImage: {
     position: 'absolute',
@@ -26,35 +32,29 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.52)',
   },
   contentContainer: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     flexDirection: 'column',
     justifyContent: 'space-between',
     padding: 40,
   },
   topSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 16,
   },
   logo: {
-    width: 160,
-    height: 44,
+    width: 320,
+    height: 90,
     objectFit: 'contain',
-  },
-  dateChip: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  dateChipText: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: fonts.sizeSm,
   },
   centerSection: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     paddingVertical: 24,
   },
   eyebrow: {
@@ -64,6 +64,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: 'uppercase',
     marginBottom: 10,
+    textAlign: 'center',
   },
   mainTitle: {
     color: colors.white,
@@ -71,6 +72,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
     lineHeight: 1.1,
     marginBottom: 14,
+    textAlign: 'center',
   },
   divider: {
     width: 60,
@@ -84,18 +86,24 @@ const styles = StyleSheet.create({
     fontSize: fonts.sizeMd,
     maxWidth: 360,
     lineHeight: 1.5,
+    textAlign: 'center',
   },
-  rvPill: {
-    marginTop: 18,
+  metaRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+  },
+  metaChip: {
     backgroundColor: 'rgba(80,136,156,0.3)',
     borderWidth: 1,
     borderColor: 'rgba(80,136,156,0.6)',
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 6,
-    alignSelf: 'flex-start',
   },
-  rvPillText: {
+  metaChipText: {
     color: colors.white,
     fontSize: fonts.sizeSm,
     fontFamily: 'Helvetica-Bold',
@@ -103,8 +111,8 @@ const styles = StyleSheet.create({
 
   // ── Page 2: TOC page ────────────────────────────────────────────
   tocPage: {
-    ...shared.page,
-    backgroundColor: colors.sageLight,
+    fontFamily: 'Helvetica',
+    backgroundColor: colors.sage,
   },
   tocPageInner: {
     flex: 1,
@@ -252,32 +260,33 @@ export function MasterCover({ userName, rvLabel }: MasterCoverProps) {
     <>
       {/* ── Page 1: Full-bleed hero cover ── */}
       <Page size="A4" style={styles.coverPage}>
+        <View style={styles.coverWrapper}>
         <Image src={pdfImageUrl('/images/page-headers/rvmp-masterplan-cover.jpg')} style={styles.heroImage} />
         <View style={styles.overlay} />
 
         <View style={styles.contentContainer}>
-          {/* Top: logo + date */}
+          {/* Top: transparent logo centered */}
           <View style={styles.topSection}>
-            <Image src={pdfImageUrl('/images/logos/rv-masterplan-logo-landscape.png')} style={styles.logo} />
-            <View style={styles.dateChip}>
-              <Text style={styles.dateChipText}>{today}</Text>
-            </View>
+            <Image src={pdfImageUrl('/images/logos/RV-MasterPlan_logo-header.jpg')} style={styles.logo} />
           </View>
 
           {/* Center: title block */}
           <View style={styles.centerSection}>
             <Text style={styles.eyebrow}>Comprehensive Strategy</Text>
-            <Text style={styles.mainTitle}>RV{'\n'}MasterPlan</Text>
+            <Text style={styles.mainTitle}>RV MasterPlan</Text>
             <View style={styles.divider} />
-            <Text style={styles.tagline}>
-              Your complete RV lifestyle strategy — budgets, power systems, water management, and more, compiled into one document.
-            </Text>
-            {chips.length > 0 && (
-              <View style={styles.rvPill}>
-                <Text style={styles.rvPillText}>{chips.join('  ·  ')}</Text>
+            <View style={styles.metaRow}>
+              {userName && (
+                <View style={styles.metaChip}>
+                  <Text style={styles.metaChipText}>{userName}</Text>
+                </View>
+              )}
+              <View style={styles.metaChip}>
+                <Text style={styles.metaChipText}>{today}</Text>
               </View>
-            )}
+            </View>
           </View>
+        </View>
         </View>
       </Page>
 
@@ -328,6 +337,7 @@ export function MasterCover({ userName, rvLabel }: MasterCoverProps) {
           </View>
 
         </View>
+        <PageFooter deptLabel="Table of Contents" />
       </Page>
     </>
   )

@@ -10,6 +10,7 @@ import { PageFooter } from '../components/PageFooter'
 
 const styles = StyleSheet.create({
   page: { ...shared.page },
+  headerPage: { ...shared.headerPage },
   categorySection: {
     marginHorizontal: 30,
     marginTop: 6,
@@ -149,7 +150,7 @@ export function SetupBudgetPages({ items }: SetupBudgetReportProps) {
   return (
     <>
       {/* Page 1: Metrics + Category Summary */}
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.headerPage}>
         <PageHeader
           imagePath="/images/page-headers/rv-setup-header.jpg"
           badge="Department Report"
@@ -194,14 +195,12 @@ export function SetupBudgetPages({ items }: SetupBudgetReportProps) {
 
       {/* Page 2: Full Equipment List */}
       <Page size="A4" style={styles.page}>
-        <View style={{ paddingTop: 28 }}>
-          <SectionTitle title="Full Equipment List" />
-          <PdfTable
-            columns={listColumns}
-            rows={listRows}
-            emptyMessage="No equipment items recorded."
-          />
-        </View>
+        <SectionTitle title="Full Equipment List" />
+        <PdfTable
+          columns={listColumns}
+          rows={listRows}
+          emptyMessage="No equipment items recorded."
+        />
         <PageFooter deptLabel="RV Setup Budget" pageLabel="Page 2" />
       </Page>
     </>

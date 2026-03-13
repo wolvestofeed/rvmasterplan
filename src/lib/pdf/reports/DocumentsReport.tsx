@@ -10,6 +10,7 @@ import { PageFooter } from '../components/PageFooter'
 
 const styles = StyleSheet.create({
   page: { ...shared.page },
+  headerPage: { ...shared.headerPage },
   renewalSection: {
     marginHorizontal: 30,
     marginTop: 6,
@@ -153,7 +154,7 @@ export function DocumentsPages({ documents }: DocumentsReportProps) {
   return (
     <>
       {/* Page 1: Metrics + Upcoming Renewals */}
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.headerPage}>
         <PageHeader
           imagePath="/images/page-headers/documents-header.png"
           badge="Department Report"
@@ -205,14 +206,12 @@ export function DocumentsPages({ documents }: DocumentsReportProps) {
 
       {/* Page 2: Full Document Registry */}
       <Page size="A4" style={styles.page}>
-        <View style={{ paddingTop: 28 }}>
-          <SectionTitle title="Full Document Registry" />
-          <PdfTable
-            columns={docColumns}
-            rows={docRows}
-            emptyMessage="No documents on file."
-          />
-        </View>
+        <SectionTitle title="Full Document Registry" />
+        <PdfTable
+          columns={docColumns}
+          rows={docRows}
+          emptyMessage="No documents on file."
+        />
         <PageFooter deptLabel="Documents & Renewals" pageLabel="Page 2" />
       </Page>
     </>

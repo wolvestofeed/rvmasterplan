@@ -9,8 +9,6 @@ import { PageFooter } from '../components/PageFooter'
 
 const styles = StyleSheet.create({
   page: { ...shared.page },
-  footer: { ...shared.footer },
-  footerText: { ...shared.footerText },
   equipmentBlock: {
     marginHorizontal: 30,
     marginTop: 8,
@@ -189,7 +187,7 @@ export function PowerSolarPages({ devices, solarEquipment }: PowerSolarReportPro
   return (
     <>
       {/* Page 1: Load Analysis */}
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={shared.headerPage}>
         <PageHeader
           imagePath="/images/page-headers/power_solar-header.jpg"
           badge="Department Report"
@@ -226,63 +224,61 @@ export function PowerSolarPages({ devices, solarEquipment }: PowerSolarReportPro
 
       {/* Page 2: Solar Equipment */}
       <Page size="A4" style={styles.page}>
-        <View style={{ paddingTop: 28 }}>
-          <SectionTitle title="Solar Panels" />
-          <PdfTable
-            columns={panelColumns}
-            rows={panelRows}
-            emptyMessage="No solar panels configured."
-          />
+        <SectionTitle title="Solar Panels" />
+        <PdfTable
+          columns={panelColumns}
+          rows={panelRows}
+          emptyMessage="No solar panels configured."
+        />
 
-          {batteries.length > 0 && (
-            <>
-              <SectionTitle title="Battery Bank" />
-              <PdfTable
-                columns={batteryColumns}
-                rows={batteryRows}
-                emptyMessage="No batteries configured."
-              />
-            </>
-          )}
+        {batteries.length > 0 && (
+          <>
+            <SectionTitle title="Battery Bank" />
+            <PdfTable
+              columns={batteryColumns}
+              rows={batteryRows}
+              emptyMessage="No batteries configured."
+            />
+          </>
+        )}
 
-          {generators.length > 0 && (
-            <>
-              <SectionTitle title="Generators" />
-              <PdfTable
-                columns={[
-                  { header: 'Make / Model', key: 'makeModel', flex: 2 },
-                  { header: 'Output', key: 'output', flex: 1, align: 'right' },
-                  { header: 'Qty', key: 'qty', flex: 0.6, align: 'right' },
-                  { header: 'Weight', key: 'weight', flex: 1, align: 'right' },
-                ]}
-                rows={generators.map((g) => ({
-                  makeModel: [g.make, g.model].filter(Boolean).join(' ') || 'Unknown',
-                  output: `${g.wattage ?? 0}W`,
-                  qty: String(g.quantity ?? 1),
-                  weight: g.weight ? `${g.weight} lbs` : '—',
-                }))}
-              />
-            </>
-          )}
+        {generators.length > 0 && (
+          <>
+            <SectionTitle title="Generators" />
+            <PdfTable
+              columns={[
+                { header: 'Make / Model', key: 'makeModel', flex: 2 },
+                { header: 'Output', key: 'output', flex: 1, align: 'right' },
+                { header: 'Qty', key: 'qty', flex: 0.6, align: 'right' },
+                { header: 'Weight', key: 'weight', flex: 1, align: 'right' },
+              ]}
+              rows={generators.map((g) => ({
+                makeModel: [g.make, g.model].filter(Boolean).join(' ') || 'Unknown',
+                output: `${g.wattage ?? 0}W`,
+                qty: String(g.quantity ?? 1),
+                weight: g.weight ? `${g.weight} lbs` : '—',
+              }))}
+            />
+          </>
+        )}
 
-          {other.length > 0 && (
-            <>
-              <SectionTitle title="Other Equipment" />
-              <PdfTable
-                columns={[
-                  { header: 'Make / Model', key: 'makeModel', flex: 2 },
-                  { header: 'Type', key: 'type', flex: 1.5 },
-                  { header: 'Qty', key: 'qty', flex: 0.6, align: 'right' },
-                ]}
-                rows={other.map((e) => ({
-                  makeModel: [e.make, e.model].filter(Boolean).join(' ') || 'Unknown',
-                  type: e.equipmentType,
-                  qty: String(e.quantity ?? 1),
-                }))}
-              />
-            </>
-          )}
-        </View>
+        {other.length > 0 && (
+          <>
+            <SectionTitle title="Other Equipment" />
+            <PdfTable
+              columns={[
+                { header: 'Make / Model', key: 'makeModel', flex: 2 },
+                { header: 'Type', key: 'type', flex: 1.5 },
+                { header: 'Qty', key: 'qty', flex: 0.6, align: 'right' },
+              ]}
+              rows={other.map((e) => ({
+                makeModel: [e.make, e.model].filter(Boolean).join(' ') || 'Unknown',
+                type: e.equipmentType,
+                qty: String(e.quantity ?? 1),
+              }))}
+            />
+          </>
+        )}
 
         <PageFooter deptLabel="Power & Solar Strategy" pageLabel="Page 2" />
       </Page>

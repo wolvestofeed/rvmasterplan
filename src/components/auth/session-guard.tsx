@@ -10,9 +10,11 @@ const SESSION_KEY = "rvmp-session-active";
  * Uses sessionStorage (cleared on browser close) to detect fresh sessions.
  */
 export function SessionGuard() {
-  const { isSignedIn, signOut } = useAuth();
+  const { isLoaded, isSignedIn, signOut } = useAuth();
 
   useEffect(() => {
+    if (!isLoaded) return; // Wait for Clerk to finish hydrating
+
     const hasActiveSession = sessionStorage.getItem(SESSION_KEY);
 
     if (!hasActiveSession && isSignedIn) {
@@ -23,7 +25,7 @@ export function SessionGuard() {
 
     // Mark this browser session as active
     sessionStorage.setItem(SESSION_KEY, "1");
-  }, [isSignedIn, signOut]);
+  }, [isLoaded, isSignedIn, signOut]);
 
   return null;
 }

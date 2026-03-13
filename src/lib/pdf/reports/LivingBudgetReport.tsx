@@ -10,6 +10,7 @@ import { PageFooter } from '../components/PageFooter'
 
 const styles = StyleSheet.create({
   page: { ...shared.page },
+  headerPage: { ...shared.headerPage },
   summaryRow: {
     flexDirection: 'row',
     paddingVertical: 5,
@@ -158,7 +159,7 @@ export function LivingBudgetPages({ expenses, budgets, year }: LivingBudgetRepor
   return (
     <>
       {/* Page 1: Summary + Monthly breakdown */}
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.headerPage}>
         <PageHeader
           imagePath="/images/page-headers/living-budget-header.jpg"
           badge="Department Report"
@@ -233,14 +234,12 @@ export function LivingBudgetPages({ expenses, budgets, year }: LivingBudgetRepor
 
       {/* Page 2: Expense Ledger */}
       <Page size="A4" style={styles.page}>
-        <View style={{ paddingTop: 28 }}>
-          <SectionTitle title="Expense Ledger" />
-          <PdfTable
-            columns={ledgerColumns}
-            rows={ledgerRows}
-            emptyMessage="No expenses recorded for this period."
-          />
-        </View>
+        <SectionTitle title="Expense Ledger" />
+        <PdfTable
+          columns={ledgerColumns}
+          rows={ledgerRows}
+          emptyMessage="No expenses recorded for this period."
+        />
         <PageFooter deptLabel="RV Living Budget" pageLabel="Page 2" />
       </Page>
     </>

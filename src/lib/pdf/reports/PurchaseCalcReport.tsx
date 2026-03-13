@@ -10,6 +10,7 @@ import { PageFooter } from '../components/PageFooter'
 
 const styles = StyleSheet.create({
   page: { ...shared.page },
+  headerPage: { ...shared.headerPage },
   twoCol: {
     flexDirection: 'row',
     gap: 12,
@@ -246,7 +247,7 @@ export function PurchaseCalcPages({ financials, rv }: PurchaseCalcReportProps) {
 
   return (
     <>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.headerPage}>
         <PageHeader
           imagePath="/images/page-headers/purchase-header.png"
           badge="Department Report"
@@ -319,14 +320,12 @@ export function PurchaseCalcPages({ financials, rv }: PurchaseCalcReportProps) {
 
       {hasData && yearRows.length > 0 && (
         <Page size="A4" style={styles.page}>
-          <View style={{ paddingTop: 28 }}>
-            <SectionTitle title="Annual Amortization Overview" />
-            <PdfTable
-              columns={yearColumns}
-              rows={yearRows}
-              emptyMessage="No amortization data available."
-            />
-          </View>
+          <SectionTitle title="Annual Amortization Overview" />
+          <PdfTable
+            columns={yearColumns}
+            rows={yearRows}
+            emptyMessage="No amortization data available."
+          />
           <PageFooter deptLabel="RV Purchase Calculator" pageLabel="Page 2" />
         </Page>
       )}

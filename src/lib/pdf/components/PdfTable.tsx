@@ -85,7 +85,7 @@ export function PdfTable({ columns, rows, emptyMessage = 'No data available.' }:
 
       {/* Rows */}
       {rows.map((row, i) => (
-        <View key={i} style={[styles.row, i % 2 === 1 ? styles.rowAlt : {}]}>
+        <View key={i} wrap={false} style={[styles.row, i % 2 === 1 ? styles.rowAlt : {}]}>
           {columns.map((col) => (
             <Text
               key={col.key}

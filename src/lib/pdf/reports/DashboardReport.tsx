@@ -12,6 +12,7 @@ const styles = StyleSheet.create({
   page: {
     ...shared.page,
   },
+  headerPage: { ...shared.headerPage },
   footer: {
     ...shared.footer,
   },
@@ -186,7 +187,7 @@ export function DashboardPages({ rv, profile, events = [] }: DashboardReportProp
 
   return (
     <>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.headerPage}>
         <PageHeader
           imagePath="/images/page-headers/dashboard-header.jpg"
           badge="Department Report"

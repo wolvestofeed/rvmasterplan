@@ -10,6 +10,7 @@ import { PageFooter } from '../components/PageFooter'
 
 const styles = StyleSheet.create({
   page: { ...shared.page },
+  headerPage: { ...shared.headerPage },
   noticeBox: {
     marginHorizontal: 30,
     marginTop: 14,
@@ -213,7 +214,7 @@ export function FuelEconomyPages({ fuelEntries, year }: FuelEconomyReportProps) 
   return (
     <>
       {/* Page 1: Metrics + Monthly Summary */}
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.headerPage}>
         <PageHeader
           imagePath="/images/page-headers/rvmp-fuel-econ-header.jpg"
           badge="Department Report"
@@ -254,14 +255,12 @@ export function FuelEconomyPages({ fuelEntries, year }: FuelEconomyReportProps) 
       {/* Page 2: Fill-up Log */}
       {hasAnyEntries && (
         <Page size="A4" style={styles.page}>
-          <View style={{ paddingTop: 28 }}>
-            <SectionTitle title="Fill-up Log" />
-            <PdfTable
-              columns={logColumns}
-              rows={logRows}
-              emptyMessage="No fill-up entries recorded."
-            />
-          </View>
+          <SectionTitle title="Fill-up Log" />
+          <PdfTable
+            columns={logColumns}
+            rows={logRows}
+            emptyMessage="No fill-up entries recorded."
+          />
           <PageFooter deptLabel="Fuel Economy" pageLabel="Page 2" />
         </Page>
       )}

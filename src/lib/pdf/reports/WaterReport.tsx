@@ -9,6 +9,7 @@ import { PageFooter } from '../components/PageFooter'
 
 const styles = StyleSheet.create({
   page: { ...shared.page },
+  headerPage: { ...shared.headerPage },
   tankGrid: {
     flexDirection: 'row',
     gap: 10,
@@ -176,7 +177,7 @@ export function WaterPages({ waterSystem, activities, tankLogs }: WaterReportPro
   return (
     <>
       {/* Page 1: Metrics + Tank capacities + Activities */}
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.headerPage}>
         <PageHeader
           imagePath="/images/page-headers/water-header.jpg"
           badge="Department Report"
@@ -223,14 +224,12 @@ export function WaterPages({ waterSystem, activities, tankLogs }: WaterReportPro
 
       {/* Page 2: Tank Log */}
       <Page size="A4" style={styles.page}>
-        <View style={{ paddingTop: 28 }}>
-          <SectionTitle title="Tank Fill & Dump Log" />
-          <PdfTable
-            columns={logColumns}
-            rows={logRows}
-            emptyMessage="No tank log entries recorded."
-          />
-        </View>
+        <SectionTitle title="Tank Fill & Dump Log" />
+        <PdfTable
+          columns={logColumns}
+          rows={logRows}
+          emptyMessage="No tank log entries recorded."
+        />
         <PageFooter deptLabel="Water Management" pageLabel="Page 2" />
       </Page>
     </>

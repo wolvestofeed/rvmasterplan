@@ -44,7 +44,14 @@ export const shared = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
     backgroundColor: colors.white,
-    paddingBottom: 40,
+    paddingTop: 36,
+    paddingBottom: 54,
+  },
+  headerPage: {
+    fontFamily: 'Helvetica',
+    backgroundColor: colors.white,
+    paddingTop: 0,
+    paddingBottom: 54,
   },
   contentArea: {
     paddingHorizontal: 30,
