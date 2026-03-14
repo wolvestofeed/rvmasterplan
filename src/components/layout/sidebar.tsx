@@ -4,35 +4,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import {
-    LayoutDashboard,
-    Calculator,
-    Wallet,
-    Banknote,
-    Zap,
-    Sun,
-    Droplets,
-    FileText,
-    PieChart,
-    Settings,
     ShieldAlert,
-    LogOut,
-    Fuel,
-    CloudSun
+    LogOut
 } from "lucide-react";
 import { SignedIn, SignedOut, SignInButton, UserButton, useUser, useAuth } from "@clerk/nextjs";
 
 const navItems = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Weather, Sun & Moon", href: "/weather", icon: CloudSun },
-    { name: "RV Purchase Calculator", href: "/calculators/purchase", icon: Calculator, featureKey: "purchase_calculator" },
-    { name: "RV Setup Budget", href: "/calculators/setup", icon: Wallet, featureKey: "setup_budget" },
-    { name: "RV Living Budget", href: "/calculators/budget", icon: Banknote, featureKey: "living_budget" },
-    { name: "Fuel Economy", href: "/fuel-economy", icon: Fuel },
-    { name: "Power and Solar Calculator", href: "/calculators/power/system", icon: Sun },
-    { name: "Water Calculator", href: "/calculators/water", icon: Droplets, featureKey: "water_calculator" },
-    { name: "Documents", href: "/documents", icon: FileText, featureKey: "document_manager" },
-    { name: "Reports", href: "/reports/master", icon: PieChart },
-    { name: "Settings", href: "/settings", icon: Settings },
+    { name: "Dashboard", href: "/dashboard" },
+    { name: "Weather, Sun & Moon", href: "/weather" },
+    { name: "RV Purchase Calculator", href: "/calculators/purchase", featureKey: "purchase_calculator" },
+    { name: "RV Setup Budget", href: "/calculators/setup", featureKey: "setup_budget" },
+    { name: "RV Living Budget", href: "/calculators/budget", featureKey: "living_budget" },
+    { name: "Fuel Economy", href: "/fuel-economy" },
+    { name: "Power and Solar Calculator", href: "/calculators/power/system" },
+    { name: "Water Calculator", href: "/calculators/water", featureKey: "water_calculator" },
+    { name: "Documents", href: "/documents", featureKey: "document_manager" },
+    { name: "Reports", href: "/reports/master" },
+    { name: "Settings", href: "/settings" },
 ];
 
 export function Sidebar({ featureFlags = {}, planType = 'full' }: { featureFlags?: Record<string, boolean>, planType?: string }) {
@@ -78,12 +66,11 @@ export function Sidebar({ featureFlags = {}, planType = 'full' }: { featureFlags
                                 <Link
                                     key={item.name}
                                     href={item.href}
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
+                                    className={`flex items-center px-3 py-2 rounded-md uppercase text-xs tracking-wide font-medium transition-colors ${isActive
                                         ? "bg-blue-100/50 text-blue-700 font-semibold"
-                                        : "text-slate-600 hover:bg-[#e6ecd9] hover:text-slate-900"
+                                        : "text-brand-primary hover:bg-[#e6ecd9] hover:text-slate-900"
                                         }`}
                                 >
-                                    <item.icon className="h-4 w-4" />
                                     {item.name}
                                 </Link>
                             );

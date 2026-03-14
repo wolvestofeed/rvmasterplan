@@ -194,7 +194,7 @@ export function ReceiptScanner({ planType = 'full' }: { planType?: string }) {
                         onClick={() => setSelectedType('General')}
                         className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                             selectedType === 'General'
-                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                ? 'border-purple-500 bg-purple-50 text-purple-700'
                                 : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
                         }`}
                     >
@@ -239,7 +239,7 @@ export function ReceiptScanner({ planType = 'full' }: { planType?: string }) {
                 <Button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isScanning || isStarter}
-                    className={`${isStarter ? 'bg-amber-100 text-amber-600 border-amber-200 cursor-not-allowed hover:bg-amber-100' : 'bg-blue-600 hover:bg-blue-700 text-white'} flex items-center gap-2 h-12 w-full shadow-lg transition-all active:scale-95`}
+                    className={`${isStarter ? 'bg-amber-100 text-amber-600 border-amber-200 cursor-not-allowed hover:bg-amber-100' : 'bg-purple-600 hover:bg-purple-700 text-white'} flex items-center gap-2 h-12 w-full shadow-lg transition-all active:scale-95`}
                 >
                     {isScanning ? (
                         <Loader2 className="h-5 w-5 animate-spin" />

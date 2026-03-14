@@ -351,24 +351,8 @@ export default function RVBudgetPage() {
                 imageUrl="/images/page-headers/living-budget-header.jpg"
             />
 
-            <div className="flex flex-col md:flex-row md:items-end justify-between mt-2 mb-8 gap-4">
-                <div className="w-full md:w-64">
-                    <ReceiptScanner planType={planType || 'full'} />
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <Label className="text-sm font-medium">Viewing Month:</Label>
-                    <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                        <SelectTrigger className="w-[160px] bg-white"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            {MONTH_NAMES.map((m, idx) => <SelectItem key={m} value={(idx + 1).toString()}>{m}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-
             {/* Summary Dash */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 mt-2">
                 <KpiBlock label="Annual Budget" variant="primary">
                     <KpiValue>{formatCurrency(getAnnualBudgetTotal())}</KpiValue>
                 </KpiBlock>
@@ -386,16 +370,53 @@ export default function RVBudgetPage() {
             </div>
 
             <Tabs defaultValue="expenses">
-                <TabsList className="mb-6 grid w-full grid-cols-3 max-w-md">
-                    <TabsTrigger value="expenses">Expenses</TabsTrigger>
-                    <TabsTrigger value="planning">Budget Planning</TabsTrigger>
-                    <TabsTrigger value="charts">Annual Analysis</TabsTrigger>
-                </TabsList>
+                <div className="grid lg:grid-cols-3 gap-6 mb-6 items-center">
+                    <div className="lg:col-span-1">
+                        <TabsList className="grid w-full grid-cols-3 bg-transparent h-auto gap-2 p-0 shadow-none border-0">
+                            <TabsTrigger 
+                                value="expenses" 
+                                className="h-11 border border-purple-200 bg-gradient-to-b from-purple-50 to-purple-100/50 text-purple-900 data-[state=active]:from-white data-[state=active]:to-purple-50 data-[state=active]:border-purple-600 data-[state=active]:text-purple-700 data-[state=active]:shadow-md font-semibold transition-all rounded-md"
+                            >
+                                Expenses
+                            </TabsTrigger>
+                            <TabsTrigger 
+                                value="planning" 
+                                className="h-11 border border-purple-200 bg-gradient-to-b from-purple-50 to-purple-100/50 text-purple-900 data-[state=active]:from-white data-[state=active]:to-purple-50 data-[state=active]:border-purple-600 data-[state=active]:text-purple-700 data-[state=active]:shadow-md font-semibold transition-all rounded-md"
+                            >
+                                Budget Planning
+                            </TabsTrigger>
+                            <TabsTrigger 
+                                value="charts" 
+                                className="h-11 border border-purple-200 bg-gradient-to-b from-purple-50 to-purple-100/50 text-purple-900 data-[state=active]:from-white data-[state=active]:to-purple-50 data-[state=active]:border-purple-600 data-[state=active]:text-purple-700 data-[state=active]:shadow-md font-semibold transition-all rounded-md"
+                            >
+                                Annual Analysis
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
+                    
+                    <div className="lg:col-span-2 flex justify-center">
+                        <div className="flex items-center gap-3">
+                            <Label className="text-sm font-medium text-slate-500">Viewing Month:</Label>
+                            <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                                <SelectTrigger className="w-[180px] bg-white h-11 border-purple-200 shadow-sm"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {MONTH_NAMES.map((m, idx) => <SelectItem key={m} value={(idx + 1).toString()}>{m}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </div>
 
                 <TabsContent value="expenses" className="space-y-6">
                     <div className="grid lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-1 space-y-6">
                             <Card className="p-6 sticky top-6">
+                                <div className="mb-6 mb-8 border-b border-slate-100 pb-6">
+                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Snap & Auto-Fill</h4>
+                                    <div className="w-full max-w-sm">
+                                        <ReceiptScanner planType={planType || 'full'} />
+                                    </div>
+                                </div>
                                 <h3 className="text-lg font-medium text-slate-800 mb-4">{editingExpense ? "Edit" : "Add"} Expense</h3>
                                 <Form {...form}>
                                     <form onSubmit={form.handleSubmit(onExpenseSubmit)} className="space-y-4">
