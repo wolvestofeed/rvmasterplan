@@ -14,12 +14,38 @@ import { getUserProfile, extendSubscription } from "@/app/actions/profiles";
 export default function SettingsPage() {
     const { user, isLoaded } = useUser();
     const [subDate, setSubDate] = useState<string>("Loading...");
+    const [billingLabel, setBillingLabel] = useState<string>("");
+    const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
         const loadProfile = async () => {
             const res = await getUserProfile();
-            if (res.success && res.data?.subscriptionRenewalDate) {
-                setSubDate(new Date(res.data.subscriptionRenewalDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }));
+            if (res.success && res.data) {
+                if (res.data.subscriptionStatus === 'admin') {
+                    setIsAdmin(true);
+                    setSubDate("N/A — Admin");
+                } else {
+                    // Set renewal date
+                    if (res.data.subscriptionRenewalDate) {
+                        setSubDate(new Date(res.data.subscriptionRenewalDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }));
+                    } else {
+                        setSubDate("No renewal date set");
+                    }
+                    // Set billing label from stored price and interval
+                    if (res.data.billingAmountCents && res.data.billingInterval) {
+                        const dollars = (res.data.billingAmountCents / 100).toFixed(2);
+                        if (res.data.billingInterval === 'one_time') {
+                            setBillingLabel(`One-time payment of $${dollars}.`);
+                        } else {
+                            const intervalLabel = res.data.billingInterval === 'year' ? 'yr' : 'mo';
+                            setBillingLabel(`Billed at $${dollars}/${intervalLabel}.`);
+                        }
+                    } else if (res.data.planType === 'starter') {
+                        setBillingLabel("Starter Pack — one-time purchase.");
+                    } else {
+                        setBillingLabel("Pro subscription.");
+                    }
+                }
             }
         };
         loadProfile();
@@ -94,7 +120,7 @@ export default function SettingsPage() {
                                     <p className="text-xs text-slate-500 mt-1">Email changes must be verified through the security panel.</p>
                                 </div>
 
-                                <Button type="submit" className="bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white">
+                                <Button type="submit" className="bg-brand-primary hover:bg-brand-primary-dark text-white">
                                     Save Changes
                                 </Button>
                             </form>
@@ -107,24 +133,30 @@ export default function SettingsPage() {
                         <Card className="border border-slate-200 border-t-4 border-t-[#2a4f3f]">
                             <CardHeader className="pb-4">
                                 <CardTitle className="flex items-center text-lg">
-                                    <CreditCard className="mr-2 h-5 w-5 text-[#2a4f3f]" />
+                                    <CreditCard className="mr-2 h-5 w-5 text-brand-primary" />
                                     Subscription Plan
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="mb-4">
-                                    <p className="text-sm text-slate-500 font-medium">Current Plan</p>
-                                    <p className="text-xl font-bold text-slate-800">Pro Member</p>
-                                    <p className="text-xs text-slate-500 mt-1 pb-1">Billed at $4.99/mo. Renews on <strong>{subDate}</strong>.</p>
+                                    <p className="text-sm text-brand-primary font-medium">Current Plan</p>
+                                    <p className="text-xl font-bold text-slate-800">{isAdmin ? "Administrator" : "Pro Member"}</p>
+                                    {isAdmin ? (
+                                        <p className="text-xs text-slate-500 mt-1 pb-1">Full access — no subscription required.</p>
+                                    ) : (
+                                        <p className="text-xs text-slate-500 mt-1 pb-1">{billingLabel} Renews on <strong>{subDate}</strong>.</p>
+                                    )}
                                 </div>
-                                <div className="flex flex-col gap-2">
-                                    <Button onClick={handleExtendSubscription} variant="outline" className="w-full bg-[#2a4f3f]/5 hover:bg-[#2a4f3f]/10 text-[#2a4f3f] border-[#2a4f3f]/20">
-                                        Extend Sub by 1 Year (Demo)
-                                    </Button>
-                                    <Button onClick={() => toast.info("Stripe integration coming soon!")} variant="outline" className="w-full">
-                                        Manage Billing
-                                    </Button>
-                                </div>
+                                {!isAdmin && (
+                                    <div className="flex flex-col gap-2">
+                                        <Button onClick={handleExtendSubscription} variant="outline" className="w-full bg-brand-primary/5 hover:bg-brand-primary/10 text-brand-primary border-brand-primary/20">
+                                            Extend Sub by 1 Year (Demo)
+                                        </Button>
+                                        <Button onClick={() => toast.info("Stripe integration coming soon!")} variant="outline" className="w-full">
+                                            Manage Billing
+                                        </Button>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
 
@@ -141,7 +173,7 @@ export default function SettingsPage() {
                             Settings and profile management are only available for registered users. Create an account to save your master plan, manage documents, and set up your profile.
                         </p>
                         <SignInButton mode="modal">
-                            <Button className="bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white">
+                            <Button className="bg-brand-primary hover:bg-brand-primary-dark text-white">
                                 Log In or Register
                             </Button>
                         </SignInButton>

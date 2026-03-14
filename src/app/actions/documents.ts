@@ -1,15 +1,14 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { documents, users } from "@/lib/db/schema";
+import { documents } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { auth } from "@clerk/nextjs/server";
+import { getActiveUserId, requireAuth } from "@/lib/actions/auth-helpers";
 
 export async function getDocuments() {
     try {
-        const { userId } = await auth();
-        const activeId = userId || "demo_user";
+        const activeId = await getActiveUserId();
 
         const results = await db.query.documents.findMany({
             where: eq(documents.userId, activeId),
@@ -31,13 +30,8 @@ export async function addDocument(data: {
     renewalCost?: string | null;
 }) {
     try {
-        const { userId } = await auth();
-        const activeId = userId || "demo_user";
-        if (!userId || activeId === "demo_user") {
-            return { success: false, error: "Saving is disabled in Demo Mode." };
-        }
+        const activeId = await requireAuth();
 
-        // Convert "10.50" string to numeric string for Postgres "numeric" column
         const costStr = data.renewalCost ? parseFloat(data.renewalCost).toString() : null;
 
         const newDoc = await db.insert(documents).values({
@@ -60,10 +54,7 @@ export async function addDocument(data: {
 
 export async function deleteDocument(id: string) {
     try {
-        const { userId } = await auth();
-        if (!userId || userId === "demo_user") {
-            return { success: false, error: "Saving is disabled in Demo Mode." };
-        }
+        await requireAuth();
 
         await db.delete(documents).where(eq(documents.id, id));
         revalidatePath("/documents");
@@ -80,10 +71,7 @@ export async function updateDocument(id: string, data: {
     renewalCost?: string | null;
 }) {
     try {
-        const { userId } = await auth();
-        if (!userId || userId === "demo_user") {
-            return { success: false, error: "Saving is disabled in Demo Mode." };
-        }
+        await requireAuth();
 
         const costStr = data.renewalCost ? parseFloat(data.renewalCost).toString() : null;
 
@@ -100,4 +88,3 @@ export async function updateDocument(id: string, data: {
         return { success: false, error: "Failed to update document" };
     }
 }
-

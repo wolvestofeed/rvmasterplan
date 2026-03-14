@@ -93,13 +93,13 @@ export default function FreeTrialPage() {
                 title="Start Your Journey"
                 description="Use your Trial Code to unlock your fully personalized 30-day Free Trial of the RV MasterPlan."
                 imageUrl="/images/page-headers/landing-header.jpg"
-                imageClass="opacity-20 bg-[#2a4f3f]"
+                imageClass="opacity-20 bg-brand-primary"
             />
 
             <div className="flex-1 flex items-center justify-center p-6 -mt-20 z-10">
                 <Card className="w-full max-w-md shadow-2xl border-t-4 border-t-[#8ca163] bg-white">
                     <CardHeader className="text-center pb-4">
-                        <CardTitle className="text-2xl font-bold text-[#2a4f3f]">Free Trial Sign Up</CardTitle>
+                        <CardTitle className="text-2xl font-bold text-brand-primary">Free Trial Sign Up</CardTitle>
                         <CardDescription>
                             Create your cloud account. Your data will be saved securely across all devices.
                         </CardDescription>
@@ -141,7 +141,7 @@ export default function FreeTrialPage() {
                                 </div>
 
                                 <div className="space-y-2 pt-2 border-t mt-4 border-slate-100">
-                                    <Label htmlFor="code" className="text-[#8ca163] font-semibold flex items-center gap-2">
+                                    <Label htmlFor="code" className="text-brand-accent font-semibold flex items-center gap-2">
                                         <Key className="w-4 h-4" /> Trial Registration Code
                                     </Label>
                                     <Input
@@ -151,10 +151,10 @@ export default function FreeTrialPage() {
                                         value={accessCode}
                                         onChange={(e) => setAccessCode(e.target.value)}
                                         required
-                                        className="bg-[#f8fbf5] border-[#8ca163]/30 focus-visible:ring-[#8ca163]"
+                                        className="bg-[#f8fbf5] border-brand-accent/30 focus-visible:ring-[#8ca163]"
                                     />
                                     <p className="text-xs text-slate-500">
-                                        You must have a Trial Code to create a free account. Otherwise, sign up <Link href="/" className="underline hover:text-[#2a4f3f]">here</Link>.
+                                        You must have a Trial Code to create a free account. Otherwise, sign up <Link href="/" className="underline hover:text-brand-primary">here</Link>.
                                     </p>
                                 </div>
 
@@ -167,7 +167,7 @@ export default function FreeTrialPage() {
                                 </Button>
 
                                 <div className="text-center pt-4 text-sm text-slate-500">
-                                    Already have an account? <Link href="/" className="font-medium text-[#2a4f3f] hover:underline">Log in</Link>
+                                    Already have an account? <Link href="/" className="font-medium text-brand-primary hover:underline">Log in</Link>
                                 </div>
                             </form>
                         ) : (
@@ -196,7 +196,7 @@ export default function FreeTrialPage() {
                                 </div>
 
                                 <Button
-                                    className="w-full bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white mt-4"
+                                    className="w-full bg-brand-primary hover:bg-brand-primary-dark text-white mt-4"
                                     type="submit"
                                     disabled={isLoading}
                                 >

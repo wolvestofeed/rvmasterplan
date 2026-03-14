@@ -3,13 +3,12 @@
 import { db } from "@/lib/db";
 import { financialData, rvVehicles } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { getActiveUserId, getRvId } from "@/lib/actions/auth-helpers";
 
 export async function getRVVehicle() {
     try {
-        const { userId } = await auth();
-        const activeId = userId || "demo_user";
+        const activeId = await getActiveUserId();
 
         const rv = await db.query.rvVehicles.findFirst({
             where: eq(rvVehicles.userId, activeId)
@@ -24,17 +23,11 @@ export async function getRVVehicle() {
 
 export async function getFinancialData() {
     try {
-        const { userId } = await auth();
-        const activeId = userId || "demo_user";
-
-        const rv = await db.query.rvVehicles.findFirst({
-            where: eq(rvVehicles.userId, activeId)
-        });
-
-        if (!rv) return { success: false, error: "RV Profile not found" };
+        const { rvId } = await getRvId();
+        if (!rvId) return { success: false, error: "RV Profile not found" };
 
         const data = await db.query.financialData.findFirst({
-            where: eq(financialData.rvId, rv.id)
+            where: eq(financialData.rvId, rvId)
         });
 
         return { success: true, data };
@@ -45,20 +38,12 @@ export async function getFinancialData() {
 
 export async function updateFinancialData(values: any) {
     try {
-        const { userId } = await auth();
-        if (userId === "demo_user") {
-            return { error: "Guest Mode is Read-Only! Cannot save calculations." };
-        }
-        const activeId = userId || "demo_user";
-
-        const rv = await db.query.rvVehicles.findFirst({
-            where: eq(rvVehicles.userId, activeId)
-        });
-
-        if (!rv) return { error: "RV Profile not found" };
+        const { rvId, isDemo } = await getRvId();
+        if (isDemo) return { error: "Guest Mode is Read-Only! Cannot save calculations." };
+        if (!rvId) return { error: "RV Profile not found" };
 
         const existing = await db.query.financialData.findFirst({
-            where: eq(financialData.rvId, rv.id)
+            where: eq(financialData.rvId, rvId)
         });
 
         const numValues = {
@@ -82,7 +67,7 @@ export async function updateFinancialData(values: any) {
         } else {
             await db.insert(financialData).values({
                 id: Date.now().toString(),
-                rvId: rv.id,
+                rvId,
                 ...numValues
             });
         }

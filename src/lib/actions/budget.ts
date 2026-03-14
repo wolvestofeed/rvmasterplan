@@ -3,20 +3,17 @@
 import { db } from '../db';
 import { expenses, financialData, targetBudgets } from "../db/schema";
 import { and, eq } from 'drizzle-orm';
-import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
+import { getActiveUserId, requireAuth } from './auth-helpers';
 
 export async function getTargetBudgets(year: number) {
-    const { userId } = await auth();
-    const activeId = userId || "demo_user";
+    const activeId = await getActiveUserId();
     const res = await db.select().from(targetBudgets).where(and(eq(targetBudgets.userId, activeId), eq(targetBudgets.year, year)));
     return res;
 }
 
 export async function setTargetBudget(month: number, year: number, amount: number) {
-    const { userId } = await auth();
-    const activeId = userId || "demo_user";
-    if (!userId || activeId === "demo_user") throw new Error("Saving is disabled in Demo Mode.");
+    const activeId = await requireAuth();
 
     const existing = await db.select().from(targetBudgets).where(
         and(
@@ -41,8 +38,7 @@ export async function setTargetBudget(month: number, year: number, amount: numbe
 }
 
 export async function getExpenses(year?: number) {
-    const { userId } = await auth();
-    const activeId = userId || "demo_user";
+    const activeId = await getActiveUserId();
 
     const query = db.select().from(expenses);
 
@@ -53,9 +49,7 @@ export async function getExpenses(year?: number) {
 }
 
 export async function addExpense(data: { name: string, category: string, amount: number, isFixed: boolean, month: number, year: number, group: string, costPerItem: number, quantity: number, tax: number, gallons?: number, odometerReading?: number, isFuelEvent?: boolean, isPropaneEvent?: boolean }) {
-    const { userId } = await auth();
-    const activeId = userId || "demo_user";
-    if (!userId || activeId === "demo_user") throw new Error("Saving is disabled in Demo Mode.");
+    const activeId = await requireAuth();
 
     const id = Date.now().toString();
     await db.insert(expenses).values({
@@ -78,9 +72,7 @@ export async function addExpense(data: { name: string, category: string, amount:
 }
 
 export async function updateExpense(id: string, data: { name: string, category: string, amount: number, isFixed: boolean, month: number, year: number, group: string, costPerItem: number, quantity: number, tax: number, gallons?: number, odometerReading?: number, isFuelEvent?: boolean, isPropaneEvent?: boolean }) {
-    const { userId } = await auth();
-    const activeId = userId || "demo_user";
-    if (!userId || activeId === "demo_user") throw new Error("Saving is disabled in Demo Mode.");
+    const activeId = await requireAuth();
 
     await db.update(expenses).set({
         name: data.name,
@@ -100,9 +92,7 @@ export async function updateExpense(id: string, data: { name: string, category: 
 }
 
 export async function batchAddExpenses(expensesList: any[]) {
-    const { userId } = await auth();
-    const activeId = userId || "demo_user";
-    if (!userId || activeId === "demo_user") throw new Error("Saving is disabled in Demo Mode.");
+    const activeId = await requireAuth();
 
     if (expensesList.length === 0) return true;
 
@@ -123,8 +113,7 @@ export async function batchAddExpenses(expensesList: any[]) {
 }
 
 export async function deleteExpense(id: string) {
-    const { userId } = await auth();
-    if (!userId || userId === "demo_user") throw new Error("Saving is disabled in Demo Mode.");
+    await requireAuth();
 
     await db.delete(expenses).where(eq(expenses.id, id));
     revalidatePath('/calculators/budget');

@@ -48,6 +48,8 @@ export async function POST(req: Request) {
                     subscriptionStatus: "active",
                     planType: "starter",
                     subscriptionRenewalDate: renewalDate,
+                    billingInterval: "one_time",
+                    billingAmountCents: session.amount_total || 2000,
                 })
                 .where(eq(userProfiles.userId, userId));
         } else {
@@ -56,12 +58,18 @@ export async function POST(req: Request) {
                 session.subscription as string
             );
 
+            // Extract interval from the subscription's plan
+            const interval = subscription.items?.data?.[0]?.plan?.interval || "month";
+            const amountCents = session.amount_total || (interval === "year" ? 6000 : 1000);
+
             await db.update(userProfiles)
                 .set({
                     subscriptionStatus: "active",
                     planType: "full",
                     // @ts-expect-error - Stripe type expansion issue
                     subscriptionRenewalDate: new Date(subscription.current_period_end * 1000),
+                    billingInterval: interval,
+                    billingAmountCents: amountCents,
                 })
                 .where(eq(userProfiles.userId, userId));
         }

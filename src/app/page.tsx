@@ -19,11 +19,11 @@ export default function LandingPage() {
                             <Link href="/free-trial">Free Trial</Link>
                         </Button>
                         <SignUpButton mode="modal">
-                            <Button className="bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white">Subscribe Now</Button>
+                            <Button className="bg-brand-primary hover:bg-brand-primary-dark text-white">Subscribe Now</Button>
                         </SignUpButton>
                     </SignedOut>
                     <SignedIn>
-                        <Button asChild className="bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white">
+                        <Button asChild className="bg-brand-primary hover:bg-brand-primary-dark text-white">
                             <Link href="/dashboard">Go to Dashboard</Link>
                         </Button>
                     </SignedIn>
@@ -66,7 +66,7 @@ export default function LandingPage() {
             {/* Video Introduction Section */}
             {/* Narrative Section */}
             <section className="py-16 px-6 max-w-4xl mx-auto text-center">
-                <h2 className="text-3xl font-bold text-[#2a4f3f] mb-6">The Ultimate Toolkit for Every Road Warrior</h2>
+                <h2 className="text-3xl font-bold text-brand-primary mb-6">The Ultimate Toolkit for Every Road Warrior</h2>
                 <p className="text-lg text-slate-600 leading-relaxed">
                     RV MasterPlan is for money and resource management, with a complete toolkit of calculators and trackers to forecast your RV loan payments and setup costs, to create the perfect solar and energy system and to manage your budgets, water, energy, fuel, weight and waste... all in one place.
                 </p>
@@ -85,7 +85,7 @@ export default function LandingPage() {
                             />
                         </div>
                         <div className="text-center md:text-left">
-                            <h2 className="text-3xl font-bold text-[#2a4f3f] mb-4">Meet Your Support Team</h2>
+                            <h2 className="text-3xl font-bold text-brand-primary mb-4">Meet Your Support Team</h2>
                             <p className="text-lg text-slate-600">
                                 Hey there! Thank you for checking out RV MasterPlan. I&apos;ve spent a lot of time in the backcountry and I love visiting America&apos;s most iconic, geographic and culturally rich destinations. I built this App for myself when I moved into a travel trailer
                                 last Spring. It&apos;s really helpful, so I thought you might like it too! Rob
@@ -198,7 +198,7 @@ export default function LandingPage() {
                     </div>
 
                     {/* Pro Monthly Subscription */}
-                    <div className="bg-[#2a4f3f] text-white rounded-2xl shadow-xl relative overflow-hidden flex flex-col h-full ring-2 ring-[#8ca163]">
+                    <div className="bg-brand-primary text-white rounded-2xl shadow-xl relative overflow-hidden flex flex-col h-full ring-2 ring-[#8ca163]">
                         {/* New Uploaded Image as Banner */}
                         <div className="w-full relative aspect-video bg-white cursor-pointer hover:opacity-90 transition-opacity" onClick={async () => {
                             const { createCheckoutSession } = await import('@/app/actions/stripe');

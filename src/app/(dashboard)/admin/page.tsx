@@ -172,12 +172,12 @@ export default function AdminPage() {
                     { label: "Events/Logs", value: stats?.totalEvents || 0 },
                 ].map((kpi, i) => (
                     <Card key={i} className={`border-2 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] ${i % 2 === 0
-                        ? 'border-[#2a4f3f] bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30'
-                        : 'border-[#8ca163] bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40'
+                        ? 'border-brand-primary bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30'
+                        : 'border-brand-accent bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40'
                         }`}>
                         <CardContent className="p-4 text-center">
                             <p className="text-xs text-slate-500 font-medium">{kpi.label}</p>
-                            <p className="text-2xl font-bold text-[#2a4f3f]">{kpi.value}</p>
+                            <p className="text-2xl font-bold text-brand-primary">{kpi.value}</p>
                         </CardContent>
                     </Card>
                 ))}
@@ -491,13 +491,13 @@ export default function AdminPage() {
                                             href={link.url}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:border-[#2a4f3f]/30 hover:bg-slate-50 transition-colors group"
+                                            className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:border-brand-primary/30 hover:bg-slate-50 transition-colors group"
                                         >
                                             <div>
-                                                <div className="text-sm font-medium text-slate-800 group-hover:text-[#2a4f3f]">{link.label}</div>
+                                                <div className="text-sm font-medium text-slate-800 group-hover:text-brand-primary">{link.label}</div>
                                                 <div className="text-xs text-slate-500">{link.desc}</div>
                                             </div>
-                                            <ExternalLink className="h-4 w-4 text-slate-400 group-hover:text-[#2a4f3f]" />
+                                            <ExternalLink className="h-4 w-4 text-slate-400 group-hover:text-brand-primary" />
                                         </a>
                                     ))}
                                 </div>
@@ -505,7 +505,7 @@ export default function AdminPage() {
                                 <div className="mt-6 pt-4 border-t border-slate-100">
                                     <p className="text-sm font-medium text-slate-800 mb-2">Data Sync & Management</p>
                                     <Button
-                                        className="bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white w-full"
+                                        className="bg-brand-primary hover:bg-brand-primary-dark text-white w-full"
                                         onClick={async () => {
                                             if (!confirm("This will overwrite the public demo data with your current live database. Proceed?")) return;
                                             const res = await publishToDemo();

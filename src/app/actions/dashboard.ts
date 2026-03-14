@@ -1,24 +1,23 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { documents, eventsAndLogs, equipmentItems, userProfiles, users } from "@/lib/db/schema";
-import { eq, isNotNull, gte } from "drizzle-orm";
-import { auth } from "@clerk/nextjs/server";
+import { documents, eventsAndLogs, equipmentItems, userProfiles } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { getActiveUserId } from "@/lib/actions/auth-helpers";
 
 export type DashboardEvent = {
     id: string;
     title: string;
     desc: string;
     rawDate: Date;
-    date: string; // Formatted date string
+    date: string;
     color: string;
     source: "document" | "event" | "equipment" | "subscription";
 };
 
 export async function getDashboardEvents(): Promise<{ success: boolean; data?: DashboardEvent[]; error?: string }> {
     try {
-        const { userId } = await auth();
-        const activeId = userId || "demo_user";
+        const activeId = await getActiveUserId();
 
         const aggregatedEvents: DashboardEvent[] = [];
 
@@ -30,14 +29,13 @@ export async function getDashboardEvents(): Promise<{ success: boolean; data?: D
         docs.forEach(doc => {
             if (doc.renewalDate) {
                 const dateObj = new Date(doc.renewalDate);
-                // Only show if it's in the future (or very recent past)
                 aggregatedEvents.push({
                     id: doc.id,
                     title: `${doc.title} Renewal`,
                     desc: doc.renewalCost && Number(doc.renewalCost) > 0 ? `Estimated Cost: $${Number(doc.renewalCost).toFixed(2)}` : "Document renewal due.",
                     rawDate: dateObj,
                     date: dateObj.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
-                    color: "text-blue-500", // Blue for admin/paperwork
+                    color: "text-blue-500",
                     source: "document"
                 });
             }
@@ -77,7 +75,7 @@ export async function getDashboardEvents(): Promise<{ success: boolean; data?: D
                     desc: `Planned Acquisition. Est Cost: $${item.cost || '0'}`,
                     rawDate: dateObj,
                     date: dateObj.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
-                    color: "text-emerald-500", // Green for purchases/inventory
+                    color: "text-emerald-500",
                     source: "equipment"
                 });
             }
@@ -96,12 +94,11 @@ export async function getDashboardEvents(): Promise<{ success: boolean; data?: D
                 desc: `Premium Membership Renewal`,
                 rawDate: dateObj,
                 date: dateObj.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
-                color: "text-slate-800", // Distinct color for core app subscription
+                color: "text-slate-800",
                 source: "subscription"
             });
         }
 
-        // Sort chronologically and return
         aggregatedEvents.sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
 
         return { success: true, data: aggregatedEvents };

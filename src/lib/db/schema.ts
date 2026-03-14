@@ -14,6 +14,8 @@ export const userProfiles = pgTable('user_profiles', {
     subscriptionStatus: text('subscription_status').default('inactive'), // 'active', 'inactive', 'admin'
     planType: text('plan_type').default('full'), // 'full', 'starter'
     subscriptionRenewalDate: timestamp('subscription_renewal_date'),
+    billingInterval: text('billing_interval'), // 'month', 'year', 'one_time'
+    billingAmountCents: integer('billing_amount_cents'), // price in cents (e.g. 1000 = $10.00)
     firstName: text('first_name'),
     lastName: text('last_name'),
     dashboardHeroImage: text('dashboard_hero_image'),

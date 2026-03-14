@@ -19,6 +19,7 @@ export function HeaderHero({ title, description, imageUrl, imageClass = "object-
                     src={displayImage}
                     alt={title}
                     fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
                     className={imageClass}
                     priority
                 />
@@ -29,8 +30,8 @@ export function HeaderHero({ title, description, imageUrl, imageClass = "object-
             {/* Title Box */}
             {!hideOverlay && (
                 <div className="absolute left-8 top-6 max-w-lg bg-white/70 p-6 rounded-lg border border-white/40 shadow-lg">
-                    <h1 className="text-3xl font-bold text-[#2a4f3f] mb-2 tracking-tight">{title}</h1>
-                    <p className="text-[#2a4f3f] text-sm md:text-base leading-relaxed font-medium">
+                    <h1 className="text-3xl font-bold text-brand-primary mb-2 tracking-tight">{title}</h1>
+                    <p className="text-brand-primary text-sm md:text-base leading-relaxed font-medium">
                         {description}
                     </p>
                 </div>

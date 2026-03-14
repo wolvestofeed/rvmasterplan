@@ -3,13 +3,11 @@
 import { db } from '../db';
 import { equipmentItems } from '../db/schema';
 import { eq } from 'drizzle-orm';
-import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
+import { getActiveUserId, requireAuth } from './auth-helpers';
 
 export async function getEquipment() {
-    const { userId } = await auth();
-    const activeId = userId || "demo_user";
-
+    const activeId = await getActiveUserId();
     return await db.select().from(equipmentItems).where(eq(equipmentItems.userId, activeId));
 }
 
@@ -18,9 +16,7 @@ export async function addEquipment(data: {
     isEssential?: boolean, isPurchased?: boolean,
     watts?: number, hoursPerDay?: number, runsOnInverter?: boolean
 }) {
-    const { userId } = await auth();
-    const activeId = userId || "demo_user";
-    if (!userId || activeId === "demo_user") throw new Error("Saving is disabled in Demo Mode.");
+    const activeId = await requireAuth();
 
     const id = Date.now().toString();
     await db.insert(equipmentItems).values({
@@ -39,9 +35,7 @@ export async function addEquipment(data: {
 }
 
 export async function deleteEquipment(id: string) {
-    const { userId } = await auth();
-    if (!userId || userId === "demo_user") throw new Error("Saving is disabled in Demo Mode.");
-
+    await requireAuth();
     await db.delete(equipmentItems).where(eq(equipmentItems.id, id));
     revalidatePath('/calculators/setup');
     revalidatePath('/calculators/power/system');

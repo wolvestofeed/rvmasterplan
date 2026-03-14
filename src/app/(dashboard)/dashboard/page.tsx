@@ -17,18 +17,19 @@ import { getExpenses, getTargetBudgets } from "@/lib/actions/budget";
 import { getUserProfile, updateDashboardHeroImage } from "@/app/actions/profiles";
 import { getDashboardEvents, type DashboardEvent } from "@/app/actions/dashboard";
 import { addManualEvent } from "@/app/actions/events";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { UploadButton } from "@/lib/uploadthing";
 import { Camera } from "lucide-react";
 import { KpiValue } from "@/components/ui/kpi-value";
+import { KpiBlock, KpiBlockSkeleton } from "@/components/ui/kpi-block";
 
 const estimatedDeviceWeight = 20; // Demo default from Power page
 
 export default function Dashboard() {
   // --- State for Dashboard Activity & Events ---
-  const [events, setEvents] = useState<any[]>([]);
-  const [monthlyExpenseData, setMonthlyExpenseData] = useState<any[]>([]);
-  const [activityFeed, setActivityFeed] = useState<any[]>([]);
+  const [events, setEvents] = useState<DashboardEvent[]>([]);
+  const [monthlyExpenseData, setMonthlyExpenseData] = useState<{ month: string; budget: number; actual: number }[]>([]);
+  const [activityFeed, setActivityFeed] = useState<{ id: string; title: string; desc: string; rawDate: Date; date: string; icon: typeof ShoppingBag; color: string }[]>([]);
 
   // Modal State
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -53,6 +54,7 @@ export default function Dashboard() {
   const [dryWeight, setDryWeight] = useState(0);
   const [gvwr, setGvwr] = useState(0);
   const [profileName, setProfileName] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchEvents = async () => {
     const res = await getDashboardEvents();
@@ -62,6 +64,7 @@ export default function Dashboard() {
   };
 
   const fetchDashboardData = async () => {
+    try {
     const [resSolar, resDevices, resWater, resWaterSys, resFin, resExp, resInc, resLogs, resRV] = await Promise.all([
       getSolarEquipment(),
       getElectricalDevices(),
@@ -80,25 +83,28 @@ export default function Dashboard() {
     }
 
     if (resSolar.success && resSolar.data) {
-      const solarEquipmentWeight = resSolar.data.reduce((total: any, item: any) => total + ((Number(item.weight) || 0) * (Number(item.quantity) || 1)), 0);
+      type SolarItem = { weight?: string | null; quantity?: number | null; equipmentType?: string | null; wattage?: string | null };
+      const solarEquipmentWeight = (resSolar.data as SolarItem[]).reduce((total, item) => total + ((Number(item.weight) || 0) * (Number(item.quantity) || 1)), 0);
       setComputedEquipmentWeight(solarEquipmentWeight + estimatedDeviceWeight);
 
-      const batteries = resSolar.data.filter((e: any) => e.equipmentType === 'Battery');
-      const generators = resSolar.data.filter((e: any) => e.equipmentType === 'Generator');
+      const batteries = (resSolar.data as SolarItem[]).filter(e => e.equipmentType === 'Battery');
+      const generators = (resSolar.data as SolarItem[]).filter(e => e.equipmentType === 'Generator');
 
-      const standalone = batteries.reduce((sum: number, b: any) => sum + ((Number(b.wattage) || 0) * (Number(b.quantity) || 1)), 0);
-      const genBats = generators.reduce((sum: number, g: any) => sum + ((Number(g.wattage) || 0) * (Number(g.quantity) || 1)), 0);
+      const standalone = batteries.reduce((sum, b) => sum + ((Number(b.wattage) || 0) * (Number(b.quantity) || 1)), 0);
+      const genBats = generators.reduce((sum, g) => sum + ((Number(g.wattage) || 0) * (Number(g.quantity) || 1)), 0);
       setTotalBatteryCapacity(standalone + genBats);
     }
 
     if (resDevices.success && resDevices.data) {
-      const totalConsumption = resDevices.data.reduce((sum: number, d: any) => sum + (Number(d.watts) * Number(d.hoursPerDay) || 0), 0);
+      type DeviceItem = { watts?: string | null; hoursPerDay?: string | null };
+      const totalConsumption = (resDevices.data as DeviceItem[]).reduce((sum, d) => sum + (Number(d.watts) * Number(d.hoursPerDay) || 0), 0);
       setDailyConsumption(totalConsumption);
     }
 
     let currentDailyWater = 0;
     if (resWater.success && resWater.data) {
-      currentDailyWater = resWater.data.reduce((sum: number, act: any) => sum + (Number(act.gallonsPerUse) * Number(act.timesPerDay) || 0), 0);
+      type WaterItem = { gallonsPerUse?: string | null; timesPerDay?: string | null };
+      currentDailyWater = (resWater.data as WaterItem[]).reduce((sum, act) => sum + (Number(act.gallonsPerUse) * Number(act.timesPerDay) || 0), 0);
       setDailyWater(currentDailyWater);
     }
 
@@ -108,7 +114,8 @@ export default function Dashboard() {
 
       // Project levels based on tank logs (matching Water Calculator logic)
       if (resLogs.success && resLogs.data) {
-        const sortedLogs = [...resLogs.data].sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        type TankLog = { date: string; tank?: string; type?: string; volume?: string | null; id?: string };
+        const sortedLogs = ([...resLogs.data] as TankLog[]).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
         let startDateStr;
         if (sortedLogs.length > 0) {
@@ -130,7 +137,7 @@ export default function Dashboard() {
           const dateStr = currentDate.toISOString().split('T')[0];
 
           while (logIndex < sortedLogs.length && sortedLogs[logIndex].date === dateStr) {
-            const log = sortedLogs[logIndex] as any;
+            const log = sortedLogs[logIndex];
             if (log.tank === 'Fresh') {
               if (log.type === 'Fill') fresh = Math.min(freshCap, fresh + Number(log.volume));
               if (log.type === 'Dump') fresh = Math.max(0, fresh - Number(log.volume));
@@ -154,13 +161,15 @@ export default function Dashboard() {
 
     let tExp = 0;
     let tInc = 0;
-    const allActivity: any[] = [];
+    type ExpItem = { id: string; name?: string; amount?: string | null; category?: string; month?: number; year?: number; createdAt?: Date | string | null };
+    type BudgetItem = { month?: number; year?: number; amount?: string | null };
+    const allActivity: { id: string; title: string; desc: string; rawDate: Date; date: string; icon: typeof ShoppingBag; color: string }[] = [];
 
     if (Array.isArray(resExp)) {
-      tExp = resExp.reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
+      tExp = (resExp as ExpItem[]).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
       setTotalExpenses(tExp);
 
-      resExp.forEach((e: any) => {
+      (resExp as ExpItem[]).forEach((e) => {
         // Build activity feed
         const d = new Date(e.createdAt);
         allActivity.push({
@@ -176,7 +185,7 @@ export default function Dashboard() {
     }
 
     if (Array.isArray(resInc)) {
-      tInc = resInc.reduce((sum: number, i: any) => sum + (Number(i.amount) || 0), 0);
+      tInc = (resInc as BudgetItem[]).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
     }
 
     // Generate monthly chart metrics for visual
@@ -184,15 +193,15 @@ export default function Dashboard() {
     const expenseMap = monthNames.map(m => ({ month: m, budget: 0, actual: 0 }));
 
     if (Array.isArray(resInc)) {
-      resInc.forEach((i: any) => {
+      (resInc as BudgetItem[]).forEach((i) => {
         const mIndex = (Number(i.month) || 1) - 1;
         if (expenseMap[mIndex]) expenseMap[mIndex].budget += (Number(i.amount) || 0);
       });
     }
 
     if (Array.isArray(resExp)) {
-      resExp.forEach((e: any) => {
-        const mIndex = (Number(e.month) || (new Date(e.createdAt).getMonth() + 1)) - 1;
+      (resExp as ExpItem[]).forEach((e) => {
+        const mIndex = (Number(e.month) || (new Date(e.createdAt as string).getMonth() + 1)) - 1;
         if (expenseMap[mIndex]) expenseMap[mIndex].actual += (Number(e.amount) || 0);
       });
     }
@@ -201,7 +210,7 @@ export default function Dashboard() {
 
     // Also add water log activity to feed
     if (resLogs.success && resLogs.data) {
-      resLogs.data.forEach((log: any) => {
+      (resLogs.data as TankLog[]).forEach((log) => {
         if (log.type === 'Dump') {
           const d = new Date(log.date);
           allActivity.push({
@@ -228,14 +237,14 @@ export default function Dashboard() {
 
     let monthTarget = 0;
     if (Array.isArray(resInc)) {
-      const targetRow = resInc.find((i: any) => Number(i.month) === currentMonthNum && Number(i.year) === currentYear);
+      const targetRow = (resInc as BudgetItem[]).find((i) => Number(i.month) === currentMonthNum && Number(i.year) === currentYear);
       if (targetRow) monthTarget = Number(targetRow.amount) || 0;
     }
 
     let monthExpenses = 0;
     if (Array.isArray(resExp)) {
-      const filteredExps = resExp.filter((e: any) => Number(e.month) === currentMonthNum && Number(e.year) === currentYear);
-      monthExpenses = filteredExps.reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
+      const filteredExps = (resExp as ExpItem[]).filter((e) => Number(e.month) === currentMonthNum && Number(e.year) === currentYear);
+      monthExpenses = filteredExps.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     }
 
     setRemainingBudget(monthTarget - monthExpenses);
@@ -249,6 +258,9 @@ export default function Dashboard() {
     else if (score >= 60) setHealthText("Good");
     else if (score >= 40) setHealthText("Fair");
     else setHealthText("Poor");
+    } catch (error) {
+      console.error("Dashboard data fetch failed:", error);
+    }
   };
 
   const fetchProfile = async () => {
@@ -263,21 +275,19 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    fetchEvents();
-    fetchDashboardData();
-    fetchProfile();
+    Promise.all([fetchEvents(), fetchDashboardData(), fetchProfile()]).finally(() => setIsLoading(false));
   }, []);
 
   const payloadCapacity = gvwr > 0 ? gvwr - dryWeight : 0;
   const waterWeight = Math.round(dailyWater * waterSupplyDays * 8.34); // gallons * lbs per gallon
   const availablePayload = Math.max(0, payloadCapacity - computedEquipmentWeight - waterWeight);
 
-  const weightData = [
+  const weightData = useMemo(() => [
     { name: "Base Vehicle", value: dryWeight, color: "#e11d48" },
     { name: "Payload Available", value: availablePayload, color: "#fbbf24" },
     { name: "Water", value: waterWeight, color: "#3b82f6" },
     { name: "Equipment", value: Math.round(computedEquipmentWeight), color: "#8b5cf6" },
-  ];
+  ], [dryWeight, availablePayload, waterWeight, computedEquipmentWeight]);
 
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -354,43 +364,50 @@ export default function Dashboard() {
 
       {/* KPI Grid — grouped by category: Financial, Power, Water */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 mt-6">
-        {/* Row 1: Financial */}
-        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Estimated Liability</div>
-          <KpiValue>${liability.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</KpiValue>
-        </div>
-        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">YTD to Budget Health</div>
-          <KpiValue>{healthText} <span className="text-sm text-[#8ca163] font-semibold">{healthScore}/100</span></KpiValue>
-        </div>
-        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Remaining Monthly Budget</div>
-          <KpiValue>${remainingBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</KpiValue>
-        </div>
-        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">YTD Expenses</div>
-          <KpiValue>${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</KpiValue>
-        </div>
+        {isLoading ? (
+          <>
+            <KpiBlockSkeleton variant="primary" />
+            <KpiBlockSkeleton variant="accent" />
+            <KpiBlockSkeleton variant="primary" />
+            <KpiBlockSkeleton variant="accent" />
+            <KpiBlockSkeleton variant="solar" />
+            <KpiBlockSkeleton variant="solar" />
+            <KpiBlockSkeleton variant="water" />
+            <KpiBlockSkeleton variant="water" />
+          </>
+        ) : (
+          <>
+            {/* Row 1: Financial */}
+            <KpiBlock label="Estimated Liability" variant="primary">
+              <KpiValue>${liability.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</KpiValue>
+            </KpiBlock>
+            <KpiBlock label="YTD to Budget Health" variant="accent">
+              <KpiValue>{healthText} <span className="text-sm text-brand-accent font-semibold">{healthScore}/100</span></KpiValue>
+            </KpiBlock>
+            <KpiBlock label="Remaining Monthly Budget" variant="primary">
+              <KpiValue>${remainingBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</KpiValue>
+            </KpiBlock>
+            <KpiBlock label="YTD Expenses" variant="accent">
+              <KpiValue>${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</KpiValue>
+            </KpiBlock>
 
-        {/* Row 2: Power + Water */}
-        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Average Solar Use</div>
-          <KpiValue>{Math.round(dailyConsumption).toLocaleString()} <span className="text-sm text-[#8ca163] font-semibold">Wh / Day</span></KpiValue>
-        </div>
-        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Estimated Runtime No Sun</div>
-          <KpiValue>
-            {dailyConsumption > 0 ? (totalBatteryCapacity / (dailyConsumption / 24)).toFixed(1) : '∞'} <span className="text-sm font-normal">hrs</span>
-          </KpiValue>
-        </div>
-        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Avg Daily Water Use</div>
-          <KpiValue>{dailyWater.toFixed(1)} gal</KpiValue>
-        </div>
-        <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-          <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Estimated Water Supply</div>
-          <KpiValue>{waterSupplyDays === 999 ? "∞" : waterSupplyDays.toFixed(1)} Days <span className="text-sm text-[#8ca163] font-semibold">Available</span></KpiValue>
-        </div>
+            {/* Row 2: Power (Solar Orange) + Water (Blue) */}
+            <KpiBlock label="Average Solar Use" variant="solar">
+              <KpiValue>{Math.round(dailyConsumption).toLocaleString()} <span className="text-sm text-brand-solar font-semibold">Wh / Day</span></KpiValue>
+            </KpiBlock>
+            <KpiBlock label="Estimated Runtime No Sun" variant="solar">
+              <KpiValue>
+                {dailyConsumption > 0 ? (totalBatteryCapacity / (dailyConsumption / 24)).toFixed(1) : '∞'} <span className="text-sm font-normal">hrs</span>
+              </KpiValue>
+            </KpiBlock>
+            <KpiBlock label="Avg Daily Water Use" variant="water">
+              <KpiValue>{dailyWater.toFixed(1)} gal</KpiValue>
+            </KpiBlock>
+            <KpiBlock label="Estimated Water Supply" variant="water">
+              <KpiValue>{waterSupplyDays === 999 ? "∞" : waterSupplyDays.toFixed(1)} Days <span className="text-sm text-brand-blue-accent font-semibold">Available</span></KpiValue>
+            </KpiBlock>
+          </>
+        )}
       </div>
 
       {/* Expense Tracker Chart */}
@@ -531,7 +548,7 @@ export default function Dashboard() {
 
             <Dialog open={isEventModalOpen} onOpenChange={setIsEventModalOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 text-[#2a4f3f] bg-[#2a4f3f]/10 hover:bg-[#2a4f3f]/20">
+                <Button variant="ghost" size="sm" className="h-8 text-brand-primary bg-brand-primary/10 hover:bg-brand-primary/20">
                   <Plus className="w-4 h-4 mr-1" /> Add Event
                 </Button>
               </DialogTrigger>
@@ -571,7 +588,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button disabled={isSubmitting} type="submit" className="bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white">
+                    <Button disabled={isSubmitting} type="submit" className="bg-brand-primary hover:bg-brand-primary-dark text-white">
                       {isSubmitting ? "Saving..." : "Save Event"}
                     </Button>
                   </DialogFooter>

@@ -7,6 +7,8 @@ import { z } from "zod";
 import { SaveIcon, PrinterIcon, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
+import { KpiValue } from "@/components/ui/kpi-value";
+import { KpiBlock } from "@/components/ui/kpi-block";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -180,26 +182,22 @@ export default function PurchaseCalculatorPage() {
             <Card className="p-6 bg-slate-50 mb-6">
                 <h3 className="text-lg font-medium text-slate-800 mb-4">Financing Summary</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-slate-800 relative xl:overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Amount to Finance</div>
-                        <div className="font-bold text-2xl text-[#2a4f3f] relative z-10">{formatCurrency(summary.amountToFinance)}</div>
+                    <KpiBlock label="Amount to Finance" variant="primary">
+                        <KpiValue>{formatCurrency(summary.amountToFinance)}</KpiValue>
                         <div className="text-xs text-slate-400 mt-1 relative z-10">Purchase + taxes - down payment - trade-in</div>
-                    </div>
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-slate-800 relative xl:overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Monthly Payment</div>
-                        <div className="font-bold text-2xl text-[#2a4f3f] relative z-10">{formatCurrency(summary.monthlyPayment)}</div>
+                    </KpiBlock>
+                    <KpiBlock label="Monthly Payment" variant="accent">
+                        <KpiValue>{formatCurrency(summary.monthlyPayment)}</KpiValue>
                         <div className="text-xs text-slate-400 mt-1 relative z-10">Principal + interest for {formValues.loanTerm} years</div>
-                    </div>
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-slate-800 relative xl:overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Total Interest</div>
-                        <div className="font-bold text-xl text-[#2a4f3f] relative z-10">{formatCurrency(summary.totalInterest)}</div>
+                    </KpiBlock>
+                    <KpiBlock label="Total Interest" variant="primary">
+                        <KpiValue>{formatCurrency(summary.totalInterest)}</KpiValue>
                         <div className="text-xs text-slate-400 mt-1 relative z-10">{((summary.totalInterest / summary.amountToFinance || 0) * 100).toFixed(1)}% of principal</div>
-                    </div>
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-slate-800 relative xl:overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Total Cost</div>
-                        <div className="font-bold text-xl text-[#2a4f3f] relative z-10">{formatCurrency(summary.totalLoanCost)}</div>
+                    </KpiBlock>
+                    <KpiBlock label="Total Cost" variant="accent">
+                        <KpiValue>{formatCurrency(summary.totalLoanCost)}</KpiValue>
                         <div className="text-xs text-slate-400 mt-1 relative z-10">Principal + interest over loan term</div>
-                    </div>
+                    </KpiBlock>
                 </div>
             </Card>
 

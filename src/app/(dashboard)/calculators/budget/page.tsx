@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,6 +24,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
 import { KpiValue } from "@/components/ui/kpi-value";
+import { KpiBlock } from "@/components/ui/kpi-block";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import { ReceiptScanner } from "@/components/expenses/ReceiptScanner";
 import { getExpenses, addExpense, deleteExpense, getTargetBudgets, setTargetBudget, updateExpense, batchAddExpenses } from "@/lib/actions/budget";
@@ -299,12 +300,12 @@ export default function RVBudgetPage() {
         }
     };
 
-    const chartData = MONTH_NAMES.map((name, idx) => {
+    const chartData = useMemo(() => MONTH_NAMES.map((name, idx) => {
         const month = idx + 1;
         const mBudget = budgets.find(b => b.month === month && b.year === currentYear)?.budgetedAmount || 0;
         const mActual = expenses.filter(e => e.month === month && e.year === currentYear).reduce((sum, e) => sum + calculateTotal(e), 0);
         return { name: name.substring(0, 3), budget: mBudget, actual: mActual };
-    });
+    }), [budgets, expenses, currentYear]);
 
     if (!isClient) return null;
 
@@ -368,24 +369,20 @@ export default function RVBudgetPage() {
 
             {/* Summary Dash */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Annual Budget</div>
+                <KpiBlock label="Annual Budget" variant="primary">
                     <KpiValue>{formatCurrency(getAnnualBudgetTotal())}</KpiValue>
-                </div>
-                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">YTD Expenses</div>
+                </KpiBlock>
+                <KpiBlock label="YTD Expenses" variant="accent">
                     <KpiValue>{formatCurrency(getYTDExpenses())}</KpiValue>
-                </div>
-                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Budget Used</div>
-                    <div className={`font-bold text-3xl ${!isBudgetOkay ? 'text-red-500' : 'text-[#2a4f3f]'} relative z-10`}>{formatNumber(percentUsed, 1)}%</div>
+                </KpiBlock>
+                <KpiBlock label="Budget Used" variant="primary">
+                    <div className={`font-bold text-3xl ${!isBudgetOkay ? 'text-red-500' : 'text-brand-primary'} relative z-10`}>{formatNumber(percentUsed, 1)}%</div>
                     <div className="text-xs text-slate-500 mt-1 relative z-10">{isBudgetOkay ? "On track" : "Over budget"}</div>
-                </div>
-                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">YTD to Budget Health</div>
+                </KpiBlock>
+                <KpiBlock label="YTD to Budget Health" variant="accent">
                     <KpiValue>{healthScore}/100</KpiValue>
                     <div className="text-xs text-slate-500 mt-1 relative z-10">{healthStatus}</div>
-                </div>
+                </KpiBlock>
             </div>
 
             <Tabs defaultValue="expenses">

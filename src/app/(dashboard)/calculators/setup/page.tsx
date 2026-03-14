@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import { KpiValue } from "@/components/ui/kpi-value";
+import { KpiBlock } from "@/components/ui/kpi-block";
 import { getEquipmentItems, addEquipmentItem, updateEquipmentItem, deleteEquipmentItem } from "@/app/actions/equipment";
 
 const CATEGORIES: SetupItemCategory[] = [
@@ -49,7 +50,7 @@ const setupItemSchema = z.object({
 
 type SetupItemFormValues = z.infer<typeof setupItemSchema>;
 
-const COLORS = ['#3b82f6', '#14b8a6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e', '#ef4444', '#64748b'];
+import { CHART_COLORS as COLORS } from "@/lib/constants/brand";
 
 export default function RVSetupBudgetPage() {
     const [isClient, setIsClient] = useState(false);
@@ -242,22 +243,18 @@ export default function RVSetupBudgetPage() {
             <Card className="p-6 bg-slate-50 mb-6">
                 <h3 className="text-lg font-medium text-slate-800 mb-4">Purchase Plan Summary</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Total Estimated Cost</div>
+                    <KpiBlock label="Total Estimated Cost" variant="primary">
                         <KpiValue>{formatCurrency(summary.totalCost)}</KpiValue>
-                    </div>
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Spent / Acquired</div>
+                    </KpiBlock>
+                    <KpiBlock label="Spent / Acquired" variant="accent">
                         <KpiValue>{formatCurrency(summary.acquiredCost)}</KpiValue>
-                    </div>
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Remaining to Purchase</div>
+                    </KpiBlock>
+                    <KpiBlock label="Remaining to Purchase" variant="primary">
                         <KpiValue>{formatCurrency(summary.remainingCost)}</KpiValue>
-                    </div>
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Added Weight</div>
+                    </KpiBlock>
+                    <KpiBlock label="Added Weight" variant="accent">
                         <KpiValue>{formatNumber(summary.totalWeight, 1)} lbs</KpiValue>
-                    </div>
+                    </KpiBlock>
                 </div>
             </Card>
 

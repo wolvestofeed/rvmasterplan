@@ -8,6 +8,7 @@ import { getUserProfile } from "@/app/actions/profiles";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { KpiValue } from "@/components/ui/kpi-value";
+import { KpiBlock } from "@/components/ui/kpi-block";
 
 export default function FuelEconomyPage() {
     const [isClient, setIsClient] = useState(false);
@@ -122,24 +123,20 @@ export default function FuelEconomyPage() {
             />
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Average MPG</div>
+                <KpiBlock label="Average MPG" variant="primary">
                     <KpiValue>{averageMPG}</KpiValue>
                     <div className="text-xs text-slate-500 mt-1 relative z-10">Based on your logged fill-ups</div>
-                </div>
-                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Cost per Mile</div>
+                </KpiBlock>
+                <KpiBlock label="Cost per Mile" variant="accent">
                     <KpiValue>{costPerMile}</KpiValue>
                     <div className="text-xs text-slate-500 mt-1 relative z-10">Current average</div>
-                </div>
-                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Avg Price / Gallon</div>
+                </KpiBlock>
+                <KpiBlock label="Avg Price / Gallon" variant="primary">
                     <KpiValue>{avgPricePerGallon}</KpiValue>
-                </div>
-                <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                    <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Total Tracked</div>
+                </KpiBlock>
+                <KpiBlock label="Total Tracked" variant="accent">
                     <KpiValue>{totalGallons.toFixed(1)} gal</KpiValue>
-                </div>
+                </KpiBlock>
             </div>
 
             {fuelLogs.length < 2 ? (

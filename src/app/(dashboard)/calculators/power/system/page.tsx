@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { KpiValue } from "@/components/ui/kpi-value";
+import { KpiBlock } from "@/components/ui/kpi-block";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
@@ -57,7 +58,7 @@ import {
 } from "@/app/actions/power";
 import { getEquipmentItems } from "@/app/actions/equipment";
 
-const COLORS = ['#3b82f6', '#14b8a6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e', '#ef4444', '#64748b'];
+import { CHART_COLORS as COLORS } from "@/lib/constants/brand";
 
 const deviceSchema = z.object({
     name: z.string().min(1, { message: "Name is required" }),
@@ -401,16 +402,17 @@ export default function PowerStrategyPage() {
 
 
 
-    // Pie chart data by category 
-    const consumptionByCategory = devices.reduce((acc, curr) => {
-        const daily = curr.watts * curr.hoursPerDay;
-        acc[curr.category] = (acc[curr.category] || 0) + daily;
-        return acc;
-    }, {} as Record<string, number>);
-
-    const chartData = Object.entries(consumptionByCategory)
-        .map(([name, value]) => ({ name, value }))
-        .filter(d => d.value > 0);
+    // Pie chart data by category
+    const chartData = useMemo(() => {
+        const consumptionByCategory = devices.reduce((acc, curr) => {
+            const daily = curr.watts * curr.hoursPerDay;
+            acc[curr.category] = (acc[curr.category] || 0) + daily;
+            return acc;
+        }, {} as Record<string, number>);
+        return Object.entries(consumptionByCategory)
+            .map(([name, value]) => ({ name, value }))
+            .filter(d => d.value > 0);
+    }, [devices]);
 
     if (!isClient) return null;
 
@@ -433,33 +435,27 @@ export default function PowerStrategyPage() {
             <Card className="p-6 bg-slate-50 mb-8">
                 <h3 className="text-lg font-medium text-slate-800 mb-4">Energy Balance</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Daily Consumption</div>
+                    <KpiBlock label="Daily Consumption" variant="solar">
                         <KpiValue>{formatNumber(getTotalDailyConsumption())} <span className="text-sm font-normal">Wh</span></KpiValue>
-                    </div>
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Avg Daily Solar Gen</div>
+                    </KpiBlock>
+                    <KpiBlock label="Avg Daily Solar Gen" variant="solar">
                         <KpiValue>{formatNumber(getDailySolarGeneration())} <span className="text-sm font-normal">Wh</span></KpiValue>
                         <div className="text-xs text-slate-400 relative z-10">{solarLogs.length > 0 ? `Based on ${solarLogs.length} log${solarLogs.length > 1 ? 's' : ''}` : 'Static estimate'}</div>
-                    </div>
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Battery Storage</div>
+                    </KpiBlock>
+                    <KpiBlock label="Battery Storage" variant="solar">
                         <KpiValue>{formatNumber(getTotalBatteryCapacity())} <span className="text-sm font-normal">Wh</span></KpiValue>
-                    </div>
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Est. Runtime no Sun</div>
+                    </KpiBlock>
+                    <KpiBlock label="Est. Runtime no Sun" variant="solar">
                         <KpiValue>{getBatteryRuntime()} <span className="text-sm font-normal">hrs</span></KpiValue>
-                    </div>
+                    </KpiBlock>
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-4">
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Solar System Weight</div>
+                    <KpiBlock label="Solar System Weight" variant="solar">
                         <KpiValue>{formatNumber(getTotalSolarSystemWeight())} <span className="text-sm font-normal">lbs</span></KpiValue>
-                    </div>
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Device Weight</div>
+                    </KpiBlock>
+                    <KpiBlock label="Device Weight" variant="solar">
                         <KpiValue>{formatNumber(estimatedDeviceWeight)} <span className="text-sm font-normal">lbs</span></KpiValue>
-                    </div>
+                    </KpiBlock>
                 </div>
                 <div className="mt-6">
                     <div className="flex justify-between text-sm mb-1">

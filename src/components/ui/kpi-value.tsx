@@ -50,7 +50,7 @@ export function KpiValue({
     <div
       ref={containerRef}
       className={cn(
-        "font-bold text-2xl md:text-3xl text-[#2a4f3f] relative z-10 overflow-hidden whitespace-nowrap",
+        "font-bold text-2xl text-brand-primary relative z-10 overflow-hidden whitespace-nowrap",
         className
       )}
     >

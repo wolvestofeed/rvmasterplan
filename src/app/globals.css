@@ -54,6 +54,8 @@
   --color-brand-border: #e0e8d5;
   --color-brand-blue-soft: #eef2f6;
   --color-brand-blue-accent: #3b82f6;
+  --color-brand-solar: #f59e0b;
+  --color-brand-primary-dark: #1a3a2d;
   --shadow-brand: 0 4px 6px -1px rgba(42, 79, 63, 0.1), 0 2px 4px -2px rgba(42, 79, 63, 0.1);
   --shadow-brand-lg: 0 10px 15px -3px rgba(42, 79, 63, 0.1), 0 4px 6px -4px rgba(42, 79, 63, 0.1);
 }

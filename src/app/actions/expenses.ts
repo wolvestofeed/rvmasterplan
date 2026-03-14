@@ -2,9 +2,9 @@
 
 import { db } from "@/lib/db";
 import { expenses } from "@/lib/db/schema";
-import { auth } from "@clerk/nextjs/server";
 import { v4 as uuidv4 } from 'uuid';
 import { revalidatePath } from "next/cache";
+import { requireAuth } from "@/lib/actions/auth-helpers";
 
 export async function saveExpense(data: {
     name: string;
@@ -19,11 +19,7 @@ export async function saveExpense(data: {
     date?: string;
     receiptUrl?: string;
 }) {
-    const { userId } = await auth();
-
-    if (!userId) {
-        throw new Error("Unauthorized");
-    }
+    const userId = await requireAuth();
 
     const id = uuidv4();
 

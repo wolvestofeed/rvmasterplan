@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
 import { formatNumber } from "@/lib/utils";
 import { KpiValue } from "@/components/ui/kpi-value";
+import { KpiBlock } from "@/components/ui/kpi-block";
 import { WaterData, WaterActivity, WaterSummary } from "@/types";
 import { getWaterSystem, getWaterActivities, addWaterActivity, updateWaterActivity, deleteWaterActivity, getTankLogs, addTankLog } from "@/app/actions/water";
 const waterActivitySchema = z.object({
@@ -39,7 +40,7 @@ const waterActivitySchema = z.object({
 
 type WaterActivityFormValues = z.infer<typeof waterActivitySchema>;
 
-const COLORS = ['#3b82f6', '#14b8a6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e'];
+import { CHART_COLORS as COLORS } from "@/lib/constants/brand";
 
 export default function WaterCalculatorPage() {
     const [isClient, setIsClient] = useState(false);
@@ -283,13 +284,14 @@ export default function WaterCalculatorPage() {
     };
 
     // Pie chart data by category
-    const usageByCategory = activities.reduce((acc, curr) => {
-        const daily = curr.gallonsPerUse * curr.timesPerDay;
-        acc[curr.category] = (acc[curr.category] || 0) + daily;
-        return acc;
-    }, {} as Record<string, number>);
-
-    const chartData = Object.entries(usageByCategory).map(([name, value]) => ({ name, value }));
+    const chartData = useMemo(() => {
+        const usageByCategory = activities.reduce((acc, curr) => {
+            const daily = curr.gallonsPerUse * curr.timesPerDay;
+            acc[curr.category] = (acc[curr.category] || 0) + daily;
+            return acc;
+        }, {} as Record<string, number>);
+        return Object.entries(usageByCategory).map(([name, value]) => ({ name, value }));
+    }, [activities]);
 
     if (!isClient) return null;
 
@@ -305,22 +307,18 @@ export default function WaterCalculatorPage() {
             <Card className="p-6 bg-slate-50 mb-6">
                 <h3 className="text-lg font-medium text-slate-800 mb-4">Water Usage Summary</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Daily Usage</div>
+                    <KpiBlock label="Daily Usage" variant="water">
                         <KpiValue>{formatNumber(summary.dailyUsage, 1)} gal</KpiValue>
-                    </div>
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Days Until Empty</div>
+                    </KpiBlock>
+                    <KpiBlock label="Days Until Empty" variant="water">
                         <KpiValue>{summary.daysUntilEmpty}</KpiValue>
-                    </div>
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#2a4f3f]/30 p-4 rounded-lg border-2 border-[#2a4f3f]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Weekly Usage</div>
+                    </KpiBlock>
+                    <KpiBlock label="Weekly Usage" variant="water">
                         <KpiValue>{formatNumber(summary.weeklyUsage, 1)} gal</KpiValue>
-                    </div>
-                    <div className="bg-gradient-to-br from-white/90 via-white/40 to-[#8ca163]/40 p-4 rounded-lg border-2 border-[#8ca163]/20 shadow-[4px_4px_12px_rgba(0,0,0,0.15)] text-center relative overflow-hidden">
-                        <div className="text-sm text-slate-500 font-medium mb-1 relative z-10">Current Tank Level</div>
+                    </KpiBlock>
+                    <KpiBlock label="Current Tank Level" variant="water">
                         <KpiValue>{summary.percentWaterRemaining}%</KpiValue>
-                    </div>
+                    </KpiBlock>
                 </div>
             </Card>
 

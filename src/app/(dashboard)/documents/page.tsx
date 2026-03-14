@@ -199,7 +199,7 @@ export default function DocumentsPage() {
                                 />
                                 {selectedFile ? (
                                     <>
-                                        <FileText className="h-8 w-8 text-[#2a4f3f] mb-2" />
+                                        <FileText className="h-8 w-8 text-brand-primary mb-2" />
                                         <p className="text-sm font-medium text-slate-800 truncate px-4">{selectedFile.name}</p>
                                         <p className="text-xs text-slate-500 mt-1">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
                                     </>
@@ -251,7 +251,7 @@ export default function DocumentsPage() {
                                 </div>
                             </div>
 
-                            <Button disabled={isUploading} type="submit" className="w-full bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white">
+                            <Button disabled={isUploading} type="submit" className="w-full bg-brand-primary hover:bg-brand-primary-dark text-white">
                                 {isUploading ? "Uploading..." : "Upload & Save"}
                             </Button>
                         </form>
@@ -319,7 +319,7 @@ export default function DocumentsPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center justify-center gap-2">
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-[#2a4f3f]" onClick={() => handleEdit(doc)}>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-brand-primary" onClick={() => handleEdit(doc)}>
                                                             <Pencil className="h-4 w-4" />
                                                         </Button>
                                                         {doc.fileUrl ? (
@@ -397,7 +397,7 @@ export default function DocumentsPage() {
                             <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
                                 Cancel
                             </Button>
-                            <Button type="submit" className="bg-[#2a4f3f] hover:bg-[#1a3a2d] text-white" disabled={isUpdating}>
+                            <Button type="submit" className="bg-brand-primary hover:bg-brand-primary-dark text-white" disabled={isUpdating}>
                                 {isUpdating ? "Saving..." : "Save Changes"}
                             </Button>
                         </DialogFooter>

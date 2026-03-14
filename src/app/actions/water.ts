@@ -4,21 +4,16 @@ import { db } from "@/lib/db";
 import { waterSystems, waterActivities, tankLogs, rvVehicles } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { auth } from "@clerk/nextjs/server";
+import { getActiveUserId, requireAuth, getRvId } from "@/lib/actions/auth-helpers";
 
 export async function getWaterSystem() {
     try {
-        const { userId } = await auth();
-        const activeId = userId || "demo_user";
-
-        const rvs = await db.select().from(rvVehicles).where(eq(rvVehicles.userId, activeId)).limit(1);
-        if (!rvs.length) return { success: false, error: "No RV profile found" };
-        const rvId = rvs[0].id;
+        const { rvId } = await getRvId();
+        if (!rvId) return { success: false, error: "No RV profile found" };
 
         const system = await db.select().from(waterSystems).where(eq(waterSystems.rvId, rvId)).limit(1);
 
         if (!system.length) {
-            // Return default
             return {
                 success: true, data: {
                     freshWaterCapacity: 40,
@@ -43,9 +38,7 @@ export async function getWaterSystem() {
 
 export async function updateWaterSystem(data: { freshCapacityGal: number, grayCapacityGal: number, blackCapacityGal: number }) {
     try {
-        const { userId } = await auth();
-        if (!userId) return { success: false, error: "Unauthorized" };
-        if (userId === "demo_user" || userId.startsWith("guest_")) return { success: false, error: "View-only mode" };
+        const userId = await requireAuth();
 
         const rvs = await db.select().from(rvVehicles).where(eq(rvVehicles.userId, userId)).limit(1);
         if (!rvs.length) return { success: false, error: "No RV profile found" };
@@ -80,9 +73,7 @@ export async function updateWaterSystem(data: { freshCapacityGal: number, grayCa
 
 export async function getWaterActivities() {
     try {
-        const { userId } = await auth();
-        const activeId = userId || "demo_user";
-
+        const activeId = await getActiveUserId();
         const results = await db.select().from(waterActivities).where(eq(waterActivities.userId, activeId));
         return { success: true, data: results };
     } catch (error) {
@@ -93,9 +84,7 @@ export async function getWaterActivities() {
 
 export async function addWaterActivity(data: { name: string; category: string; gallonsPerUse: number; timesPerDay: number }) {
     try {
-        const { userId } = await auth();
-        if (!userId) return { success: false, error: "Unauthorized" };
-        if (userId === "demo_user" || userId.startsWith("guest_")) return { success: false, error: "View-only mode" };
+        const userId = await requireAuth();
 
         await db.insert(waterActivities).values({
             id: Date.now().toString(),
@@ -116,9 +105,7 @@ export async function addWaterActivity(data: { name: string; category: string; g
 
 export async function updateWaterActivity(id: string, data: { name: string; category: string; gallonsPerUse: number; timesPerDay: number }) {
     try {
-        const { userId } = await auth();
-        if (!userId) return { success: false, error: "Unauthorized" };
-        if (userId === "demo_user" || userId.startsWith("guest_")) return { success: false, error: "View-only mode" };
+        const userId = await requireAuth();
 
         await db.update(waterActivities)
             .set({
@@ -139,10 +126,7 @@ export async function updateWaterActivity(id: string, data: { name: string; cate
 
 export async function deleteWaterActivity(id: string) {
     try {
-        const { userId } = await auth();
-        if (!userId) return { success: false, error: "Unauthorized" };
-        if (userId === "demo_user" || userId.startsWith("guest_")) return { success: false, error: "View-only mode" };
-
+        const userId = await requireAuth();
         await db.delete(waterActivities).where(and(eq(waterActivities.id, id), eq(waterActivities.userId, userId)));
         revalidatePath("/calculators/water");
         return { success: true };
@@ -154,9 +138,7 @@ export async function deleteWaterActivity(id: string) {
 
 export async function getTankLogs() {
     try {
-        const { userId } = await auth();
-        const activeId = userId || "demo_user";
-
+        const activeId = await getActiveUserId();
         const results = await db.select().from(tankLogs).where(eq(tankLogs.userId, activeId));
         return { success: true, data: results };
     } catch (error) {
@@ -167,9 +149,7 @@ export async function getTankLogs() {
 
 export async function addTankLog(data: { date: string, type: 'Dump' | 'Fill', tank: 'Fresh' | 'Gray' | 'Black', volume: number }) {
     try {
-        const { userId } = await auth();
-        if (!userId) return { success: false, error: "Unauthorized" };
-        if (userId === "demo_user" || userId.startsWith("guest_")) return { success: false, error: "View-only mode" };
+        const userId = await requireAuth();
 
         await db.insert(tankLogs).values({
             id: Date.now().toString(),

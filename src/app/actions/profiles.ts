@@ -1,23 +1,20 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { userProfiles, users } from "@/lib/db/schema";
+import { userProfiles } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
-import { auth } from "@clerk/nextjs/server";
+import { getActiveUserId, requireAuth } from "@/lib/actions/auth-helpers";
 
 export async function getUserProfile() {
     try {
-        const { userId } = await auth();
-        const activeId = userId || "demo_user";
+        const activeId = await getActiveUserId();
 
-        // Fetch or create profile
         let profile = await db.query.userProfiles.findFirst({
             where: eq(userProfiles.userId, activeId)
         });
 
         if (!profile) {
-            // Give them a default active subscription 30 days from now
             const defaultDate = new Date();
             defaultDate.setDate(defaultDate.getDate() + 30);
 
@@ -39,16 +36,11 @@ export async function getUserProfile() {
 
 export async function extendSubscription() {
     try {
-        const { userId } = await auth();
-        const activeId = userId || "demo_user";
-        if (!userId || activeId === "demo_user") {
-            return { success: false, error: "Subscriptions disabled in Demo Mode." };
-        }
+        const activeId = await requireAuth();
 
         const res = await getUserProfile();
         if (res.success && res.data) {
             const current = res.data.subscriptionRenewalDate ? new Date(res.data.subscriptionRenewalDate) : new Date();
-            // Extend by 1 year
             current.setFullYear(current.getFullYear() + 1);
 
             await db.update(userProfiles)
@@ -68,12 +60,7 @@ export async function extendSubscription() {
 
 export async function updateDashboardHeroImage(imageUrl: string) {
     try {
-        const { userId } = await auth();
-        const activeId = userId || "demo_user";
-
-        if (!userId || activeId === "demo_user") {
-            return { success: false, error: "Image uploads are disabled in Demo Mode." };
-        }
+        const activeId = await requireAuth();
 
         await db.update(userProfiles)
             .set({

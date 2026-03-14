@@ -1,15 +1,14 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { equipmentItems, users } from "@/lib/db/schema";
+import { equipmentItems } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
 import { eq, desc } from "drizzle-orm";
-import { auth } from "@clerk/nextjs/server";
+import { getActiveUserId, requireAuth } from "@/lib/actions/auth-helpers";
 
 export async function getEquipmentItems() {
     try {
-        const { userId } = await auth();
-        const activeId = userId || "demo_user";
+        const activeId = await getActiveUserId();
 
         const items = await db.query.equipmentItems.findMany({
             where: eq(equipmentItems.userId, activeId),
@@ -34,11 +33,7 @@ export async function addEquipmentItem(data: {
     notes?: string;
 }) {
     try {
-        const { userId } = await auth();
-        const activeId = userId || "demo_user";
-        if (!userId || activeId === "demo_user") {
-            return { success: false, error: "Saving is disabled in Demo Mode." };
-        }
+        const activeId = await requireAuth();
 
         const newItem = await db.insert(equipmentItems).values({
             id: Math.random().toString(36).substring(2, 10),
@@ -72,10 +67,7 @@ export async function updateEquipmentItem(id: string, data: {
     notes?: string;
 }) {
     try {
-        const { userId } = await auth();
-        if (!userId || userId === "demo_user") {
-            return { success: false, error: "Saving is disabled in Demo Mode." };
-        }
+        await requireAuth();
 
         const updatedItem = await db.update(equipmentItems)
             .set({
@@ -101,10 +93,7 @@ export async function updateEquipmentItem(id: string, data: {
 
 export async function deleteEquipmentItem(id: string) {
     try {
-        const { userId } = await auth();
-        if (!userId || userId === "demo_user") {
-            return { success: false, error: "Saving is disabled in Demo Mode." };
-        }
+        await requireAuth();
 
         await db.delete(equipmentItems).where(eq(equipmentItems.id, id));
         revalidatePath("/calculators/setup");

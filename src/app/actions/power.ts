@@ -1,18 +1,10 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { electricalDevices, solarEquipment, dailySolarLogs, rvVehicles } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
-import { auth } from "@clerk/nextjs/server";
+import { electricalDevices, solarEquipment, dailySolarLogs } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-
-// --- Helpers ---
-const getRvId = async () => {
-    const { userId } = await auth();
-    const activeId = userId || "demo_user";
-    const rv = await db.query.rvVehicles.findFirst({ where: eq(rvVehicles.userId, activeId) });
-    return { rvId: rv?.id, isDemo: userId === "demo_user" };
-};
+import { getRvId } from "@/lib/actions/auth-helpers";
 
 // --- Electrical Devices ---
 export async function getElectricalDevices() {
@@ -100,7 +92,6 @@ export async function addSolarEquipment(values: any) {
             weight: values.weight?.toString()
         });
         revalidatePath('/calculators/power/system');
-        // also revalidate dashboard since it uses this for weight
         revalidatePath('/dashboard');
         return { success: true };
     } catch (e: any) { return { error: e.message }; }
