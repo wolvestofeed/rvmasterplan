@@ -436,7 +436,7 @@ export default function ReportsDashboard() {
                             alt="RV at sunset"
                             fill
                             className="object-cover object-center"
-                            unoptimized={true}
+                            sizes="(max-width: 768px) 100vw, 40vw"
                         />
                     </div>
                     <div className="flex-grow p-6 md:p-8 md:w-[60%] flex flex-col justify-center">
