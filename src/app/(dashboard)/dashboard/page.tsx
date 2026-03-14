@@ -17,6 +17,8 @@ import { getExpenses, getTargetBudgets } from "@/lib/actions/budget";
 import { getUserProfile, updateDashboardHeroImage } from "@/app/actions/profiles";
 import { getDashboardEvents, type DashboardEvent } from "@/app/actions/dashboard";
 import { addManualEvent } from "@/app/actions/events";
+import { getUserLocation } from "@/app/actions/weather";
+import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { UploadButton } from "@/lib/uploadthing";
 import { Camera } from "lucide-react";
@@ -55,6 +57,10 @@ export default function Dashboard() {
   const [gvwr, setGvwr] = useState(0);
   const [profileName, setProfileName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [weatherPSH, setWeatherPSH] = useState<number | null>(null);
+  const [weatherCloud, setWeatherCloud] = useState<number | null>(null);
+  const [weatherSunset, setWeatherSunset] = useState<string | null>(null);
+  const [hasLocation, setHasLocation] = useState(false);
 
   const fetchEvents = async () => {
     const res = await getDashboardEvents();
@@ -274,8 +280,49 @@ export default function Dashboard() {
     }
   };
 
+  const fetchWeatherKpis = async () => {
+    try {
+      const locRes = await getUserLocation();
+      if (!locRes.success || !locRes.data?.lat || !locRes.data?.lon) return;
+      setHasLocation(true);
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${locRes.data.lat}&longitude=${locRes.data.lon}&daily=sunrise,sunset&hourly=shortwave_radiation,cloudcover&timezone=auto&forecast_days=1`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.hourly) {
+        const now = new Date().getHours();
+        const todayStr = data.daily?.time?.[0] || "";
+        let psh = 0;
+        let cloudSum = 0;
+        let cloudCount = 0;
+        data.hourly.time.forEach((t: string, i: number) => {
+          if (t.startsWith(todayStr)) {
+            psh += (data.hourly.shortwave_radiation[i] || 0) / 1000;
+            const h = new Date(t).getHours();
+            if (h <= now) { cloudSum += data.hourly.cloudcover[i] || 0; cloudCount++; }
+          }
+        });
+        setWeatherPSH(psh);
+        setWeatherCloud(cloudCount > 0 ? Math.round(cloudSum / cloudCount) : 0);
+      }
+      if (data.daily?.sunset?.[0]) {
+        const ss = new Date(data.daily.sunset[0]);
+        const now = new Date();
+        const diff = ss.getTime() - now.getTime();
+        if (diff > 0) {
+          const hrs = Math.floor(diff / 3600000);
+          const mins = Math.round((diff % 3600000) / 60000);
+          setWeatherSunset(`${hrs}h ${mins}m`);
+        } else {
+          setWeatherSunset("Past");
+        }
+      }
+    } catch (e) {
+      console.error("Weather KPI fetch failed:", e);
+    }
+  };
+
   useEffect(() => {
-    Promise.all([fetchEvents(), fetchDashboardData(), fetchProfile()]).finally(() => setIsLoading(false));
+    Promise.all([fetchEvents(), fetchDashboardData(), fetchProfile(), fetchWeatherKpis()]).finally(() => setIsLoading(false));
   }, []);
 
   const payloadCapacity = gvwr > 0 ? gvwr - dryWeight : 0;
@@ -406,6 +453,28 @@ export default function Dashboard() {
             <KpiBlock label="Estimated Water Supply" variant="water">
               <KpiValue>{waterSupplyDays === 999 ? "∞" : waterSupplyDays.toFixed(1)} Days <span className="text-sm text-brand-blue-accent font-semibold">Available</span></KpiValue>
             </KpiBlock>
+
+            {/* Row 3: Weather, Sun & Moon */}
+            {hasLocation ? (
+              <>
+                <KpiBlock label="Peak Sun Hours" variant="solar">
+                  <KpiValue>{weatherPSH !== null ? `${weatherPSH.toFixed(1)} hrs` : "—"}</KpiValue>
+                </KpiBlock>
+                <KpiBlock label="Cloud Cover" variant="water">
+                  <KpiValue>{weatherCloud !== null ? `${weatherCloud}%` : "—"}</KpiValue>
+                </KpiBlock>
+                <KpiBlock label="Sunset Countdown" variant="solar">
+                  <KpiValue>{weatherSunset || "—"}</KpiValue>
+                </KpiBlock>
+                <KpiBlock label="Weather, Sun & Moon" variant="accent">
+                  <Link href="/weather" className="text-sm text-brand-primary font-semibold hover:underline">View Full Report →</Link>
+                </KpiBlock>
+              </>
+            ) : (
+              <KpiBlock label="Weather, Sun & Moon" variant="solar" className="col-span-2 md:col-span-4">
+                <Link href="/weather" className="text-sm text-brand-primary font-semibold hover:underline">Set your location to see solar & weather KPIs →</Link>
+              </KpiBlock>
+            )}
           </>
         )}
       </div>

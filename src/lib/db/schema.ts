@@ -19,6 +19,9 @@ export const userProfiles = pgTable('user_profiles', {
     firstName: text('first_name'),
     lastName: text('last_name'),
     dashboardHeroImage: text('dashboard_hero_image'),
+    locationName: text('location_name'),
+    locationLat: text('location_lat'),
+    locationLon: text('location_lon'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

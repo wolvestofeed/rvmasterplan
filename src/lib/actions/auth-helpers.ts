@@ -32,5 +32,5 @@ export async function getRvId() {
     const rv = await db.query.rvVehicles.findFirst({
         where: eq(rvVehicles.userId, activeId),
     });
-    return { rvId: rv?.id, isDemo: activeId === "demo_user" };
+    return { rvId: rv?.id, isDemo: activeId === "demo_user" || activeId.startsWith("guest_") };
 }

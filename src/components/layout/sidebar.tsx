@@ -16,12 +16,14 @@ import {
     Settings,
     ShieldAlert,
     LogOut,
-    Fuel
+    Fuel,
+    CloudSun
 } from "lucide-react";
 import { SignedIn, SignedOut, SignInButton, UserButton, useUser, useAuth } from "@clerk/nextjs";
 
 const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Weather, Sun & Moon", href: "/weather", icon: CloudSun },
     { name: "RV Purchase Calculator", href: "/calculators/purchase", icon: Calculator, featureKey: "purchase_calculator" },
     { name: "RV Setup Budget", href: "/calculators/setup", icon: Wallet, featureKey: "setup_budget" },
     { name: "RV Living Budget", href: "/calculators/budget", icon: Banknote, featureKey: "living_budget" },
