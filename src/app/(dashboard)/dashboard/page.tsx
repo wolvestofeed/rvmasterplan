@@ -234,7 +234,7 @@ export default function Dashboard() {
 
     // Grab some setup records too, if recently tracked (using logs that match 'Equipment')
     // Fallback: If no activity, keep array empty.
-    const sortedActivity = allActivity.sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime()).slice(0, 5);
+    const sortedActivity = allActivity.sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime()).slice(0, 8);
     setActivityFeed(sortedActivity);
 
     // Strict Living Budget Math
@@ -505,115 +505,82 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* RV Weight Distribution */}
-      <Card className="mb-8">
-        <CardHeader className="pb-4 border-b border-slate-100">
-          <CardTitle className="text-lg font-bold text-slate-800">RV Weight Distribution</CardTitle>
-          <p className="text-sm text-slate-500">Track varying load variables to maintain your ideal distribution.</p>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div className="border-b md:border-b-0 md:border-r border-slate-200 pb-4 md:pb-0 md:pr-4">
-              <p className="text-sm text-slate-500">Dry Weight</p>
-              <p className="text-2xl font-bold">{dryWeight.toLocaleString()} lbs</p>
-            </div>
-            <div className="border-b md:border-b-0 md:border-r border-slate-200 pb-4 md:pb-0 md:pr-4">
-              <p className="text-sm text-slate-500">Payload Capacity</p>
-              <p className="text-2xl font-bold">{payloadCapacity.toLocaleString()} lbs</p>
-            </div>
-            <div>
-              <p className="text-sm text-slate-500">GVWR</p>
-              <p className="text-2xl font-bold">{gvwr.toLocaleString()} lbs</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-2">
-            <div>
-              <p className="text-sm text-slate-500">Equipment Weight</p>
-              <p className="text-xl font-bold">{Math.round(computedEquipmentWeight).toLocaleString()} lbs</p>
-            </div>
-            <div>
-              <p className="text-sm text-slate-500">Water Weight</p>
-              <p className="text-xl font-bold">{waterWeight.toLocaleString()} lbs</p>
-            </div>
-            <div>
-              <p className="text-sm text-slate-500">Cargo Status</p>
-              <p className={`text-xl font-bold ${availablePayload > 200 ? "text-emerald-600" : availablePayload > 0 ? "text-amber-500" : "text-red-600"}`}>
-                {availablePayload > 200 ? "Normal Range" : availablePayload > 0 ? "Near Limit" : "Overweight"}
-              </p>
-              <p className="text-xs text-slate-500">Available payload: {availablePayload.toLocaleString()} lbs</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row items-center mt-8 pt-6 border-t border-slate-100 min-h-[300px]">
-            <div className="w-full md:w-1/2 h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={weightData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {weightData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="w-full md:w-1/2 pl-0 md:pl-8 mt-6 md:mt-0">
-              <ul className="space-y-3">
-                {weightData.map((item, i) => (
-                  <li key={i} className="flex justify-between items-center text-sm">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
-                      <span className="text-slate-600">{item.name}</span>
-                    </div>
-                    <span className="font-medium text-slate-800">{item.value.toLocaleString()} lbs</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Activity and Events Split */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-bold text-slate-800">Recent Activity</CardTitle>
+      {/* Grouped Weight and Timelines */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        {/* RV Weight Distribution */}
+        <Card className="flex flex-col">
+          <CardHeader className="pb-4 border-b border-slate-100">
+            <CardTitle className="text-lg font-bold text-slate-800">RV Weight Distribution</CardTitle>
+            <p className="text-sm text-slate-500">Maintain ideal distribution across varying loads.</p>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {activityFeed.length === 0 ? (
-                <p className="text-sm text-slate-500">No recent activity.</p>
-              ) : (
-                activityFeed.map((activity, i) => (
-                  <div key={i} className="flex gap-4">
-                    <div className={`mt-1 ${activity.color}`}>
-                      <activity.icon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-slate-800">{activity.title}</h4>
-                      <p className="text-xs text-slate-500 mb-1">{activity.desc}</p>
-                      <p className="text-xs text-slate-400">{activity.date}</p>
-                    </div>
-                  </div>
-                ))
-              )}
+          <CardContent className="pt-6 flex-1 flex flex-col">
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Dry Weight</p>
+                <p className="text-lg font-bold text-slate-700">{dryWeight.toLocaleString()} <span className="text-[10px] font-normal text-slate-400">lbs</span></p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Payload Cap</p>
+                <p className="text-lg font-bold text-slate-700">{payloadCapacity.toLocaleString()} <span className="text-[10px] font-normal text-slate-400">lbs</span></p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">GVWR</p>
+                <p className="text-lg font-bold text-slate-700">{gvwr.toLocaleString()} <span className="text-[10px] font-normal text-slate-400">lbs</span></p>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center flex-1 justify-center">
+              <div className="w-full h-[220px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={weightData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={75}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {weightData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              
+              <div className="w-full mt-4">
+                <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  {weightData.map((item, i) => (
+                    <li key={i} className="flex justify-between items-center text-xs">
+                      <div className="flex items-center truncate">
+                        <div className="w-2.5 h-2.5 rounded-full mr-1.5 shrink-0" style={{ backgroundColor: item.color }}></div>
+                        <span className="text-slate-500 truncate">{item.name}</span>
+                      </div>
+                      <span className="font-semibold text-slate-700">{item.value.toLocaleString()}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
+                    <span className="text-xs font-medium text-slate-500">Status:</span>
+                    <span className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${availablePayload > 200 ? "bg-emerald-50 text-emerald-700" : availablePayload > 0 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"}`}>
+                        {availablePayload > 200 ? "Normal Range" : availablePayload > 0 ? "Near Limit" : "Overweight"}
+                    </span>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-4 flex flex-row items-center justify-between">
-            <CardTitle className="text-lg font-bold text-slate-800">Timeline & Deadlines</CardTitle>
+        {/* Timeline & Deadlines */}
+        <Card className="flex flex-col">
+          <CardHeader className="pb-4 flex flex-row items-center justify-between border-b border-slate-100">
+            <div>
+              <CardTitle className="text-lg font-bold text-slate-800">Timeline & Deadlines</CardTitle>
+              <p className="text-sm text-slate-500">Upcoming maintenance and events.</p>
+            </div>
 
             <Dialog open={isEventModalOpen} onOpenChange={setIsEventModalOpen}>
               <DialogTrigger asChild>
@@ -635,51 +602,51 @@ export default function Dashboard() {
                       <Input id="title" placeholder="e.g. Inspect Roof Seals" value={newEventTitle} onChange={e => setNewEventTitle(e.target.value)} />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="type">Event Type</Label>
-                      <Select value={newEventType} onValueChange={setNewEventType}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Maintenance">Maintenance</SelectItem>
-                          <SelectItem value="Reminder">Reminder</SelectItem>
-                          <SelectItem value="Custom">Custom Note</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="date">Scheduled Date</Label>
-                      <Input id="date" type="date" value={newEventDate} onChange={e => setNewEventDate(e.target.value)} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="desc">Description / Notes (Optional)</Label>
-                      <Input id="desc" placeholder="Details about this event..." value={newEventDesc} onChange={e => setNewEventDesc(e.target.value)} />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button disabled={isSubmitting} type="submit" className="bg-brand-primary hover:bg-brand-primary-dark text-white">
-                      {isSubmitting ? "Saving..." : "Save Event"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+                       <Label htmlFor="type">Event Type</Label>
+                       <Select value={newEventType} onValueChange={setNewEventType}>
+                         <SelectTrigger>
+                           <SelectValue placeholder="Select type" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="Maintenance">Maintenance</SelectItem>
+                           <SelectItem value="Reminder">Reminder</SelectItem>
+                           <SelectItem value="Custom">Custom Note</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
+                     <div className="grid gap-2">
+                       <Label htmlFor="date">Scheduled Date</Label>
+                       <Input id="date" type="date" value={newEventDate} onChange={e => setNewEventDate(e.target.value)} />
+                     </div>
+                     <div className="grid gap-2">
+                       <Label htmlFor="desc">Description / Notes (Optional)</Label>
+                       <Input id="desc" placeholder="Details about this event..." value={newEventDesc} onChange={e => setNewEventDesc(e.target.value)} />
+                     </div>
+                   </div>
+                   <DialogFooter>
+                     <Button disabled={isSubmitting} type="submit" className="bg-brand-primary hover:bg-brand-primary-dark text-white">
+                       {isSubmitting ? "Saving..." : "Save Event"}
+                     </Button>
+                   </DialogFooter>
+                 </form>
+               </DialogContent>
+             </Dialog>
 
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6 flex-1">
             <div className="space-y-6">
               {events.length === 0 ? (
-                <p className="text-sm text-slate-500">No upcoming events.</p>
+                <p className="text-sm text-slate-500 italic py-4 text-center">No upcoming events.</p>
               ) : (
                 events.map((evt, i) => (
                   <div key={evt.id || i} className="flex gap-4">
-                    <div className={`mt-1 ${evt.color}`}>
+                    <div className={`mt-1 ${evt.color} shrink-0`}>
                       {getEventIcon(evt.source)}
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold text-slate-800">{evt.title}</h4>
-                      <p className="text-xs text-slate-500 mb-1">{evt.desc}</p>
-                      <p className="text-xs font-medium text-slate-700">{evt.date}</p>
+                      <p className="text-xs text-slate-500 mb-1 line-clamp-1">{evt.desc}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{evt.date}</p>
                     </div>
                   </div>
                 ))
@@ -687,8 +654,35 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-
       </div>
+
+      {/* Recent Activity — Full Width */}
+      <Card className="mb-10">
+        <CardHeader className="pb-4 border-b border-slate-100">
+          <CardTitle className="text-lg font-bold text-slate-800">Recent Activity</CardTitle>
+          <p className="text-sm text-slate-500">Your recent financial and logistical logs.</p>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-6">
+            {activityFeed.length === 0 ? (
+              <p className="text-sm text-slate-500 italic py-4 text-center col-span-full">No recent activity.</p>
+            ) : (
+              activityFeed.map((activity, i) => (
+                <div key={i} className="flex gap-4 items-start">
+                  <div className={`mt-1 ${activity.color} shrink-0 p-2 bg-slate-50 rounded-lg`}>
+                    <activity.icon className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-bold text-slate-800 truncate">{activity.title}</h4>
+                    <p className="text-xs text-slate-500 mb-1 line-clamp-2 leading-relaxed">{activity.desc}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{activity.date}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
