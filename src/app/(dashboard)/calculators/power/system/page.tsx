@@ -424,12 +424,7 @@ export default function PowerStrategyPage() {
                 imageUrl="/images/page-headers/power_solar-header.jpg"
             />
 
-            <div className="flex justify-end mt-2 mb-8 gap-2">
-                <Button variant="outline" onClick={importFromSetupBudget} className="flex items-center">
-                    <ImportIcon className="mr-2 h-4 w-4" /> Import from Budget
-                </Button>
 
-            </div>
 
             {/* Hero Analytics Dash */}
             <Card className="p-6 bg-slate-50 mb-8">
@@ -465,13 +460,18 @@ export default function PowerStrategyPage() {
                     <Progress value={(getDailySolarGeneration() / (getTotalDailyConsumption() || 1)) * 100} className="h-3" />
                 </div>
             </Card>
-
             <Tabs defaultValue="load" id="power-tabs">
-                <TabsList className="mb-6 grid w-full max-w-lg" style={{ gridTemplateColumns: featureSolarCapture ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)' }}>
-                    <TabsTrigger value="load">Electrical Load</TabsTrigger>
-                    <TabsTrigger value="solar">Solar Equipment</TabsTrigger>
-                    {featureSolarCapture && <TabsTrigger value="capture">Solar Capture</TabsTrigger>}
-                </TabsList>
+                <div className="flex items-center justify-between gap-4 mb-8">
+                    <TabsList className="grid w-auto min-w-[300px]" style={{ gridTemplateColumns: featureSolarCapture ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)' }}>
+                        <TabsTrigger value="load">Electrical Load</TabsTrigger>
+                        <TabsTrigger value="solar">Solar Equipment</TabsTrigger>
+                        {featureSolarCapture && <TabsTrigger value="capture">Solar Capture</TabsTrigger>}
+                    </TabsList>
+
+                    <Button variant="outline" onClick={importFromSetupBudget} className="flex items-center h-10 border-orange-200 hover:bg-orange-50 text-orange-700 whitespace-nowrap">
+                        <ImportIcon className="mr-2 h-4 w-4" /> Import from Budget
+                    </Button>
+                </div>
 
                 <TabsContent value="load" className="space-y-6">
                     <div className="grid lg:grid-cols-3 gap-6">
