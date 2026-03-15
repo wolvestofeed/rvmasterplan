@@ -230,7 +230,7 @@ export default function RVSetupBudgetPage() {
             <HeaderHero
                 title="RV Setup Budget & Purchase Plan"
                 description="Track items needed to set up your RV for full-time living. Monitor costs, priorities, and inventory."
-                imageUrl="/images/page-headers/rv-setup-header.jpg"
+                imageUrl="/images/page-headers/rvmp-setup-header.jpg"
             />
 
             <div className="flex justify-end mt-2 mb-8">

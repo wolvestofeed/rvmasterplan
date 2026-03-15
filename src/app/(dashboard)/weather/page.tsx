@@ -299,6 +299,7 @@ export default function WeatherPage() {
                         </div>
                     )}
                     <div className="relative">
+                        <p className="text-sm text-slate-500 mb-2">Type your location and hit Enter to prompt the database.</p>
                         <div className="flex gap-2">
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />

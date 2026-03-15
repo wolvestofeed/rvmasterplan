@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import Image from "next/image";
 import {
     ShieldAlert,
-    LogOut
+    LogOut,
+    Mail
 } from "lucide-react";
 import { SignedIn, SignedOut, SignInButton, UserButton, useUser, useAuth } from "@clerk/nextjs";
 
@@ -96,6 +97,16 @@ export function Sidebar({ featureFlags = {}, planType = 'full' }: { featureFlags
                         <div className="mt-8 mb-2 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                             Session
                         </div>
+                        <Link
+                            href="/contact"
+                            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${pathname === '/contact'
+                                ? "bg-blue-100/50 text-blue-700 font-semibold"
+                                : "text-slate-600 hover:bg-[#e6ecd9] hover:text-slate-900"
+                                }`}
+                        >
+                            <Mail className="h-4 w-4" />
+                            Contact RVMP
+                        </Link>
                         <button
                             onClick={handleLogout}
                             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-slate-600 hover:bg-red-50 hover:text-red-700 w-full text-left font-semibold"

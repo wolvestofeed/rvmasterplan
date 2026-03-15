@@ -330,6 +330,9 @@ export default function LandingPage() {
                         © {new Date().getFullYear()} Wolves to Feed Publishing<br />
                         All rights reserved.
                     </div>
+                    <Link href="/contact" className="text-slate-400 text-sm hover:text-white transition-colors">
+                        Contact Us
+                    </Link>
                 </div>
             </footer>
         </div>

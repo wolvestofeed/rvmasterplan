@@ -371,30 +371,30 @@ export default function RVBudgetPage() {
 
             <Tabs defaultValue="expenses">
                 <div className="grid lg:grid-cols-3 gap-6 mb-6 items-center">
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-2">
                         <TabsList className="grid w-full grid-cols-3 bg-transparent h-auto gap-2 p-0 shadow-none border-0">
-                            <TabsTrigger 
-                                value="expenses" 
-                                className="h-11 border border-purple-200 bg-gradient-to-b from-purple-50 to-purple-100/50 text-purple-900 data-[state=active]:from-white data-[state=active]:to-purple-50 data-[state=active]:border-purple-600 data-[state=active]:text-purple-700 data-[state=active]:shadow-md font-semibold transition-all rounded-md"
+                            <TabsTrigger
+                                value="expenses"
+                                className="h-11 px-6 border border-purple-200 bg-gradient-to-b from-purple-50 to-purple-100/50 text-purple-900 data-[state=active]:from-white data-[state=active]:to-purple-50 data-[state=active]:border-purple-600 data-[state=active]:text-purple-700 data-[state=active]:shadow-md font-semibold transition-all rounded-md whitespace-nowrap"
                             >
                                 Expenses
                             </TabsTrigger>
-                            <TabsTrigger 
-                                value="planning" 
-                                className="h-11 border border-purple-200 bg-gradient-to-b from-purple-50 to-purple-100/50 text-purple-900 data-[state=active]:from-white data-[state=active]:to-purple-50 data-[state=active]:border-purple-600 data-[state=active]:text-purple-700 data-[state=active]:shadow-md font-semibold transition-all rounded-md"
+                            <TabsTrigger
+                                value="planning"
+                                className="h-11 px-6 border border-purple-200 bg-gradient-to-b from-purple-50 to-purple-100/50 text-purple-900 data-[state=active]:from-white data-[state=active]:to-purple-50 data-[state=active]:border-purple-600 data-[state=active]:text-purple-700 data-[state=active]:shadow-md font-semibold transition-all rounded-md whitespace-nowrap"
                             >
                                 Budget Planning
                             </TabsTrigger>
-                            <TabsTrigger 
-                                value="charts" 
-                                className="h-11 border border-purple-200 bg-gradient-to-b from-purple-50 to-purple-100/50 text-purple-900 data-[state=active]:from-white data-[state=active]:to-purple-50 data-[state=active]:border-purple-600 data-[state=active]:text-purple-700 data-[state=active]:shadow-md font-semibold transition-all rounded-md"
+                            <TabsTrigger
+                                value="charts"
+                                className="h-11 px-6 border border-purple-200 bg-gradient-to-b from-purple-50 to-purple-100/50 text-purple-900 data-[state=active]:from-white data-[state=active]:to-purple-50 data-[state=active]:border-purple-600 data-[state=active]:text-purple-700 data-[state=active]:shadow-md font-semibold transition-all rounded-md whitespace-nowrap"
                             >
                                 Annual Analysis
                             </TabsTrigger>
                         </TabsList>
                     </div>
-                    
-                    <div className="lg:col-span-2 flex justify-center">
+
+                    <div className="lg:col-span-1 flex justify-end">
                         <div className="flex items-center gap-3">
                             <Label className="text-sm font-medium text-slate-500">Viewing Month:</Label>
                             <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>

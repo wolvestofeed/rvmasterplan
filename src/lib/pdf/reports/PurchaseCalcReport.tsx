@@ -196,7 +196,7 @@ export function PurchaseCalcPages({ financials, rv }: PurchaseCalcReportProps) {
   const summaryColumns: TableColumn[] = [
     { header: 'Line Item', key: 'item', flex: 2 },
     { header: 'Amount', key: 'amount', flex: 1, align: 'right', bold: true },
-    { header: 'Notes', key: 'notes', flex: 2 },
+    { header: 'Notes', key: 'notes', flex: 2, align: 'center' },
   ]
 
   const summaryRows = [

@@ -4,7 +4,10 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { SaveIcon, PrinterIcon, ArrowLeft } from "lucide-react";
+import { SaveIcon, Download, Loader2, ArrowLeft } from "lucide-react";
+import React from "react";
+import { pdf } from "@react-pdf/renderer";
+import { PurchaseCalcReport } from "@/lib/pdf/reports/PurchaseCalcReport";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { KpiValue } from "@/components/ui/kpi-value";
@@ -23,7 +26,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 import { FinancialData, FinancialSummary } from "@/types";
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
-import { getFinancialData, updateFinancialData } from "@/app/actions/financials";
+import { getFinancialData, updateFinancialData, getRVVehicle } from "@/app/actions/financials";
 
 const financialSchema = z.object({
     rvType: z.string().min(1, { message: "RV type is required" }),
@@ -50,6 +53,30 @@ type FinancialFormValues = z.infer<typeof financialSchema>;
 export default function PurchaseCalculatorPage() {
     const [isClient, setIsClient] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const handleDownloadReport = async () => {
+        setIsDownloading(true);
+        try {
+            const [rvRes, finRes] = await Promise.all([
+                getRVVehicle(),
+                getFinancialData(),
+            ]);
+            const rv = rvRes?.success ? rvRes.data : null;
+            const financials = finRes?.success ? finRes.data : null;
+            const blob = await pdf(React.createElement(PurchaseCalcReport, { rv, financials }) as any).toBlob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "RVMP_Purchase_Calculator_Report.pdf";
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch {
+            toast.error("Failed to generate report.");
+        } finally {
+            setIsDownloading(false);
+        }
+    };
 
     const defaultValues: FinancialFormValues = {
         rvType: "Travel Trailer",
@@ -389,8 +416,12 @@ export default function PurchaseCalculatorPage() {
                                 <div className="text-right font-medium text-slate-900">{formatCurrency(summary.totalInterest)}</div>
                             </div>
                         </div>
-                        <Button variant="outline" className="w-full mt-4" onClick={() => window.print()}>
-                            <PrinterIcon className="mr-2 h-4 w-4" /> Print Summary
+                        <Button variant="outline" className="w-full mt-4" onClick={handleDownloadReport} disabled={isDownloading}>
+                            {isDownloading ? (
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
+                            ) : (
+                                <><Download className="mr-2 h-4 w-4" /> Download Report</>
+                            )}
                         </Button>
                     </Card>
                 </div>
