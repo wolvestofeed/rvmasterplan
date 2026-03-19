@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { db } from "@/lib/db";
 import { userProfiles } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { sendOnboardingSequence } from "@/lib/email-service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_fallback", {
     apiVersion: "2024-04-10" as Stripe.StripeConfig["apiVersion"],
@@ -52,6 +53,15 @@ export async function POST(req: Request) {
                     billingAmountCents: session.amount_total || 2000,
                 })
                 .where(eq(userProfiles.userId, userId));
+
+            // Send onboarding email sequence
+            await sendOnboardingSequence({
+                userId,
+                email: session.customer_details?.email || session.customer_email || "",
+                name: session.customer_details?.name || "",
+                plan: "starter",
+                billingInterval: "one_time",
+            });
         } else {
             // Logic for recurring subscriptions
             const subscription = await stripe.subscriptions.retrieve(
@@ -72,6 +82,15 @@ export async function POST(req: Request) {
                     billingAmountCents: amountCents,
                 })
                 .where(eq(userProfiles.userId, userId));
+
+            // Send onboarding email sequence
+            await sendOnboardingSequence({
+                userId,
+                email: session.customer_details?.email || session.customer_email || "",
+                name: session.customer_details?.name || "",
+                plan: "full",
+                billingInterval: interval as "month" | "year",
+            });
         }
     }
 

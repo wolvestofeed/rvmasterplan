@@ -14,6 +14,7 @@
     "@clerk/nextjs": "^6.39.0",
     "@hookform/resolvers": "^5.2.2",
     "@neondatabase/serverless": "^1.0.2",
+    "@react-email/components": "^1.0.10",
     "@react-pdf/renderer": "^4.3.2",
     "@types/uuid": "^10.0.0",
     "@uploadthing/react": "^7.3.3",
@@ -31,6 +32,7 @@
     "radix-ui": "^1.4.3",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "react-email": "^5.2.10",
     "react-hook-form": "^7.71.2",
     "recharts": "^3.7.0",
     "resend": "^6.9.4",
@@ -44,6 +46,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@react-email/preview-server": "^5.2.10",
     "@tailwindcss/postcss": "^4",
     "@types/file-saver": "^2.0.7",
     "@types/node": "^20",
