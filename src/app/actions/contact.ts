@@ -1,5 +1,7 @@
 "use server";
 
+import { resend } from "@/lib/resend";
+
 interface ContactFormData {
     name: string;
     email: string;
@@ -14,8 +16,24 @@ export async function submitContactForm(data: ContactFormData) {
         return { success: false, error: "All fields are required." };
     }
 
-    // TODO: Wire up to email service (SendGrid, Resend, etc.) or form provider
-    console.log("Contact form submission:", { name, email, subject, message });
+    try {
+        await resend.emails.send({
+            from: "RVMP Contact <noreply@rvmasterplan.app>",
+            to: "lonewolf@rvmasterplan.app",
+            replyTo: email,
+            subject: `[RVMP Contact] ${subject}`,
+            html: `
+                <h2>New Contact Form Submission</h2>
+                <p><strong>From:</strong> ${name} (${email})</p>
+                <p><strong>Subject:</strong> ${subject}</p>
+                <hr />
+                <p>${message.replace(/\n/g, "<br />")}</p>
+            `,
+        });
 
-    return { success: true };
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to send contact email:", error);
+        return { success: false, error: "Failed to send message. Please try again." };
+    }
 }
