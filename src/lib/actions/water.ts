@@ -4,6 +4,7 @@ import { db } from '../db';
 import { waterActivities, tankLogs } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { randomUUID } from 'crypto';
 import { getActiveUserId, requireAuth } from './auth-helpers';
 
 export async function getWaterActivities() {
@@ -14,7 +15,7 @@ export async function getWaterActivities() {
 export async function addWaterActivity(data: { name: string, category: string, gallonsPerUse: number, timesPerDay: number }) {
     const activeId = await requireAuth();
 
-    const id = Date.now().toString();
+    const id = randomUUID();
     await db.insert(waterActivities).values({
         id,
         userId: activeId,
@@ -43,7 +44,7 @@ export async function getTankLogs() {
 export async function addTankLog(data: { date: string, type: string, tank: string, volume: number }) {
     const activeId = await requireAuth();
 
-    const id = Date.now().toString();
+    const id = randomUUID();
     await db.insert(tankLogs).values({
         id,
         userId: activeId,

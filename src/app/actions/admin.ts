@@ -6,6 +6,7 @@ import {
     powerSystems, waterSystems, waterActivities, tankLogs, incomes, expenses,
     electricalDevices, solarEquipment, dailySolarLogs, financialData, targetBudgets
 } from "@/lib/db/schema";
+import { randomUUID } from "crypto";
 import { eq, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
@@ -115,7 +116,7 @@ export async function toggleUserSubscription(userId: string) {
             const defaultDate = new Date();
             defaultDate.setDate(defaultDate.getDate() + 30);
             await db.insert(userProfiles).values({
-                id: Math.random().toString(36).substring(2, 10),
+                id: randomUUID(),
                 userId,
                 subscriptionStatus: 'active',
                 subscriptionRenewalDate: defaultDate,

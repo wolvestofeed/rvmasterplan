@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
@@ -76,7 +77,7 @@ export async function POST(req: Request) {
             }
 
             await db.insert(userProfiles).values({
-                id: Math.random().toString(36).substring(2, 10),
+                id: randomUUID(),
                 userId: id,
                 firstName: first_name || null,
                 lastName: last_name || null,

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { waterSystems, waterActivities, tankLogs, rvVehicles } from "@/lib/db/schema";
+import { waterSystems, waterActivities, tankLogs } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getActiveUserId, requireAuth, getRvId } from "@/lib/actions/auth-helpers";
@@ -38,30 +38,27 @@ export async function getWaterSystem() {
 
 export async function updateWaterSystem(data: { freshCapacityGal: number, grayCapacityGal: number, blackCapacityGal: number }) {
     try {
-        const userId = await requireAuth();
+        const { rvId, isDemo } = await getRvId();
+        if (isDemo) return { success: false, error: "Guest Mode is Read-Only!" };
+        if (!rvId) return { success: false, error: "No RV profile found" };
 
-        const rvs = await db.select().from(rvVehicles).where(eq(rvVehicles.userId, userId)).limit(1);
-        if (!rvs.length) return { success: false, error: "No RV profile found" };
-        const rvId = rvs[0].id;
-
-        const existing = await db.select().from(waterSystems).where(eq(waterSystems.rvId, rvId)).limit(1);
-
-        if (existing.length) {
-            await db.update(waterSystems).set({
+        await db.insert(waterSystems)
+            .values({
+                id: randomUUID(),
+                rvId,
                 freshCapacityGal: data.freshCapacityGal.toString(),
                 grayCapacityGal: data.grayCapacityGal.toString(),
                 blackCapacityGal: data.blackCapacityGal.toString(),
-                updatedAt: new Date(),
-            }).where(eq(waterSystems.rvId, rvId));
-        } else {
-            await db.insert(waterSystems).values({
-                id: Date.now().toString(),
-                rvId: rvId,
-                freshCapacityGal: data.freshCapacityGal.toString(),
-                grayCapacityGal: data.grayCapacityGal.toString(),
-                blackCapacityGal: data.blackCapacityGal.toString(),
+            })
+            .onConflictDoUpdate({
+                target: waterSystems.rvId,
+                set: {
+                    freshCapacityGal: data.freshCapacityGal.toString(),
+                    grayCapacityGal: data.grayCapacityGal.toString(),
+                    blackCapacityGal: data.blackCapacityGal.toString(),
+                    updatedAt: new Date(),
+                },
             });
-        }
 
         revalidatePath("/calculators/water");
         return { success: true };
@@ -74,7 +71,7 @@ export async function updateWaterSystem(data: { freshCapacityGal: number, grayCa
 export async function getWaterActivities() {
     try {
         const activeId = await getActiveUserId();
-        const results = await db.select().from(waterActivities).where(eq(waterActivities.userId, activeId));
+        const results = await db.select().from(waterActivities).where(eq(waterActivities.userId, activeId)).limit(500);
         return { success: true, data: results };
     } catch (error) {
         console.error("Error fetching water activities:", error);
@@ -87,7 +84,7 @@ export async function addWaterActivity(data: { name: string; category: string; g
         const userId = await requireAuth();
 
         await db.insert(waterActivities).values({
-            id: Date.now().toString(),
+            id: randomUUID(),
             userId: userId,
             name: data.name,
             category: data.category,
@@ -139,7 +136,7 @@ export async function deleteWaterActivity(id: string) {
 export async function getTankLogs() {
     try {
         const activeId = await getActiveUserId();
-        const results = await db.select().from(tankLogs).where(eq(tankLogs.userId, activeId));
+        const results = await db.select().from(tankLogs).where(eq(tankLogs.userId, activeId)).limit(500);
         return { success: true, data: results };
     } catch (error) {
         console.error("Error fetching tank logs:", error);
@@ -152,7 +149,7 @@ export async function addTankLog(data: { date: string, type: 'Dump' | 'Fill', ta
         const userId = await requireAuth();
 
         await db.insert(tankLogs).values({
-            id: Date.now().toString(),
+            id: randomUUID(),
             userId: userId,
             date: data.date,
             type: data.type,

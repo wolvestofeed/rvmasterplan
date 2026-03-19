@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { equipmentItems } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
 import { eq, desc } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import { getActiveUserId, requireAuth } from "@/lib/actions/auth-helpers";
 
 export async function getEquipmentItems() {
@@ -12,7 +13,8 @@ export async function getEquipmentItems() {
 
         const items = await db.query.equipmentItems.findMany({
             where: eq(equipmentItems.userId, activeId),
-            orderBy: [desc(equipmentItems.createdAt)]
+            orderBy: [desc(equipmentItems.createdAt)],
+            limit: 500,
         });
 
         return { success: true, data: items };
@@ -36,7 +38,7 @@ export async function addEquipmentItem(data: {
         const activeId = await requireAuth();
 
         const newItem = await db.insert(equipmentItems).values({
-            id: Math.random().toString(36).substring(2, 10),
+            id: randomUUID(),
             userId: activeId,
             name: data.name,
             category: data.category,

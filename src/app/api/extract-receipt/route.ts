@@ -1,3 +1,4 @@
+import { auth } from '@clerk/nextjs/server';
 import { google } from '@ai-sdk/google';
 import { generateObject } from 'ai';
 import { z } from 'zod';
@@ -7,6 +8,11 @@ export const maxDuration = 30;
 
 export async function POST(req: Request) {
     try {
+        const { userId } = await auth();
+        if (!userId) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+        }
+
         const { image } = await req.json();
 
         if (!image) {

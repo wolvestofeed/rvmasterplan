@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { documents } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "crypto";
 import { getActiveUserId, requireAuth } from "@/lib/actions/auth-helpers";
 
 export async function getDocuments() {
@@ -12,7 +13,8 @@ export async function getDocuments() {
 
         const results = await db.query.documents.findMany({
             where: eq(documents.userId, activeId),
-            orderBy: [desc(documents.createdAt)]
+            orderBy: [desc(documents.createdAt)],
+            limit: 500,
         });
 
         return { success: true, data: results };
@@ -35,7 +37,7 @@ export async function addDocument(data: {
         const costStr = data.renewalCost ? parseFloat(data.renewalCost).toString() : null;
 
         const newDoc = await db.insert(documents).values({
-            id: Math.random().toString(36).substring(2, 10),
+            id: randomUUID(),
             userId: activeId,
             title: data.title,
             fileType: data.fileType,

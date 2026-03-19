@@ -4,6 +4,7 @@ import { db } from '../db';
 import { expenses, financialData, targetBudgets } from "../db/schema";
 import { and, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { randomUUID } from 'crypto';
 import { getActiveUserId, requireAuth } from './auth-helpers';
 
 export async function getTargetBudgets(year: number) {
@@ -27,7 +28,7 @@ export async function setTargetBudget(month: number, year: number, amount: numbe
         await db.update(targetBudgets).set({ amount: String(amount) }).where(eq(targetBudgets.id, existing[0].id));
     } else {
         await db.insert(targetBudgets).values({
-            id: Date.now().toString() + "-" + month,
+            id: randomUUID(),
             userId: activeId,
             month,
             year,
@@ -51,7 +52,7 @@ export async function getExpenses(year?: number) {
 export async function addExpense(data: { name: string, category: string, amount: number, isFixed: boolean, month: number, year: number, group: string, costPerItem: number, quantity: number, tax: number, gallons?: number, odometerReading?: number, isFuelEvent?: boolean, isPropaneEvent?: boolean }) {
     const activeId = await requireAuth();
 
-    const id = Date.now().toString();
+    const id = randomUUID();
     await db.insert(expenses).values({
         id,
         userId: activeId,

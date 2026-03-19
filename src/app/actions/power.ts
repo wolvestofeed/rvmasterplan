@@ -2,8 +2,9 @@
 
 import { db } from "@/lib/db";
 import { electricalDevices, solarEquipment, dailySolarLogs } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "crypto";
 import { getRvId } from "@/lib/actions/auth-helpers";
 
 // --- Electrical Devices ---
@@ -23,7 +24,7 @@ export async function addElectricalDevice(values: any) {
         if (!rvId) return { error: "RV Profile not found" };
 
         await db.insert(electricalDevices).values({
-            id: Date.now().toString(),
+            id: randomUUID(),
             rvId,
             name: values.name,
             groupType: values.group,
@@ -80,7 +81,7 @@ export async function addSolarEquipment(values: any) {
         if (!rvId) return { error: "RV Profile not found" };
 
         await db.insert(solarEquipment).values({
-            id: Date.now().toString(),
+            id: randomUUID(),
             rvId,
             make: values.make,
             model: values.model,
@@ -134,7 +135,11 @@ export async function getDailySolarLogs() {
     try {
         const { rvId } = await getRvId();
         if (!rvId) return { success: false, data: [] };
-        const data = await db.query.dailySolarLogs.findMany({ where: eq(dailySolarLogs.rvId, rvId) });
+        const data = await db.query.dailySolarLogs.findMany({
+            where: eq(dailySolarLogs.rvId, rvId),
+            orderBy: [desc(dailySolarLogs.date)],
+            limit: 365,
+        });
         return { success: true, data };
     } catch (e) { return { success: false, error: "Failed to fetch" }; }
 }
@@ -146,7 +151,7 @@ export async function addDailySolarLog(values: any) {
         if (!rvId) return { error: "RV Profile not found" };
 
         await db.insert(dailySolarLogs).values({
-            id: Date.now().toString(),
+            id: randomUUID(),
             rvId,
             date: values.date,
             weatherCondition: values.weatherCondition,

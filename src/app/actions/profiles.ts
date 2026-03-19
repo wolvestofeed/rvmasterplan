@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { userProfiles } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import { getActiveUserId, requireAuth } from "@/lib/actions/auth-helpers";
 
 export async function getUserProfile() {
@@ -19,7 +20,7 @@ export async function getUserProfile() {
             defaultDate.setDate(defaultDate.getDate() + 30);
 
             const newProfiles = await db.insert(userProfiles).values({
-                id: Math.random().toString(36).substring(2, 10),
+                id: randomUUID(),
                 userId: activeId,
                 subscriptionStatus: 'active',
                 subscriptionRenewalDate: defaultDate

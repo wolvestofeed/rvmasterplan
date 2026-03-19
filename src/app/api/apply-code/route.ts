@@ -31,7 +31,9 @@ export async function POST(req: Request) {
             })
             .where(eq(userProfiles.userId, userId));
 
-        revalidatePath('/', 'layout');
+        revalidatePath('/dashboard');
+        revalidatePath('/settings');
+        revalidatePath('/welcome');
 
         return new Response(JSON.stringify({ success: true }));
     } catch (e: any) {

@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { eventsAndLogs } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "crypto";
 import { requireAuth } from "@/lib/actions/auth-helpers";
 
 export async function addManualEvent(data: {
@@ -15,7 +16,7 @@ export async function addManualEvent(data: {
         const activeId = await requireAuth();
 
         const newEvent = await db.insert(eventsAndLogs).values({
-            id: Math.random().toString(36).substring(2, 10),
+            id: randomUUID(),
             userId: activeId,
             title: data.title,
             eventType: data.eventType,

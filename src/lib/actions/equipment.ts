@@ -4,6 +4,7 @@ import { db } from '../db';
 import { equipmentItems } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { randomUUID } from 'crypto';
 import { getActiveUserId, requireAuth } from './auth-helpers';
 
 export async function getEquipment() {
@@ -18,7 +19,7 @@ export async function addEquipment(data: {
 }) {
     const activeId = await requireAuth();
 
-    const id = Date.now().toString();
+    const id = randomUUID();
     await db.insert(equipmentItems).values({
         id,
         userId: activeId,

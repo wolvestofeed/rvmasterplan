@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { db } from "@/lib/db";
 import { rvVehicles } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -26,11 +27,12 @@ export async function requireAuth() {
     return userId;
 }
 
-/** Returns { rvId, isDemo } for the current user's first RV vehicle. */
-export async function getRvId() {
+/** Returns { rvId, isDemo } for the current user's first RV vehicle.
+ *  Wrapped in React cache() to deduplicate DB calls within a single request. */
+export const getRvId = cache(async () => {
     const activeId = await getActiveUserId();
     const rv = await db.query.rvVehicles.findFirst({
         where: eq(rvVehicles.userId, activeId),
     });
     return { rvId: rv?.id, isDemo: activeId === "demo_user" || activeId.startsWith("guest_") };
-}
+});

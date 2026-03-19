@@ -21,11 +21,23 @@ export async function getDashboardEvents(): Promise<{ success: boolean; data?: D
 
         const aggregatedEvents: DashboardEvent[] = [];
 
-        // 1. Fetch upcoming Document Renewals
-        const docs = await db.query.documents.findMany({
-            where: eq(documents.userId, activeId),
-        });
+        // Fire all 4 queries in parallel instead of sequentially
+        const [docs, events, items, profile] = await Promise.all([
+            db.query.documents.findMany({
+                where: eq(documents.userId, activeId),
+            }),
+            db.query.eventsAndLogs.findMany({
+                where: eq(eventsAndLogs.userId, activeId),
+            }),
+            db.query.equipmentItems.findMany({
+                where: eq(equipmentItems.userId, activeId),
+            }),
+            db.query.userProfiles.findFirst({
+                where: eq(userProfiles.userId, activeId),
+            }),
+        ]);
 
+        // 1. Document Renewals
         docs.forEach(doc => {
             if (doc.renewalDate) {
                 const dateObj = new Date(doc.renewalDate);
@@ -41,11 +53,7 @@ export async function getDashboardEvents(): Promise<{ success: boolean; data?: D
             }
         });
 
-        // 2. Fetch Manually Scheduled Events (Maintenance, Reminders)
-        const events = await db.query.eventsAndLogs.findMany({
-            where: eq(eventsAndLogs.userId, activeId)
-        });
-
+        // 2. Manually Scheduled Events (Maintenance, Reminders)
         events.forEach(evt => {
             if (evt.scheduledDate && evt.status === "Upcoming") {
                 const dateObj = new Date(evt.scheduledDate);
@@ -61,11 +69,7 @@ export async function getDashboardEvents(): Promise<{ success: boolean; data?: D
             }
         });
 
-        // 3. Fetch Equipment Purchase Deadlines
-        const items = await db.query.equipmentItems.findMany({
-            where: eq(equipmentItems.userId, activeId)
-        });
-
+        // 3. Equipment Purchase Deadlines
         items.forEach(item => {
             if (item.purchaseDeadline && !item.isAcquired) {
                 const dateObj = new Date(item.purchaseDeadline);
@@ -81,11 +85,7 @@ export async function getDashboardEvents(): Promise<{ success: boolean; data?: D
             }
         });
 
-        // 4. Fetch User Subscription Renewal
-        const profile = await db.query.userProfiles.findFirst({
-            where: eq(userProfiles.userId, activeId)
-        });
-
+        // 4. Subscription Renewal
         if (profile?.subscriptionRenewalDate) {
             const dateObj = new Date(profile.subscriptionRenewalDate);
             aggregatedEvents.push({

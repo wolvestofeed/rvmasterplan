@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { financialData, rvVehicles } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "crypto";
 import { getActiveUserId, getRvId } from "@/lib/actions/auth-helpers";
 
 export async function getRVVehicle() {
@@ -42,10 +43,6 @@ export async function updateFinancialData(values: any) {
         if (isDemo) return { error: "Guest Mode is Read-Only! Cannot save calculations." };
         if (!rvId) return { error: "RV Profile not found" };
 
-        const existing = await db.query.financialData.findFirst({
-            where: eq(financialData.rvId, rvId)
-        });
-
         const numValues = {
             purchasePrice: values.purchasePrice?.toString(),
             salesTaxRate: values.salesTaxRate?.toString(),
@@ -60,17 +57,16 @@ export async function updateFinancialData(values: any) {
             accessories: values.accessories?.toString()
         };
 
-        if (existing) {
-            await db.update(financialData)
-                .set({ ...numValues, updatedAt: new Date() })
-                .where(eq(financialData.id, existing.id));
-        } else {
-            await db.insert(financialData).values({
-                id: Date.now().toString(),
+        await db.insert(financialData)
+            .values({
+                id: randomUUID(),
                 rvId,
                 ...numValues
+            })
+            .onConflictDoUpdate({
+                target: financialData.rvId,
+                set: { ...numValues, updatedAt: new Date() },
             });
-        }
         revalidatePath('/calculators/purchase');
         return { success: true };
     } catch (error: any) {
