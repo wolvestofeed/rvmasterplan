@@ -461,10 +461,10 @@ export default function PowerStrategyPage() {
             </Card>
             <Tabs defaultValue="load" id="power-tabs">
                 <div className="flex items-center justify-between gap-4 mb-8">
-                    <TabsList className="grid w-auto min-w-[300px]" style={{ gridTemplateColumns: featureSolarCapture ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)' }}>
-                        <TabsTrigger value="load">Electrical Load</TabsTrigger>
-                        <TabsTrigger value="solar">Solar Equipment</TabsTrigger>
-                        {featureSolarCapture && <TabsTrigger value="capture">Solar Capture</TabsTrigger>}
+                    <TabsList className="flex gap-2 bg-transparent p-0 h-auto">
+                        <TabsTrigger value="load" className="bg-gradient-to-br from-white/90 via-white/40 to-brand-primary/30 border-2 border-amber-600 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-50 data-[state=active]:via-white data-[state=active]:to-brand-primary/40 data-[state=active]:text-amber-700 data-[state=active]:shadow-md data-[state=active]:border-amber-600">Electrical Load</TabsTrigger>
+                        <TabsTrigger value="solar" className="bg-gradient-to-br from-white/90 via-white/40 to-brand-primary/30 border-2 border-amber-600 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-50 data-[state=active]:via-white data-[state=active]:to-brand-primary/40 data-[state=active]:text-amber-700 data-[state=active]:shadow-md data-[state=active]:border-amber-600">Solar Equipment</TabsTrigger>
+                        {featureSolarCapture && <TabsTrigger value="capture" className="bg-gradient-to-br from-white/90 via-white/40 to-brand-primary/30 border-2 border-amber-600 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-50 data-[state=active]:via-white data-[state=active]:to-brand-primary/40 data-[state=active]:text-amber-700 data-[state=active]:shadow-md data-[state=active]:border-amber-600">Solar Capture</TabsTrigger>}
                     </TabsList>
 
                     <Button variant="outline" onClick={importFromSetupBudget} className="flex items-center h-10 border-orange-200 hover:bg-orange-50 text-orange-700 whitespace-nowrap">
@@ -715,7 +715,56 @@ export default function PowerStrategyPage() {
                         </div>
 
                         <div className="lg:col-span-2 space-y-6">
-                    <div className="grid md:grid-cols-2 gap-6">
+                        <Card className="p-6">
+                            <h3 className="text-lg font-medium text-slate-800 mb-4">
+                                Batteries & Generators
+                            </h3>
+                            {genericEquipment.filter(item => item.equipmentType === 'Battery' || item.equipmentType === 'Generator').length === 0 ? <p className="text-sm text-slate-500">No storage configured.</p> : (
+                                <div className="space-y-3">
+                                    {genericEquipment.filter(item => item.equipmentType === 'Generator').map(g => {
+                                        const isEditing = editingEquipmentId === g.id;
+                                        return (
+                                        <div key={g.id} className={`flex flex-col p-3 rounded-lg border group relative transition-all duration-200 ${isEditing ? 'bg-purple-50 border-l-4 border-purple-500' : 'bg-slate-50 border-slate-100'}`}>
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <div className={`font-medium ${isEditing ? 'text-purple-900' : 'text-slate-800'}`}>
+                                                        {g.make} {g.model} {isEditing && <span className="text-xs ml-2 bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full">Editing</span>}
+                                                    </div>
+                                                    <div className="text-xs text-slate-500">Generator {g.specs ? `• ${g.specs}` : ''} • Qty: {g.quantity}{g.weight ? ` • ${g.weight * g.quantity} lbs` : ''}</div>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <div className={`font-bold mr-2 ${isEditing ? 'text-purple-700' : 'text-slate-700'}`}>${formatNumber(g.price * g.quantity)}</div>
+                                                    <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" className={`h-8 w-8 ${isEditing ? 'bg-purple-200 text-purple-700' : 'text-slate-400 hover:text-blue-600'}`} onClick={() => editGenericEquipment(g.id)}><PencilIcon className="h-4 w-4" /></Button>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => deleteGenericEquipment(g.id)}><TrashIcon className="h-4 w-4" /></Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        );
+                                    })}
+                                    {genericEquipment.filter(item => item.equipmentType === 'Battery').map(b => {
+                                        const isEditing = editingEquipmentId === b.id;
+                                        return (
+                                        <div key={b.id} className={`flex flex-col p-3 rounded-lg border group relative transition-all duration-200 ${isEditing ? 'bg-purple-50 border-l-4 border-purple-500' : 'bg-slate-50 border-slate-100'}`}>
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <div className={`font-medium ${isEditing ? 'text-purple-900' : 'text-slate-800'}`}>
+                                                        {b.make} {b.model} {isEditing && <span className="text-xs ml-2 bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full">Editing</span>}
+                                                    </div>
+                                                    <div className="text-xs text-slate-500">Battery {b.specs ? `• ${b.specs}` : ''} • Qty: {b.quantity}{b.weight ? ` • ${b.weight * b.quantity} lbs` : ''}</div>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <div className={`font-bold mr-2 ${isEditing ? 'text-purple-700' : 'text-slate-700'}`}>${formatNumber(b.price * b.quantity)}</div>
+                                                    <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" className={`h-8 w-8 ${isEditing ? 'bg-purple-200 text-purple-700' : 'text-slate-400 hover:text-blue-600'}`} onClick={() => editGenericEquipment(b.id)}><PencilIcon className="h-4 w-4" /></Button>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => deleteGenericEquipment(b.id)}><TrashIcon className="h-4 w-4" /></Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </Card>
+
                         <Card className="p-6">
                             <h3 className="text-lg font-medium text-slate-800 mb-4">
                                 Solar Panels
@@ -739,64 +788,6 @@ export default function PowerStrategyPage() {
                                                         <PencilIcon className="h-4 w-4" />
                                                     </Button>
                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => deleteGenericEquipment(p.id)}>
-                                                        <TrashIcon className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </Card>
-
-                        <Card className="p-6">
-                            <h3 className="text-lg font-medium text-slate-800 mb-4">
-                                Batteries & Generators
-                            </h3>
-                            {genericEquipment.filter(item => item.equipmentType === 'Battery' || item.equipmentType === 'Generator').length === 0 ? <p className="text-sm text-slate-500">No storage configured.</p> : (
-                                <div className="space-y-3">
-                                    {genericEquipment.filter(item => item.equipmentType === 'Generator').map(g => {
-                                        const isEditing = editingEquipmentId === g.id;
-                                        return (
-                                        <div key={g.id} className={`flex flex-col p-3 rounded-lg border group relative transition-all duration-200 ${isEditing ? 'bg-purple-50 border-l-4 border-purple-500' : 'bg-slate-50 border-slate-100'}`}>
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div>
-                                                    <div className={`font-medium ${isEditing ? 'text-purple-900' : 'text-slate-800'}`}>
-                                                        {g.make} {g.model} {isEditing && <span className="text-xs ml-2 bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full">Editing</span>}
-                                                    </div>
-                                                    <div className="text-xs text-slate-500">Generator {g.specs ? `• ${g.specs}` : ''} • Qty: {g.quantity}{g.weight ? ` • ${g.weight * g.quantity} lbs` : ''}</div>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <div className={`font-bold mr-2 ${isEditing ? 'text-purple-700' : 'text-slate-700'}`}>${formatNumber(g.price * g.quantity)}</div>
-                                                    <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" className={`h-8 w-8 ${isEditing ? 'bg-purple-200 text-purple-700' : 'text-slate-400 hover:text-blue-600'}`} onClick={() => editGenericEquipment(g.id)}>
-                                                        <PencilIcon className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => deleteGenericEquipment(g.id)}>
-                                                        <TrashIcon className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        );
-                                    })}
-                                    {genericEquipment.filter(item => item.equipmentType === 'Battery').map(b => {
-                                        const isEditing = editingEquipmentId === b.id;
-                                        return (
-                                        <div key={b.id} className={`flex flex-col p-3 rounded-lg border group relative transition-all duration-200 ${isEditing ? 'bg-purple-50 border-l-4 border-purple-500' : 'bg-slate-50 border-slate-100'}`}>
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div>
-                                                    <div className={`font-medium ${isEditing ? 'text-purple-900' : 'text-slate-800'}`}>
-                                                        {b.make} {b.model} {isEditing && <span className="text-xs ml-2 bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full">Editing</span>}
-                                                    </div>
-                                                    <div className="text-xs text-slate-500">Battery {b.specs ? `• ${b.specs}` : ''} • Qty: {b.quantity}{b.weight ? ` • ${b.weight * b.quantity} lbs` : ''}</div>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <div className={`font-bold mr-2 ${isEditing ? 'text-purple-700' : 'text-slate-700'}`}>${formatNumber(b.price * b.quantity)}</div>
-                                                    <Button variant={isEditing ? 'secondary' : 'ghost'} size="icon" className={`h-8 w-8 ${isEditing ? 'bg-purple-200 text-purple-700' : 'text-slate-400 hover:text-blue-600'}`} onClick={() => editGenericEquipment(b.id)}>
-                                                        <PencilIcon className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => deleteGenericEquipment(b.id)}>
                                                         <TrashIcon className="h-4 w-4" />
                                                     </Button>
                                                 </div>
@@ -848,7 +839,6 @@ export default function PowerStrategyPage() {
                                 </Card>
                             );
                         })}
-                    </div>
                         </div>
                     </div>
                 </TabsContent>

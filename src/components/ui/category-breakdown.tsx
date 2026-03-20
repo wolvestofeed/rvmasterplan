@@ -51,7 +51,7 @@ export function CategoryBreakdown({
                                 <span className="text-sm font-medium text-slate-700 truncate">{item.name}</span>
                             </div>
                             <div className="flex items-center gap-3 flex-shrink-0 ml-2">
-                                <span className="text-xs text-slate-400 tabular-nums">{pct.toFixed(1)}%</span>
+                                <span className="text-xs text-[#2a4f3f] font-medium tabular-nums">{pct.toFixed(1)}%</span>
                                 <span className="text-sm font-semibold text-slate-800 tabular-nums">{formatValue(item.value)}</span>
                             </div>
                         </div>
