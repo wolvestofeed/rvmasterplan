@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { CategoryBreakdown } from "@/components/ui/category-breakdown";
 import { SetupItem, SetupItemCategory, SetupItemPriority } from "@/types";
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
@@ -50,7 +50,6 @@ const setupItemSchema = z.object({
 
 type SetupItemFormValues = z.infer<typeof setupItemSchema>;
 
-import { CHART_COLORS as COLORS } from "@/lib/constants/brand";
 
 export default function RVSetupBudgetPage() {
     const [isClient, setIsClient] = useState(false);
@@ -362,28 +361,12 @@ export default function RVSetupBudgetPage() {
 
                     <Card className="p-6">
                         <h3 className="text-lg font-medium text-slate-800 mb-4">Cost By Category</h3>
-                        {chartData.length > 0 ? (
-                            <div className="h-64 flex items-center justify-center -ml-4">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={chartData}
-                                            cx="50%" cy="50%" outerRadius={70} innerRadius={35} dataKey="value"
-                                        >
-                                            {chartData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
-                                        <Legend className="text-xs" />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                        ) : (
-                            <div className="h-64 flex items-center justify-center text-slate-400 italic">
-                                Add items to see chart
-                            </div>
-                        )}
+                        <CategoryBreakdown
+                            data={chartData}
+                            formatValue={(v) => formatCurrency(v)}
+                            totalLabel="Total Budget"
+                            emptyMessage="Add items to see breakdown"
+                        />
                     </Card>
 
                 </div>

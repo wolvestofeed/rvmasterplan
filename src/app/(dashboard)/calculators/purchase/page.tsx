@@ -22,7 +22,7 @@ import {
     calculateTotalInterest,
     formatCurrency
 } from "@/lib/utils";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { CategoryBreakdown } from "@/components/ui/category-breakdown";
 import { FinancialData, FinancialSummary } from "@/types";
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
@@ -391,24 +391,14 @@ export default function PurchaseCalculatorPage() {
 
                     <Card className="p-6">
                         <h3 className="text-lg font-medium text-slate-800 mb-4">Loan Breakdown</h3>
-                        <div className="h-64 flex items-center justify-center">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={[
-                                            { name: 'Principal', value: summary.amountToFinance },
-                                            { name: 'Interest', value: summary.totalInterest }
-                                        ]}
-                                        cx="50%" cy="50%" outerRadius={80} innerRadius={40} dataKey="value"
-                                    >
-                                        <Cell fill="#3b82f6" />
-                                        <Cell fill="#94a3b8" />
-                                    </Pie>
-                                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                                    <Legend verticalAlign="bottom" />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
+                        <CategoryBreakdown
+                            data={[
+                                { name: 'Principal', value: summary.amountToFinance, color: '#3b82f6' },
+                                { name: 'Interest', value: summary.totalInterest, color: '#94a3b8' },
+                            ]}
+                            formatValue={(v) => formatCurrency(v)}
+                            totalLabel="Total Loan Cost"
+                        />
                         <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-4">
                             <div className="grid grid-cols-2 gap-y-2 text-sm text-slate-600">
                                 <div>Total to Principal:</div>

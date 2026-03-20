@@ -29,7 +29,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { KpiValue } from "@/components/ui/kpi-value";
 import { KpiBlock } from "@/components/ui/kpi-block";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { CategoryBreakdown } from "@/components/ui/category-breakdown";
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
 import { formatNumber } from "@/lib/utils";
@@ -58,7 +58,6 @@ import {
 } from "@/app/actions/power";
 import { getEquipmentItems } from "@/app/actions/equipment";
 
-import { CHART_COLORS as COLORS } from "@/lib/constants/brand";
 
 const deviceSchema = z.object({
     name: z.string().min(1, { message: "Name is required" }),
@@ -550,23 +549,12 @@ export default function PowerStrategyPage() {
 
                             <Card className="p-6">
                                 <h3 className="text-lg font-medium text-slate-800 mb-4">Consumption By Category</h3>
-                                {chartData.length > 0 ? (
-                                    <div className="h-64 flex items-center justify-center -ml-4">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <PieChart>
-                                                <Pie data={chartData} cx="50%" cy="50%" outerRadius={70} innerRadius={35} dataKey="value">
-                                                    {chartData.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                    ))}
-                                                </Pie>
-                                                <Tooltip formatter={(value: any) => `${formatNumber(Number(value))} Wh`} />
-                                                <Legend className="text-xs" />
-                                            </PieChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                ) : (
-                                    <div className="h-64 flex items-center justify-center text-slate-400 italic">No devices added</div>
-                                )}
+                                <CategoryBreakdown
+                                    data={chartData}
+                                    formatValue={(v) => `${formatNumber(v)} Wh`}
+                                    totalLabel="Total Daily Load"
+                                    emptyMessage="Add devices to see breakdown"
+                                />
                             </Card>
                         </div>
 

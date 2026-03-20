@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { CategoryBreakdown } from "@/components/ui/category-breakdown";
 import { toast } from "sonner";
 import { HeaderHero } from "@/components/layout/header-hero";
 import { formatNumber } from "@/lib/utils";
@@ -40,7 +40,6 @@ const waterActivitySchema = z.object({
 
 type WaterActivityFormValues = z.infer<typeof waterActivitySchema>;
 
-import { CHART_COLORS as COLORS } from "@/lib/constants/brand";
 
 export default function WaterCalculatorPage() {
     const [isClient, setIsClient] = useState(false);
@@ -551,28 +550,12 @@ export default function WaterCalculatorPage() {
 
                     <Card className="p-6">
                         <h3 className="text-lg font-medium text-slate-800 mb-4">Usage By Category</h3>
-                        {chartData.length > 0 ? (
-                            <div className="h-64 flex items-center justify-center">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={chartData}
-                                            cx="50%" cy="50%" outerRadius={80} innerRadius={40} dataKey="value"
-                                        >
-                                            {chartData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip formatter={(value: any) => `${formatNumber(Number(value), 1)} gal`} />
-                                        <Legend verticalAlign="bottom" />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                        ) : (
-                            <div className="h-64 flex items-center justify-center text-slate-400 italic">
-                                Add activities to see chart
-                            </div>
-                        )}
+                        <CategoryBreakdown
+                            data={chartData}
+                            formatValue={(v) => `${formatNumber(v, 1)} gal`}
+                            totalLabel="Total Daily Usage"
+                            emptyMessage="Add activities to see breakdown"
+                        />
                     </Card>
 
                 </div>

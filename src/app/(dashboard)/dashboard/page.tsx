@@ -2,7 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HeaderHero } from "@/components/layout/header-hero";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from "recharts";
+import { CategoryBreakdown } from "@/components/ui/category-breakdown";
 import { Droplet, Activity, Calendar, CheckCircle, Flame, Truck, Plus, FileText, ShoppingBag, Bell } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -535,46 +536,18 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="flex flex-col items-center flex-1 justify-center">
-              <div className="w-full h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={weightData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={75}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {weightData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              
-              <div className="w-full mt-4">
-                <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
-                  {weightData.map((item, i) => (
-                    <li key={i} className="flex justify-between items-center text-xs">
-                      <div className="flex items-center truncate">
-                        <div className="w-2.5 h-2.5 rounded-full mr-1.5 shrink-0" style={{ backgroundColor: item.color }}></div>
-                        <span className="text-slate-500 truncate">{item.name}</span>
-                      </div>
-                      <span className="font-semibold text-slate-700">{item.value.toLocaleString()}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
-                    <span className="text-xs font-medium text-slate-500">Status:</span>
-                    <span className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${availablePayload > 200 ? "bg-emerald-50 text-emerald-700" : availablePayload > 0 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"}`}>
-                        {availablePayload > 200 ? "Normal Range" : availablePayload > 0 ? "Near Limit" : "Overweight"}
-                    </span>
-                </div>
+            <div className="flex flex-col flex-1 justify-center w-full mt-2">
+              <CategoryBreakdown
+                data={weightData}
+                formatValue={(v) => `${v.toLocaleString()} lbs`}
+                totalLabel="GVWR"
+                showTotal={false}
+              />
+              <div className="mt-4 pt-3 border-t border-[#e0e8d5] flex justify-between items-center">
+                <span className="text-xs font-medium text-slate-500">Status:</span>
+                <span className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${availablePayload > 200 ? "bg-emerald-50 text-emerald-700" : availablePayload > 0 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"}`}>
+                  {availablePayload > 200 ? "Normal Range" : availablePayload > 0 ? "Near Limit" : "Overweight"}
+                </span>
               </div>
             </div>
           </CardContent>
