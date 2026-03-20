@@ -193,9 +193,10 @@ export default function PurchaseCalculatorPage() {
     return (
         <div className="container mx-auto py-10 px-4 md:px-8 max-w-6xl">
             <HeaderHero
-                title="Purchase Planner"
-                description="Calculate all costs associated with purchasing and owning an RV, including financing, insurance, and maintenance."
+                title=""
+                description=""
                 imageUrl="/images/page-headers/purchase-header.png"
+                hideOverlay
             />
 
             <div className="flex justify-between items-center mt-2 mb-8">
@@ -424,6 +425,9 @@ export default function PurchaseCalculatorPage() {
                             )}
                         </Button>
                     </Card>
+                    <Button onClick={form.handleSubmit(onSubmit)} className="w-full mt-2 flex items-center justify-center" disabled={isLoading}>
+                        <SaveIcon className="mr-2 h-4 w-4" /> Save Calculations
+                    </Button>
                 </div>
             </div>
         </div>

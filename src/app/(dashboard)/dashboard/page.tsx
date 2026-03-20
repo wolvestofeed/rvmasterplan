@@ -386,7 +386,7 @@ export default function Dashboard() {
         imageClass={isDemoMode ? "object-contain object-center bg-[#f8fbf5]" : "object-cover object-[center_70%]"}
         hideOverlay={isDemoMode}
       >
-        <div className="absolute top-4 right-4 z-10 overflow-hidden rounded-md opacity-30 hover:opacity-100 transition-opacity bg-black/60 p-1 flex items-center justify-center">
+        {!isDemoMode && <div className="absolute top-4 right-4 z-10 overflow-hidden rounded-md opacity-30 hover:opacity-100 transition-opacity bg-black/60 p-1 flex items-center justify-center">
           <UploadButton
             endpoint="heroImageUploader"
             onClientUploadComplete={async (res) => {
@@ -411,7 +411,7 @@ export default function Dashboard() {
               }
             }}
           />
-        </div>
+        </div>}
       </HeaderHero>
       )}
 
