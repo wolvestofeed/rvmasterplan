@@ -6,11 +6,13 @@ import { eq, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import { getRvId } from "@/lib/actions/auth-helpers";
+import { getCachedDemoElectricalDevices, getCachedDemoSolarEquipment } from "@/lib/actions/demo-cache";
 
 // --- Electrical Devices ---
 export async function getElectricalDevices() {
     try {
-        const { rvId } = await getRvId();
+        const { rvId, isDemo } = await getRvId();
+        if (isDemo) return getCachedDemoElectricalDevices();
         if (!rvId) return { success: false, data: [] };
         const data = await db.query.electricalDevices.findMany({ where: eq(electricalDevices.rvId, rvId) });
         return { success: true, data };
@@ -67,7 +69,8 @@ export async function deleteElectricalDevice(id: string) {
 // --- Solar Equipment ---
 export async function getSolarEquipment() {
     try {
-        const { rvId } = await getRvId();
+        const { rvId, isDemo } = await getRvId();
+        if (isDemo) return getCachedDemoSolarEquipment();
         if (!rvId) return { success: false, data: [] };
         const data = await db.query.solarEquipment.findMany({ where: eq(solarEquipment.rvId, rvId) });
         return { success: true, data };

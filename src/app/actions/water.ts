@@ -5,10 +5,12 @@ import { waterSystems, waterActivities, tankLogs } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getActiveUserId, requireAuth, getRvId } from "@/lib/actions/auth-helpers";
+import { getCachedDemoWaterSystem, getCachedDemoWaterActivities, getCachedDemoTankLogs } from "@/lib/actions/demo-cache";
 
 export async function getWaterSystem() {
     try {
-        const { rvId } = await getRvId();
+        const { rvId, isDemo } = await getRvId();
+        if (isDemo) return getCachedDemoWaterSystem();
         if (!rvId) return { success: false, error: "No RV profile found" };
 
         const system = await db.select().from(waterSystems).where(eq(waterSystems.rvId, rvId)).limit(1);
@@ -71,6 +73,7 @@ export async function updateWaterSystem(data: { freshCapacityGal: number, grayCa
 export async function getWaterActivities() {
     try {
         const activeId = await getActiveUserId();
+        if (activeId === "demo_user" || activeId.startsWith("guest_")) return getCachedDemoWaterActivities();
         const results = await db.select().from(waterActivities).where(eq(waterActivities.userId, activeId)).limit(500);
         return { success: true, data: results };
     } catch (error) {
@@ -136,6 +139,7 @@ export async function deleteWaterActivity(id: string) {
 export async function getTankLogs() {
     try {
         const activeId = await getActiveUserId();
+        if (activeId === "demo_user" || activeId.startsWith("guest_")) return getCachedDemoTankLogs();
         const results = await db.select().from(tankLogs).where(eq(tankLogs.userId, activeId)).limit(500);
         return { success: true, data: results };
     } catch (error) {

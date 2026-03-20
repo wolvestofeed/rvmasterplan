@@ -8,7 +8,7 @@ import {
 } from "@/lib/db/schema";
 import { randomUUID } from "crypto";
 import { eq, count } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { systemSettings } from "@/lib/db/schema";
 
@@ -293,6 +293,7 @@ export async function publishToDemo() {
         }
 
         revalidatePath("/", "layout");
+        revalidateTag("demo-data");
         return { success: true, message: "Live data successfully published to Demo Mode!" };
     } catch (error) {
         console.error("Error publishing to demo:", error);

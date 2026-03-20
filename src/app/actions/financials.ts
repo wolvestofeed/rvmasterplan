@@ -6,10 +6,12 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import { getActiveUserId, getRvId } from "@/lib/actions/auth-helpers";
+import { getCachedDemoRVVehicle, getCachedDemoFinancialData } from "@/lib/actions/demo-cache";
 
 export async function getRVVehicle() {
     try {
         const activeId = await getActiveUserId();
+        if (activeId === "demo_user" || activeId.startsWith("guest_")) return getCachedDemoRVVehicle();
 
         const rv = await db.query.rvVehicles.findFirst({
             where: eq(rvVehicles.userId, activeId)
@@ -24,7 +26,8 @@ export async function getRVVehicle() {
 
 export async function getFinancialData() {
     try {
-        const { rvId } = await getRvId();
+        const { rvId, isDemo } = await getRvId();
+        if (isDemo) return getCachedDemoFinancialData();
         if (!rvId) return { success: false, error: "RV Profile not found" };
 
         const data = await db.query.financialData.findFirst({

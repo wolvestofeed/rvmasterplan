@@ -6,10 +6,12 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { getActiveUserId, requireAuth } from "@/lib/actions/auth-helpers";
+import { getCachedDemoProfile } from "@/lib/actions/demo-cache";
 
 export async function getUserProfile() {
     try {
         const activeId = await getActiveUserId();
+        if (activeId === "demo_user" || activeId.startsWith("guest_")) return getCachedDemoProfile();
 
         let profile = await db.query.userProfiles.findFirst({
             where: eq(userProfiles.userId, activeId)

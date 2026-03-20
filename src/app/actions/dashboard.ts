@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { documents, eventsAndLogs, equipmentItems, userProfiles } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getActiveUserId } from "@/lib/actions/auth-helpers";
+import { getCachedDemoDashboardEvents } from "@/lib/actions/demo-cache";
 
 export type DashboardEvent = {
     id: string;
@@ -18,6 +19,7 @@ export type DashboardEvent = {
 export async function getDashboardEvents(): Promise<{ success: boolean; data?: DashboardEvent[]; error?: string }> {
     try {
         const activeId = await getActiveUserId();
+        if (activeId === "demo_user" || activeId.startsWith("guest_")) return getCachedDemoDashboardEvents();
 
         const aggregatedEvents: DashboardEvent[] = [];
 

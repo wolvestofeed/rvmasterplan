@@ -6,9 +6,11 @@ import { and, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { randomUUID } from 'crypto';
 import { getActiveUserId, requireAuth } from './auth-helpers';
+import { getCachedDemoTargetBudgets, getCachedDemoExpenses } from './demo-cache';
 
 export async function getTargetBudgets(year: number) {
     const activeId = await getActiveUserId();
+    if (activeId === "demo_user" || activeId.startsWith("guest_")) return getCachedDemoTargetBudgets(year);
     const res = await db.select().from(targetBudgets).where(and(eq(targetBudgets.userId, activeId), eq(targetBudgets.year, year)));
     return res;
 }
@@ -40,6 +42,7 @@ export async function setTargetBudget(month: number, year: number, amount: numbe
 
 export async function getExpenses(year?: number) {
     const activeId = await getActiveUserId();
+    if (activeId === "demo_user" || activeId.startsWith("guest_")) return getCachedDemoExpenses(year ?? new Date().getFullYear());
 
     const query = db.select().from(expenses);
 
