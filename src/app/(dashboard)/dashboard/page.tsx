@@ -44,6 +44,7 @@ export default function Dashboard() {
   const [computedEquipmentWeight, setComputedEquipmentWeight] = useState(estimatedDeviceWeight);
   const [heroImage, setHeroImage] = useState<string | null>(null);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
   const [dailyConsumption, setDailyConsumption] = useState(0);
   const [dailyWater, setDailyWater] = useState(0);
   const [liability, setLiability] = useState(0);
@@ -278,6 +279,7 @@ export default function Dashboard() {
       const last = res.data.lastName || "";
       setProfileName(`${first} ${last}`.trim());
     }
+    setIsProfileLoaded(true);
   };
 
   const fetchWeatherKpis = async () => {
@@ -374,6 +376,9 @@ export default function Dashboard() {
   };
   return (
     <div className="container mx-auto py-10 px-4 md:px-8 max-w-6xl">
+      {!isProfileLoaded ? (
+        <div className="w-full rounded-xl bg-[#e0e8d5] animate-pulse" style={{ aspectRatio: "21/9", maxHeight: 400 }} />
+      ) : (
       <HeaderHero
         title={isDemoMode ? "Welcome, Visitor!" : `Welcome, ${profileName || "RV Owner"}!`}
         description="RV MasterPlan Dashboard"
@@ -408,6 +413,7 @@ export default function Dashboard() {
           />
         </div>
       </HeaderHero>
+      )}
 
       {/* KPI Grid — grouped by category: Financial, Power, Water */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 mt-6">
