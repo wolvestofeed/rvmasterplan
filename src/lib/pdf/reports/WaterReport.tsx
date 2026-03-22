@@ -204,7 +204,7 @@ export function WaterPages({ waterSystem, activities, tankLogs }: WaterReportPro
               )}
               <View style={styles.barTrack}>
                 <View style={[styles.barFill, {
-                  width: `${Math.round((t.cap / maxCap) * 100)}%`,
+                  width: `${maxCap > 0 ? Math.round((t.cap / maxCap) * 100) : 0}%`,
                   backgroundColor: t.color,
                 }]} />
               </View>

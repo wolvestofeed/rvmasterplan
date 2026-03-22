@@ -152,7 +152,7 @@ export function SetupBudgetPages({ items }: SetupBudgetReportProps) {
       {/* Page 1: Metrics + Category Summary */}
       <Page size="A4" style={styles.headerPage}>
         <PageHeader
-          imagePath="/images/page-headers/rv-setup-header.jpg"
+          imagePath="/images/page-headers/rvmp-setup-header.jpg"
           badge="Department Report"
           title="RV Setup Budget"
           subtitle="Equipment list, acquisition status & cost by category"
