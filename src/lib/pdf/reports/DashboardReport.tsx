@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   },
 })
 
-interface RVVehicle {
+export interface RVVehicle {
   type?: string
   year?: number | string | null
   make?: string | null
@@ -119,14 +119,14 @@ interface RVVehicle {
   gvwrLbs?: number | string | null
 }
 
-interface UserProfile {
+export interface UserProfile {
   firstName?: string | null
   lastName?: string | null
   planType?: string | null
   subscriptionStatus?: string | null
 }
 
-interface DashboardEvent {
+export interface DashboardEvent {
   date: string | Date
   title: string
   description?: string
