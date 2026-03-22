@@ -29,6 +29,7 @@ import { KpiValue } from "@/components/ui/kpi-value";
 import { KpiBlock } from "@/components/ui/kpi-block";
 import { WaterData, WaterActivity, WaterSummary } from "@/types";
 import { getWaterSystem, getWaterActivities, addWaterActivity, updateWaterActivity, deleteWaterActivity, getTankLogs, addTankLog } from "@/app/actions/water";
+import { isReadOnly } from "@/lib/actions/auth-helpers";
 const waterActivitySchema = z.object({
     name: z.string().min(1, { message: "Activity name is required" }),
     category: z.string().min(1, { message: "Category is required" }),
@@ -58,6 +59,7 @@ export default function WaterCalculatorPage() {
     const [logVolume, setLogVolume] = useState<number>(0);
     const [tankLogs, setTankLogs] = useState<{ id: string, date: string, type: 'Dump' | 'Fill', tank: 'Fresh' | 'Gray' | 'Black', volume: number }[]>([]);
     const [projectedLevels, setProjectedLevels] = useState({ fresh: 40, gray: 0, black: 0 });
+    const [readOnly, setReadOnly] = useState(false);
 
     const [summary, setSummary] = useState<WaterSummary>({
         dailyUsage: 0,
@@ -68,14 +70,21 @@ export default function WaterCalculatorPage() {
     });
 
     const loadData = async () => {
-        const [sys, acts, logs] = await Promise.all([
+        const [sys, acts, logs, ro] = await Promise.all([
             getWaterSystem(),
             getWaterActivities(),
-            getTankLogs()
+            getTankLogs(),
+            isReadOnly(),
         ]);
+        setReadOnly(ro);
 
         if (sys.success && sys.data) {
-            setWaterData(sys.data as WaterData);
+            setWaterData(prev => ({
+                ...prev,
+                freshWaterCapacity: Number((sys.data as any).freshWaterCapacity) || prev.freshWaterCapacity,
+                grayWaterCapacity: Number((sys.data as any).grayWaterCapacity) || prev.grayWaterCapacity,
+                blackWaterCapacity: Number((sys.data as any).blackWaterCapacity) || prev.blackWaterCapacity,
+            }));
         }
         if (acts.success && acts.data) {
             setActivities(acts.data.map((a: { gallonsPerUse: any; timesPerDay: any }) => ({
@@ -138,6 +147,16 @@ export default function WaterCalculatorPage() {
         const grayCap = waterData.grayWaterCapacity;
         const blackCap = waterData.blackWaterCapacity;
 
+        // Demo/guest mode: show static levels relative to capacity (no day-by-day simulation)
+        if (readOnly) {
+            setProjectedLevels({
+                fresh: Math.round(freshCap * 0.65),
+                gray: Math.round(grayCap * 0.35),
+                black: Math.round(blackCap * 0.20),
+            });
+            return;
+        }
+
         let fresh = freshCap;
         let gray = 0;
         let black = 0;
@@ -192,7 +211,7 @@ export default function WaterCalculatorPage() {
 
         setProjectedLevels({ fresh, gray, black });
 
-    }, [tankLogs, activities, waterData]);
+    }, [tankLogs, activities, waterData, readOnly]);
 
     const form = useForm<WaterActivityFormValues>({
         resolver: zodResolver(waterActivitySchema) as any,
@@ -450,7 +469,7 @@ export default function WaterCalculatorPage() {
                                     <span className="text-slate-500">{formatNumber(projectedLevels.fresh, 1)} / {waterData.freshWaterCapacity} gal</span>
                                 </div>
                                 <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-                                    <div className="h-3 bg-cyan-500 rounded-full transition-all duration-500" style={{ width: `${(projectedLevels.fresh / waterData.freshWaterCapacity) * 100}%` }} />
+                                    <div className="h-3 bg-cyan-500 rounded-full transition-all duration-500" style={{ width: `${waterData.freshWaterCapacity > 0 ? (projectedLevels.fresh / waterData.freshWaterCapacity) * 100 : 0}%` }} />
                                 </div>
                             </div>
 
@@ -460,7 +479,7 @@ export default function WaterCalculatorPage() {
                                     <span className="text-slate-500">{formatNumber(projectedLevels.gray, 1)} / {waterData.grayWaterCapacity} gal</span>
                                 </div>
                                 <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-                                    <div className="h-3 bg-slate-400 rounded-full transition-all duration-500" style={{ width: `${(projectedLevels.gray / waterData.grayWaterCapacity) * 100}%` }} />
+                                    <div className="h-3 bg-slate-400 rounded-full transition-all duration-500" style={{ width: `${waterData.grayWaterCapacity > 0 ? (projectedLevels.gray / waterData.grayWaterCapacity) * 100 : 0}%` }} />
                                 </div>
                             </div>
 
@@ -470,7 +489,7 @@ export default function WaterCalculatorPage() {
                                     <span className="text-slate-500">{formatNumber(projectedLevels.black, 1)} / {waterData.blackWaterCapacity} gal</span>
                                 </div>
                                 <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-                                    <div className="h-3 bg-slate-800 rounded-full transition-all duration-500" style={{ width: `${(projectedLevels.black / waterData.blackWaterCapacity) * 100}%` }} />
+                                    <div className="h-3 bg-slate-800 rounded-full transition-all duration-500" style={{ width: `${waterData.blackWaterCapacity > 0 ? (projectedLevels.black / waterData.blackWaterCapacity) * 100 : 0}%` }} />
                                 </div>
                             </div>
                         </div>

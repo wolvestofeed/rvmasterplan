@@ -71,9 +71,17 @@ export const getCachedDemoElectricalDevices = unstable_cache(
 export const getCachedDemoWaterSystem = unstable_cache(
     async () => {
         const rvId = await getDemoRvId();
-        if (!rvId) return { success: true as const, data: null };
+        if (!rvId) return { success: true as const, data: { freshWaterCapacity: 40, grayWaterCapacity: 30, blackWaterCapacity: 30 } };
         const data = await db.query.waterSystems.findFirst({ where: eq(waterSystems.rvId, rvId) });
-        return { success: true as const, data: data ?? null };
+        if (!data) return { success: true as const, data: { freshWaterCapacity: 40, grayWaterCapacity: 30, blackWaterCapacity: 30 } };
+        return {
+            success: true as const,
+            data: {
+                freshWaterCapacity: Number(data.freshCapacityGal) || 40,
+                grayWaterCapacity: Number(data.grayCapacityGal) || 30,
+                blackWaterCapacity: Number(data.blackCapacityGal) || 30,
+            },
+        };
     },
     ["demo-water-system"],
     CACHE_OPTS
