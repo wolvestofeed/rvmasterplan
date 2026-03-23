@@ -23,6 +23,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { DemoAuthProvider } from "@/components/auth/demo-provider";
 import { ClerkProvider } from "@clerk/nextjs";
 import { SessionGuard } from "@/components/auth/session-guard";
+import Script from "next/script";
 
 export default function RootLayout({
   children,
@@ -32,6 +33,20 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className="bg-[#f8fbf5]">
+        <head>
+          <Script
+            src="https://www.googletagmanager.com/gtag/js?id=G-ENG486BQ41"
+            strategy="afterInteractive"
+          />
+          <Script id="google-analytics" strategy="afterInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-ENG486BQ41');
+            `}
+          </Script>
+        </head>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#f8fbf5]`}
         >
