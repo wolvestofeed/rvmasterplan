@@ -51,6 +51,7 @@ export async function POST(req: Request) {
                     subscriptionRenewalDate: renewalDate,
                     billingInterval: "one_time",
                     billingAmountCents: session.amount_total || 2000,
+                    stripeCustomerId: session.customer as string,
                 })
                 .where(eq(userProfiles.userId, userId));
 
@@ -80,6 +81,7 @@ export async function POST(req: Request) {
                     subscriptionRenewalDate: new Date(subscription.current_period_end * 1000),
                     billingInterval: interval,
                     billingAmountCents: amountCents,
+                    stripeCustomerId: session.customer as string,
                 })
                 .where(eq(userProfiles.userId, userId));
 

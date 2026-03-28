@@ -3,6 +3,9 @@
 import Stripe from "stripe";
 import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
+import { db } from "@/lib/db";
+import { userProfiles } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_fallback", {
     apiVersion: "2024-04-10" as Stripe.StripeConfig["apiVersion"],
@@ -67,5 +70,40 @@ export async function createCheckoutSession(productId: string, interval: "month"
         const e = error as Error;
         console.error("Stripe Checkout Error:", e);
         throw new Error(e.message);
+    }
+}
+
+export async function createCustomerPortalSession(): Promise<{ success: boolean; url?: string; error?: string }> {
+    const { userId } = await auth();
+    if (!userId || userId === "demo_user") {
+        return { success: false, error: "Must be logged in to manage billing." };
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+        return { success: false, error: "Stripe billing portal is unavailable in development mode." };
+    }
+
+    try {
+        const profile = await db.query.userProfiles.findFirst({
+            where: eq(userProfiles.userId, userId),
+        });
+
+        if (!profile?.stripeCustomerId) {
+            return { success: false, error: "No billing account found. Please contact support." };
+        }
+
+        const headerList = await headers();
+        const origin = headerList.get("origin") || "https://rvmasterplan.com";
+
+        const portalSession = await stripe.billingPortal.sessions.create({
+            customer: profile.stripeCustomerId,
+            return_url: `${origin}/settings`,
+        });
+
+        return { success: true, url: portalSession.url };
+    } catch (error: unknown) {
+        const e = error as Error;
+        console.error("Stripe Portal Error:", e);
+        return { success: false, error: "Could not open billing portal. Please try again." };
     }
 }

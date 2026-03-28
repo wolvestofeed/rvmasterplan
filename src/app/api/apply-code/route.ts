@@ -14,13 +14,18 @@ export async function POST(req: Request) {
         const body = await req.json();
         const code = body.code as string;
 
-        // Check against trial code
+        // Check against trial code (free-trial signup) or renewal code (renew page)
         const TRIAL_CODE = process.env.TRIAL_ACCESS_CODE || "RVMP2026FREE";
-        if (code !== TRIAL_CODE) {
+        const RENEWAL_CODE = process.env.RENEWAL_ACCESS_CODE || "RENRVMP";
+
+        const isTrialCode = code === TRIAL_CODE;
+        const isRenewalCode = code === RENEWAL_CODE;
+
+        if (!isTrialCode && !isRenewalCode) {
             return new Response(JSON.stringify({ success: false, error: 'Invalid or expired registration code.' }), { status: 400 });
         }
 
-        // Apply 30 Days
+        // Trial code: 30 days. Renewal code: 30 days (same duration, separate code).
         const trialEndDate = new Date();
         trialEndDate.setDate(trialEndDate.getDate() + 30);
 

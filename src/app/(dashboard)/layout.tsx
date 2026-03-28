@@ -1,10 +1,12 @@
 import { Sidebar } from "@/components/layout/sidebar";
+import { SubscriptionBanner } from "@/components/layout/subscription-banner";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { userProfiles } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getSystemSettings } from "@/app/actions/admin";
+
 export default async function DashboardLayout({
     children,
 }: {
@@ -30,13 +32,19 @@ export default async function DashboardLayout({
                 redirect("/renew");
             }
 
+            const renewalDate = profile?.subscriptionRenewalDate ? new Date(profile.subscriptionRenewalDate) : null;
+            const daysRemaining = renewalDate
+                ? Math.ceil((renewalDate.getTime() - Date.now()) / 86_400_000)
+                : null;
+
             const { data: settings } = await getSystemSettings();
             const featureFlags = settings?.featureFlags as Record<string, boolean> | undefined;
 
             return (
                 <div className="flex min-h-screen bg-[#f8fbf5]">
-                    <Sidebar featureFlags={featureFlags || {}} planType={planType} />
+                    <Sidebar featureFlags={featureFlags || {}} planType={planType} daysRemaining={daysRemaining} />
                     <main className="flex-1 ml-64 bg-[#f8fbf5] relative">
+                        <SubscriptionBanner daysRemaining={daysRemaining} planType={planType} />
                         <div className="max-w-6xl mx-auto pb-12">
                             {children}
                         </div>
@@ -51,7 +59,7 @@ export default async function DashboardLayout({
 
     return (
         <div className="flex min-h-screen bg-[#f8fbf5]">
-            <Sidebar featureFlags={featureFlags || {}} planType="full" />
+            <Sidebar featureFlags={featureFlags || {}} planType="full" daysRemaining={null} />
             <main className="flex-1 ml-64 bg-[#f8fbf5] relative">
                 <div className="max-w-6xl mx-auto pb-12">
                     {children}

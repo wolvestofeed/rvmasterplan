@@ -46,6 +46,9 @@ export default function Dashboard() {
   const [heroImage, setHeroImage] = useState<string | null>(null);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [isProfileLoaded, setIsProfileLoaded] = useState(false);
+  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
+  const [planType, setPlanType] = useState<string>("full");
+  const [showExpiryModal, setShowExpiryModal] = useState(false);
   const [dailyConsumption, setDailyConsumption] = useState(0);
   const [dailyWater, setDailyWater] = useState(0);
   const [liability, setLiability] = useState(0);
@@ -275,10 +278,24 @@ export default function Dashboard() {
     const res = await getUserProfile();
     if (res.success && res.data) {
       setHeroImage(res.data.dashboardHeroImage);
-      setIsDemoMode(res.data.userId === "demo_user" || res.data.userId.startsWith("guest_"));
+      const isDemo = res.data.userId === "demo_user" || res.data.userId.startsWith("guest_");
+      setIsDemoMode(isDemo);
       const first = res.data.firstName || "";
       const last = res.data.lastName || "";
       setProfileName(`${first} ${last}`.trim());
+      setPlanType(res.data.planType || "full");
+
+      if (!isDemo && res.data.subscriptionRenewalDate) {
+        const days = Math.ceil((new Date(res.data.subscriptionRenewalDate).getTime() - Date.now()) / 86_400_000);
+        setDaysRemaining(days);
+        if (days <= 7) {
+          const key = `rvmp-expiry-modal-${new Date().toDateString()}`;
+          if (!sessionStorage.getItem(key)) {
+            sessionStorage.setItem(key, "1");
+            setShowExpiryModal(true);
+          }
+        }
+      }
     }
     setIsProfileLoaded(true);
   };
@@ -375,7 +392,47 @@ export default function Dashboard() {
       default: return <Calendar className="w-5 h-5" />;
     }
   };
+  const isUrgent = daysRemaining !== null && daysRemaining <= 3;
+  const isStarter = planType === "starter";
+  const daysLabel = daysRemaining === 1 ? "1 day" : `${daysRemaining} days`;
+
   return (
+    <>
+      {/* Subscription expiry modal — shown once per calendar day when ≤7 days remain */}
+      <Dialog open={showExpiryModal} onOpenChange={setShowExpiryModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className={isUrgent ? "text-red-700" : "text-amber-700"}>
+              {isUrgent ? "⚠️ Subscription Expiring Soon!" : "Heads Up — Subscription Reminder"}
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-slate-700">
+              {isStarter
+                ? `Your Starter Pack expires in ${daysLabel}. Upgrade to Pro to keep access to all features.`
+                : `Your subscription renews in ${daysLabel}. Visit Settings to manage your billing.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+            {isStarter ? (
+              <Button
+                className="bg-[#8ca163] hover:bg-[#7a8e52] text-white"
+                onClick={() => { setShowExpiryModal(false); window.location.href = "/#pricing"; }}
+              >
+                View Pro Plans
+              </Button>
+            ) : (
+              <Button
+                className={isUrgent ? "bg-red-600 hover:bg-red-700 text-white" : "bg-brand-primary hover:bg-brand-primary-dark text-white"}
+                onClick={() => { setShowExpiryModal(false); window.location.href = "/settings"; }}
+              >
+                Manage Subscription
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setShowExpiryModal(false)}>
+              Remind Me Tomorrow
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     <div className="container mx-auto py-10 px-4 md:px-8 max-w-6xl">
       {!isProfileLoaded ? (
         <div className="w-full rounded-xl bg-[#e0e8d5] animate-pulse" style={{ aspectRatio: "21/9", maxHeight: 400 }} />
@@ -663,5 +720,6 @@ export default function Dashboard() {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 }

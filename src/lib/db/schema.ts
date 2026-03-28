@@ -22,6 +22,7 @@ export const userProfiles = pgTable('user_profiles', {
     locationName: text('location_name'),
     locationLat: text('location_lat'),
     locationLon: text('location_lon'),
+    stripeCustomerId: text('stripe_customer_id'),
     emailUnsubscribed: boolean('email_unsubscribed').default(false).notNull(),
     emailUnsubscribeToken: text('email_unsubscribe_token').unique(),
     createdAt: timestamp('created_at').defaultNow().notNull(),

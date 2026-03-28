@@ -6,7 +6,8 @@ import Image from "next/image";
 import {
     ShieldAlert,
     LogOut,
-    Mail
+    Mail,
+    Clock
 } from "lucide-react";
 import { SignedIn, SignedOut, SignInButton, UserButton, useUser, useAuth } from "@clerk/nextjs";
 
@@ -24,7 +25,7 @@ const navItems = [
     { name: "Settings", href: "/settings" },
 ];
 
-export function Sidebar({ featureFlags = {}, planType = 'full' }: { featureFlags?: Record<string, boolean>, planType?: string }) {
+export function Sidebar({ featureFlags = {}, planType = 'full', daysRemaining = null }: { featureFlags?: Record<string, boolean>, planType?: string, daysRemaining?: number | null }) {
     const pathname = usePathname();
     const { user } = useUser();
     const { signOut } = useAuth();
@@ -135,6 +136,20 @@ export function Sidebar({ featureFlags = {}, planType = 'full' }: { featureFlags
                                 )}
                             </div>
                         </div>
+                        {daysRemaining !== null && daysRemaining <= 7 && user?.publicMetadata?.role !== 'admin' && (
+                            <Link
+                                href="/settings"
+                                className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${daysRemaining <= 3
+                                    ? "bg-red-50 text-red-700 hover:bg-red-100"
+                                    : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                                    }`}
+                            >
+                                <Clock className="w-3.5 h-3.5 shrink-0" />
+                                <span>
+                                    <span className="font-bold">{daysRemaining}d</span> remaining — Manage
+                                </span>
+                            </Link>
+                        )}
                         <button
                             onClick={handleLogout}
                             className="w-full flex items-center gap-2 text-slate-600 hover:text-red-700 transition-colors text-sm font-medium py-1.5 px-2 rounded-md hover:bg-red-50"

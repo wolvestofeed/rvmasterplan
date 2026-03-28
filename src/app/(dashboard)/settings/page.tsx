@@ -10,12 +10,15 @@ import { useUser, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import { User, Mail, CreditCard, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { getUserProfile, extendSubscription } from "@/app/actions/profiles";
+import { createCustomerPortalSession } from "@/app/actions/stripe";
 
 export default function SettingsPage() {
     const { user, isLoaded } = useUser();
     const [subDate, setSubDate] = useState<string>("Loading...");
     const [billingLabel, setBillingLabel] = useState<string>("");
     const [isAdmin, setIsAdmin] = useState(false);
+    const [planType, setPlanType] = useState<string>("full");
+    const [isPortalLoading, setIsPortalLoading] = useState(false);
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -25,6 +28,7 @@ export default function SettingsPage() {
                     setIsAdmin(true);
                     setSubDate("N/A — Admin");
                 } else {
+                    setPlanType(res.data.planType || "full");
                     // Set renewal date
                     if (res.data.subscriptionRenewalDate) {
                         setSubDate(new Date(res.data.subscriptionRenewalDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }));
@@ -54,6 +58,17 @@ export default function SettingsPage() {
     const handleSaveProfile = (e: React.FormEvent) => {
         e.preventDefault();
         toast.success("Profile updated successfully (Demo Mode)");
+    };
+
+    const handleManageBilling = async () => {
+        setIsPortalLoading(true);
+        const res = await createCustomerPortalSession();
+        if (res.success && res.url) {
+            window.location.href = res.url;
+        } else {
+            toast.error(res.error || "Could not open billing portal.");
+        }
+        setIsPortalLoading(false);
     };
 
     const handleExtendSubscription = async () => {
@@ -140,7 +155,7 @@ export default function SettingsPage() {
                             <CardContent>
                                 <div className="mb-4">
                                     <p className="text-sm text-brand-primary font-medium">Current Plan</p>
-                                    <p className="text-xl font-bold text-slate-800">{isAdmin ? "Administrator" : "Pro Member"}</p>
+                                    <p className="text-xl font-bold text-slate-800">{isAdmin ? "Administrator" : planType === "starter" ? "Starter Pack" : "Pro Member"}</p>
                                     {isAdmin ? (
                                         <p className="text-xs text-slate-500 mt-1 pb-1">Full access — no subscription required.</p>
                                     ) : (
@@ -152,13 +167,40 @@ export default function SettingsPage() {
                                         <Button onClick={handleExtendSubscription} variant="outline" className="w-full bg-brand-primary/5 hover:bg-brand-primary/10 text-brand-primary border-brand-primary/20">
                                             Extend Sub by 1 Year (Demo)
                                         </Button>
-                                        <Button onClick={() => toast.info("Stripe integration coming soon!")} variant="outline" className="w-full">
-                                            Manage Billing
+                                        <Button
+                                            onClick={handleManageBilling}
+                                            disabled={isPortalLoading}
+                                            variant="outline"
+                                            className="w-full"
+                                        >
+                                            {isPortalLoading ? "Opening..." : planType === "starter" ? "View Payment History" : "Manage Billing"}
                                         </Button>
                                     </div>
                                 )}
                             </CardContent>
                         </Card>
+
+                        {planType === "starter" && !isAdmin && (
+                            <Card className="border border-[#8ca163]/40 border-t-4 border-t-[#8ca163]">
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="flex items-center text-lg">
+                                        <Shield className="mr-2 h-5 w-5 text-[#8ca163]" />
+                                        Upgrade to Pro
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Unlock RV Living Budget, Fuel Economy, and all future Pro features.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Button
+                                        className="w-full bg-[#8ca163] hover:bg-[#7a8e52] text-white"
+                                        onClick={() => window.location.href = "/#pricing"}
+                                    >
+                                        View Pro Plans
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        )}
 
                     </div>
                 </div>

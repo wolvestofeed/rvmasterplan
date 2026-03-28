@@ -106,7 +106,7 @@ export default function RenewPage() {
                         {/* Registration Code Section */}
                         <div className="bg-slate-50 p-5 rounded-xl border border-slate-100 mt-6">
                             <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-2 mb-3">
-                                <Key className="w-4 h-4 text-slate-500" /> Have a Registration Code?
+                                <Key className="w-4 h-4 text-slate-500" /> Have a Renewal Code?
                             </h4>
                             <div className="flex gap-2">
                                 <Input
@@ -121,11 +121,11 @@ export default function RenewPage() {
                                     variant="outline"
                                     className="shrink-0 border-brand-primary text-brand-primary hover:bg-[#f8fbf5]"
                                 >
-                                    {isSubmitting ? "Verifying..." : "Apply Trial Code"}
+                                    {isSubmitting ? "Verifying..." : "Apply Renewal Code"}
                                 </Button>
                             </div>
                             <p className="text-xs text-slate-500 mt-2">
-                                Valid registration codes unlock a 30-day free trial with full feature access.
+                                Valid renewal codes restore full feature access to your account.
                             </p>
                         </div>
 
