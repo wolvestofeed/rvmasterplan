@@ -8,12 +8,14 @@ interface HeaderHeroProps {
     imageClass?: string;
     hideOverlay?: boolean;
     children?: ReactNode;
+    /** Frame shape. Defaults to the standard 21:9 banner; pass a taller aspect to crop less. */
+    frameClass?: string;
 }
 
-export function HeaderHero({ title, description, imageUrl, imageClass = "object-cover object-center", hideOverlay = false, children }: HeaderHeroProps) {
+export function HeaderHero({ title, description, imageUrl, imageClass = "object-cover object-center", hideOverlay = false, children, frameClass = "aspect-[21/9] max-h-[400px]" }: HeaderHeroProps) {
     const displayImage = imageUrl || "/images/logos/RV-MasterPlan_logo-header.jpg";
     return (
-        <div className="relative w-full aspect-[21/9] max-h-[400px] rounded-xl overflow-hidden mb-8 mt-6 bg-[#f8fbf5]">
+        <div className={`relative w-full ${frameClass} rounded-xl overflow-hidden mb-8 mt-6 bg-[#f8fbf5]`}>
             <div className="absolute inset-0">
                 <Image
                     src={displayImage}

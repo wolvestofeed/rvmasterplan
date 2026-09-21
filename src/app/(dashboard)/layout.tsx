@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { SubscriptionBanner } from "@/components/layout/subscription-banner";
+import { ContentContainer } from "@/components/layout/content-container";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
@@ -43,11 +44,11 @@ export default async function DashboardLayout({
             return (
                 <div className="flex min-h-screen bg-[#f8fbf5]">
                     <Sidebar featureFlags={featureFlags || {}} planType={planType} daysRemaining={daysRemaining} />
-                    <main className="flex-1 ml-64 bg-[#f8fbf5] relative">
+                    <main className="flex-1 min-w-0 ml-64 bg-[#f8fbf5] relative">
                         <SubscriptionBanner daysRemaining={daysRemaining} planType={planType} />
-                        <div className="max-w-6xl mx-auto pb-12">
+                        <ContentContainer>
                             {children}
-                        </div>
+                        </ContentContainer>
                     </main>
                 </div>
             );
@@ -60,10 +61,10 @@ export default async function DashboardLayout({
     return (
         <div className="flex min-h-screen bg-[#f8fbf5]">
             <Sidebar featureFlags={featureFlags || {}} planType="full" daysRemaining={null} />
-            <main className="flex-1 ml-64 bg-[#f8fbf5] relative">
-                <div className="max-w-6xl mx-auto pb-12">
+            <main className="flex-1 min-w-0 ml-64 bg-[#f8fbf5] relative">
+                <ContentContainer>
                     {children}
-                </div>
+                </ContentContainer>
             </main>
         </div>
     );

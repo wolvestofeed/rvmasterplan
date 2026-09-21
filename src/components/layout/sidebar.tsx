@@ -17,6 +17,7 @@ const navItems = [
     { name: "RV Purchase Calculator", href: "/calculators/purchase", featureKey: "purchase_calculator" },
     { name: "RV Setup Budget", href: "/calculators/setup", featureKey: "setup_budget" },
     { name: "RV Living Budget", href: "/calculators/budget", featureKey: "living_budget" },
+    { name: "Cash Flow Statement", href: "/calculators/cashflow", featureKey: "cash_flow" },
     { name: "Fuel Economy", href: "/fuel-economy" },
     { name: "Power and Solar Calculator", href: "/calculators/power/system" },
     { name: "Water Calculator", href: "/calculators/water", featureKey: "water_calculator" },
@@ -57,7 +58,7 @@ export function Sidebar({ featureFlags = {}, planType = 'full', daysRemaining = 
                     {navItems
                         .filter(item => {
                             // Hide specific items for Starter Pack
-                            if (isStarter && (item.name === "RV Living Budget" || item.name === "Fuel Economy")) {
+                            if (isStarter && (item.name === "RV Living Budget" || item.name === "Fuel Economy" || item.name === "Cash Flow Statement")) {
                                 return false;
                             }
                             return !item.featureKey || featureFlags[item.featureKey] !== false;

@@ -10,7 +10,8 @@ import { randomUUID } from "crypto";
 import { eq, count } from "drizzle-orm";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { systemSettings } from "@/lib/db/schema";
+import { systemSettings, cfScenarios } from "@/lib/db/schema";
+import { cloneScenarioRows, deleteScenariosForUser } from "@/lib/cashflow/db-clone";
 
 // --- Admin Stats ---
 export async function getAdminStats() {
@@ -139,6 +140,7 @@ export async function toggleUserSubscription(userId: string) {
 // --- Delete User ---
 export async function deleteUser(userId: string) {
     try {
+        await deleteScenariosForUser(userId);
         await db.delete(documents).where(eq(documents.userId, userId));
         await db.delete(equipmentItems).where(eq(equipmentItems.userId, userId));
         await db.delete(eventsAndLogs).where(eq(eventsAndLogs.userId, userId));
@@ -168,6 +170,7 @@ export async function publishToDemo() {
 
     try {
         // 1. Delete all existing demo data
+        await deleteScenariosForUser(DEMO_ID);
         await db.delete(documents).where(eq(documents.userId, DEMO_ID));
         await db.delete(equipmentItems).where(eq(equipmentItems.userId, DEMO_ID));
         await db.delete(eventsAndLogs).where(eq(eventsAndLogs.userId, DEMO_ID));
@@ -235,6 +238,12 @@ export async function publishToDemo() {
         if (adminInc.length > 0) await db.insert(incomes).values(cloneData(adminInc));
         if (adminExp.length > 0) await db.insert(expenses).values(cloneData(adminExp));
         if (adminBudgets.length > 0) await db.insert(targetBudgets).values(cloneData(adminBudgets));
+
+        // Cash flow scenarios (sections, lines, cells, calculators are re-keyed inside the clone)
+        const adminScenarios = await db.query.cfScenarios.findMany({ where: eq(cfScenarios.userId, ADMIN_ID) });
+        for (const sc of adminScenarios) {
+            await cloneScenarioRows(sc.id, DEMO_ID, { name: sc.name, isPrimary: sc.isPrimary, clonedFromId: null });
+        }
 
         // Upsert demo user profile with static guest values + admin's hero image
         const adminProfile = await db.query.userProfiles.findFirst({ where: eq(userProfiles.userId, ADMIN_ID) });

@@ -66,7 +66,8 @@ export default function AdminPage() {
         "document_manager": true,
         "water_calculator": true,
         "budget_calculator": true,
-        "purchase_calculator": true
+        "purchase_calculator": true,
+        "cash_flow": true
     });
 
     const loadData = async () => {
@@ -377,6 +378,7 @@ export default function AdminPage() {
                                     { key: "purchase_calculator", label: "RV Purchase Calculator", desc: "Enable the RV Purchase calculator tab" },
                                     { key: "setup_budget", label: "RV Setup Budget", desc: "Enable the Setup Cost budgeting tool" },
                                     { key: "living_budget", label: "RV Living Budget", desc: "Enable the monthly living budget calculator" },
+                                    { key: "cash_flow", label: "Cash Flow Statement", desc: "Enable the 12-month cash flow statement with scenarios" },
                                     { key: "water_calculator", label: "Water Calculator", desc: "Enable the water usage calculator" },
                                     { key: "document_manager", label: "Document Manager", desc: "Enable document upload and management" },
                                 ].map((flag) => (
