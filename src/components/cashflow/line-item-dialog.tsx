@@ -65,7 +65,7 @@ export function LineItemDialog(p: LineItemDialogProps) {
 
     return (
         <Dialog open={p.open} onOpenChange={p.onOpenChange}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{editing ? "Edit line" : "Add line"}</DialogTitle>
                     <DialogDescription>{editing ? "Change how this line appears on the statement, or fill its months below." : "A line is one row on the statement: an income source or a bill."}</DialogDescription>

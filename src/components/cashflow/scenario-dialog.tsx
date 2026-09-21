@@ -40,7 +40,7 @@ export function ScenarioDialog({ open, onOpenChange, scenario, onSave }: Scenari
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{scenario ? "Edit scenario" : "New scenario"}</DialogTitle>
                     <DialogDescription>A scenario is one 12-month statement. Clone it to try a what-if without touching the original.</DialogDescription>

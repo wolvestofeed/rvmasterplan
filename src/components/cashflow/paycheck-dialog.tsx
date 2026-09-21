@@ -43,7 +43,7 @@ export function PaycheckDialog({ open, onOpenChange, sections, lineItems, existi
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Paycheck calculator</DialogTitle>
                     <DialogDescription>Gross pay to net monthly, the way the spreadsheet did it. Applying writes the net monthly figure into every month of the income line.</DialogDescription>
