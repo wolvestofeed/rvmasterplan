@@ -1,5 +1,8 @@
 @import "tailwindcss";
-@import "@uploadthing/react/styles.css";
+/* Uploadthing ships a Tailwind v3 preflight that resets --tw-translate-* unlayered, which would
+   override every Tailwind v4 translate/rotate/scale utility (dialogs sat half off-screen).
+   Importing it into the base layer keeps its styles but lets utilities win. */
+@import "@uploadthing/react/styles.css" layer(base);
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
