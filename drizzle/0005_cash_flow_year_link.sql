@@ -1,0 +1,3 @@
+ALTER TABLE "cf_scenarios" ADD COLUMN "opening_source_scenario_id" text;--> statement-breakpoint
+ALTER TABLE "cf_scenarios" ADD CONSTRAINT "cf_scenarios_opening_source_scenario_id_cf_scenarios_id_fk" FOREIGN KEY ("opening_source_scenario_id") REFERENCES "public"."cf_scenarios"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "cf_scenarios_opening_source_idx" ON "cf_scenarios" USING btree ("opening_source_scenario_id");

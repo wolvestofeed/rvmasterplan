@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Copy, Download, Plus, Star, Pencil, Trash2, Calculator, AlertTriangle } from "lucide-react";
+import { Copy, Download, Plus, Star, Pencil, Trash2, Calculator, AlertTriangle, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { HeaderHero } from "@/components/layout/header-hero";
@@ -16,7 +16,8 @@ import { formatCurrency, cn } from "@/lib/utils";
 
 import { StatementGrid } from "@/components/cashflow/statement-grid";
 import { LineItemDialog } from "@/components/cashflow/line-item-dialog";
-import { ScenarioDialog } from "@/components/cashflow/scenario-dialog";
+import { ScenarioDialog, type ScenarioInput } from "@/components/cashflow/scenario-dialog";
+import { RollForwardDialog } from "@/components/cashflow/roll-forward-dialog";
 import { PaycheckDialog, PAYCHECK_NEW_LINE } from "@/components/cashflow/paycheck-dialog";
 import { BillsView } from "@/components/cashflow/bills-view";
 import { ChartsView } from "@/components/cashflow/charts-view";
@@ -27,7 +28,7 @@ import { MONTHS_LONG } from "@/lib/cashflow/constants";
 import { downloadWorkbook } from "@/lib/cashflow/export-xlsx";
 import type { CfLineItem, CfScenario, CfSection, ScenarioBundle } from "@/lib/cashflow/types";
 import {
-    getScenarios, getScenarioBundle, createScenario, cloneScenario, updateScenario, setPrimaryScenario, deleteScenario,
+    getScenarios, getScenarioBundle, createScenario, cloneScenario, rollForwardScenario, updateScenario, setPrimaryScenario, deleteScenario,
     addLineItem, updateLineItem, deleteLineItem, reorderLineItems, setCellsPlanned, setCellPaid, saveCalculator,
     type LineItemInput,
 } from "@/lib/actions/cashflow";
@@ -46,6 +47,7 @@ export default function CashFlowPage() {
     const [lineDialog, setLineDialog] = useState<{ open: boolean; line?: CfLineItem; sectionId?: string }>({ open: false });
     const [scenarioDialog, setScenarioDialog] = useState<{ open: boolean; scenario?: CfScenario }>({ open: false });
     const [paycheckOpen, setPaycheckOpen] = useState(false);
+    const [rollForwardOpen, setRollForwardOpen] = useState(false);
 
     const today = new Date();
     const isLiveYear = bundle?.scenario.year === today.getFullYear();
@@ -154,7 +156,7 @@ export default function CashFlowPage() {
     };
 
     // ── scenarios ───────────────────────────────────────────────────────────
-    const onSaveScenario = async (input: { name: string; year: number; openingCash: number; notes: string | null }, id?: string) => {
+    const onSaveScenario = async (input: ScenarioInput, id?: string) => {
         if (!guard()) return;
         if (id) {
             const res = await updateScenario(id, input);
@@ -162,12 +164,20 @@ export default function CashFlowPage() {
             toast.success("Scenario updated");
             await loadScenarios(id); await loadBundle(id);
         } else {
-            const res = await createScenario({ name: input.name, year: input.year, openingCash: input.openingCash, notes: input.notes ?? undefined });
+            const res = await createScenario({ name: input.name, year: input.year, openingCash: input.openingCash, openingSourceScenarioId: input.openingSourceScenarioId, notes: input.notes ?? undefined });
             if (!res.success) { toast.error(res.error); return; }
             toast.success("Scenario created");
             await loadScenarios(res.data.id);
         }
     };
+    const onRollForward = async ({ name, copyAmounts }: { name: string; copyAmounts: boolean }) => {
+        if (!bundle || !guard()) return;
+        const res = await rollForwardScenario(bundle.scenario.id, { name, copyAmounts });
+        if (!res.success) { toast.error(res.error); return; }
+        toast.success(`${name} created; its opening cash follows ${bundle.scenario.name}`);
+        await loadScenarios(res.data.id);
+    };
+    const openScenarioEditor = () => bundle && setScenarioDialog({ open: true, scenario: bundle.scenario });
     const onClone = async () => {
         if (!bundle || !guard()) return;
         const name = prompt("Name for the copy:", `${bundle.scenario.name} (what-if)`); if (name === null) return;
@@ -239,7 +249,7 @@ export default function CashFlowPage() {
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">{[0, 1, 2, 3, 4].map(i => <KpiBlockSkeleton key={i} />)}</div>
             ) : computed && bundle ? (
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                    <KpiBlock label="Opening cash" variant="primary"><KpiValue>{formatCurrency(computed.totals.openingCash)}</KpiValue></KpiBlock>
+                    <KpiBlock label={bundle.openingSource ? `Opening cash (from ${bundle.openingSource.year})` : "Opening cash"} variant="primary"><KpiValue>{formatCurrency(computed.totals.openingCash)}</KpiValue></KpiBlock>
                     <KpiBlock label="Cash receipts (year)" variant="accent"><KpiValue>{formatCurrency(computed.totals.receipts)}</KpiValue></KpiBlock>
                     <KpiBlock label="Cash paid out (year)" variant="solar"><KpiValue>{formatCurrency(computed.totals.outflow)}</KpiValue></KpiBlock>
                     <KpiBlock label="Net cash (year)" variant="accent"><KpiValue className={cn(computed.totals.net < 0 && "text-red-700")}>{formatCurrency(computed.totals.net)}</KpiValue></KpiBlock>
@@ -251,6 +261,16 @@ export default function CashFlowPage() {
                 <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
                     <AlertTriangle className="h-4 w-4 shrink-0" />
                     Cash goes negative in {MONTHS_LONG[computed.firstNegativeMonth]} (lowest point {formatCurrency(computed.lowestEnding.value)} in {MONTHS_LONG[computed.lowestEnding.month]}).
+                </div>
+            )}
+
+            {bundle && bundle.scenario.openingSourceScenarioId && bundle.openingSource === null && (
+                <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    <span>
+                        This scenario carried its opening cash forward from a scenario that no longer exists, so it is using its last stored amount.{" "}
+                        {!readOnly && <button type="button" className="underline font-medium" onClick={openScenarioEditor}>Edit the scenario</button>}{!readOnly && " to pick a source or enter an amount."}
+                    </span>
                 </div>
             )}
 
@@ -267,6 +287,7 @@ export default function CashFlowPage() {
                         <Button variant="outline" size="sm" onClick={() => setScenarioDialog({ open: true })}><Plus className="h-4 w-4 mr-1" />New</Button>
                         <Button variant="outline" size="sm" disabled={!bundle} onClick={() => bundle && setScenarioDialog({ open: true, scenario: bundle.scenario })}><Pencil className="h-4 w-4 mr-1" />Edit</Button>
                         <Button variant="outline" size="sm" disabled={!bundle} onClick={onClone}><Copy className="h-4 w-4 mr-1" />Clone</Button>
+                        <Button variant="outline" size="sm" disabled={!bundle} onClick={() => setRollForwardOpen(true)} title="Create next year from this scenario, opening cash linked to this December"><CalendarPlus className="h-4 w-4 mr-1" />Roll forward</Button>
                         <Button variant="outline" size="sm" disabled={!bundle || bundle.scenario.isPrimary} onClick={onSetPrimary}><Star className="h-4 w-4 mr-1" />Set primary</Button>
                         <Button variant="ghost" size="sm" disabled={!bundle} className="text-red-700 hover:text-red-800" onClick={onDeleteScenario}><Trash2 className="h-4 w-4" /></Button>
                     </>
@@ -306,6 +327,7 @@ export default function CashFlowPage() {
                             onCellCommit={onCellCommit} onOpeningCashCommit={onOpeningCashCommit}
                             onEditLine={(line) => setLineDialog({ open: true, line })}
                             onAddLine={(section) => setLineDialog({ open: true, sectionId: section.id })}
+                            onEditScenario={openScenarioEditor}
                         />
                         {bundle.lineItems.some(l => l.archived) && (
                             <p className="mt-2 text-xs text-slate-500">
@@ -333,9 +355,17 @@ export default function CashFlowPage() {
                 onSave={onSaveLine} onFill={fill12} onSetAnnual={onSetAnnual}
                 onClear={(id) => fill12(id, 0)} onMove={onMove} onArchive={onArchive} onDelete={onDelete}
             />
-            <ScenarioDialog open={scenarioDialog.open} onOpenChange={(o) => setScenarioDialog(d => ({ ...d, open: o }))} scenario={scenarioDialog.scenario} onSave={onSaveScenario} />
-            {bundle && (
-                <PaycheckDialog open={paycheckOpen} onOpenChange={setPaycheckOpen} sections={sections} lineItems={bundle.lineItems} existing={existingPaycheck} onApply={onApplyPaycheck} />
+            <ScenarioDialog
+                open={scenarioDialog.open} onOpenChange={(o) => setScenarioDialog(d => ({ ...d, open: o }))}
+                scenario={scenarioDialog.scenario} scenarios={scenarios}
+                effectiveOpeningCash={scenarioDialog.scenario && scenarioDialog.scenario.id === bundle?.scenario.id ? computed?.totals.openingCash : undefined}
+                onSave={onSaveScenario}
+            />
+            {bundle && computed && (
+                <>
+                    <PaycheckDialog open={paycheckOpen} onOpenChange={setPaycheckOpen} sections={sections} lineItems={bundle.lineItems} existing={existingPaycheck} onApply={onApplyPaycheck} />
+                    <RollForwardDialog open={rollForwardOpen} onOpenChange={setRollForwardOpen} scenario={bundle.scenario} endingCash={computed.totals.endingCash} onConfirm={onRollForward} />
+                </>
             )}
         </div>
     );

@@ -8,26 +8,10 @@ import { randomUUID } from 'crypto';
 import { getActiveUserId, requireAuth } from './auth-helpers';
 import { cloneScenarioRows } from '@/lib/cashflow/db-clone';
 import { DEFAULT_SECTIONS } from '@/lib/cashflow/constants';
-import type { CfScenario, CfSection, CfLineItem, CfCell, CfCalculator, ScenarioBundle, SectionKind, Recurrence, CalculatorType } from '@/lib/cashflow/types';
+import { toScenario, loadBundle, resolveOpeningSource, validateOpeningSource } from '@/lib/cashflow/db-load';
+import type { SectionKind, Recurrence, CalculatorType } from '@/lib/cashflow/types';
 
 const PATH = '/calculators/cashflow';
-
-// ─── Row → domain converters (numeric columns arrive as strings) ─────────────
-function toScenario(r: typeof cfScenarios.$inferSelect): CfScenario {
-    return { id: r.id, name: r.name, year: r.year, openingCash: Number(r.openingCash), isPrimary: r.isPrimary, clonedFromId: r.clonedFromId, notes: r.notes };
-}
-function toSection(r: typeof cfSections.$inferSelect): CfSection {
-    return { id: r.id, scenarioId: r.scenarioId, kind: r.kind as SectionKind, name: r.name, sortOrder: r.sortOrder };
-}
-function toLine(r: typeof cfLineItems.$inferSelect): CfLineItem {
-    return { id: r.id, scenarioId: r.scenarioId, sectionId: r.sectionId, name: r.name, category: r.category, dueDay: r.dueDay, recurrence: r.recurrence as Recurrence, sortOrder: r.sortOrder, archived: r.archived, notes: r.notes };
-}
-function toCell(r: typeof cfCells.$inferSelect): CfCell {
-    return { id: r.id, scenarioId: r.scenarioId, lineItemId: r.lineItemId, month: r.month, planned: Number(r.planned), actual: r.actual === null ? null : Number(r.actual), paid: r.paid, note: r.note };
-}
-function toCalc(r: typeof cfCalculators.$inferSelect): CfCalculator {
-    return { id: r.id, scenarioId: r.scenarioId, lineItemId: r.lineItemId, type: r.type as CalculatorType, name: r.name, params: (r.params || {}) as Record<string, unknown> };
-}
 
 /** Throws unless the scenario belongs to userId. */
 async function ownScenario(scenarioId: string, userId: string) {
@@ -54,19 +38,7 @@ export async function getScenarioBundle(scenarioId: string) {
         const activeId = await getActiveUserId();
         const s = await db.query.cfScenarios.findFirst({ where: and(eq(cfScenarios.id, scenarioId), eq(cfScenarios.userId, activeId)) });
         if (!s) return { success: false as const, error: 'Scenario not found' };
-        const [sections, lines, cells, calcs] = await Promise.all([
-            db.select().from(cfSections).where(eq(cfSections.scenarioId, scenarioId)),
-            db.select().from(cfLineItems).where(eq(cfLineItems.scenarioId, scenarioId)),
-            db.select().from(cfCells).where(eq(cfCells.scenarioId, scenarioId)),
-            db.select().from(cfCalculators).where(eq(cfCalculators.scenarioId, scenarioId)),
-        ]);
-        const data: ScenarioBundle = {
-            scenario: toScenario(s),
-            sections: sections.map(toSection),
-            lineItems: lines.map(toLine),
-            cells: cells.map(toCell),
-            calculators: calcs.map(toCalc),
-        };
+        const data = await loadBundle(s, activeId);
         return { success: true as const, data };
     } catch (error) {
         console.error('getScenarioBundle:', error);
@@ -74,14 +46,17 @@ export async function getScenarioBundle(scenarioId: string) {
     }
 }
 
-export async function createScenario(input: { name: string; year: number; openingCash: number; notes?: string }) {
+export async function createScenario(input: { name: string; year: number; openingCash: number; openingSourceScenarioId?: string | null; notes?: string }) {
     try {
         const userId = await requireAuth();
         const existing = await db.select({ id: cfScenarios.id }).from(cfScenarios).where(eq(cfScenarios.userId, userId));
+        const sourceId = input.openingSourceScenarioId ?? null;
+        if (sourceId) await validateOpeningSource(userId, null, sourceId, input.year);
         const id = randomUUID();
         await db.insert(cfScenarios).values({
             id, userId, name: input.name.trim() || `${input.year} Budget`, year: input.year,
-            openingCash: String(input.openingCash || 0), isPrimary: existing.length === 0, notes: input.notes ?? null,
+            openingCash: String(input.openingCash || 0), isPrimary: existing.length === 0,
+            openingSourceScenarioId: sourceId, notes: input.notes ?? null,
         });
         await db.insert(cfSections).values(DEFAULT_SECTIONS.map(s => ({ id: randomUUID(), scenarioId: id, ...s })));
         revalidatePath(PATH);
@@ -105,14 +80,51 @@ export async function cloneScenario(scenarioId: string, name?: string) {
     }
 }
 
-export async function updateScenario(scenarioId: string, patch: { name?: string; year?: number; openingCash?: number; notes?: string | null }) {
+/** Create next year's scenario from this one: year + 1, same sections and lines,
+ *  opening cash linked to this scenario's December ending. Paid flags, actuals and
+ *  cell notes are dropped; planned amounts are kept unless copyAmounts is false. */
+export async function rollForwardScenario(scenarioId: string, opts: { name?: string; copyAmounts?: boolean } = {}) {
     try {
         const userId = await requireAuth();
-        await ownScenario(scenarioId, userId);
+        const src = await ownScenario(scenarioId, userId);
+        const year = src.year + 1;
+        const id = await cloneScenarioRows(scenarioId, userId, {
+            name: opts.name?.trim() || `${year} Budget`,
+            year,
+            openingSourceScenarioId: scenarioId,
+            clonedFromId: scenarioId,
+            resetCells: true,
+            keepPlanned: opts.copyAmounts ?? true,
+        });
+        revalidatePath(PATH);
+        return { success: true as const, data: { id } };
+    } catch (error) {
+        console.error('rollForwardScenario:', error);
+        return { success: false as const, error: error instanceof Error ? error.message : 'Failed to roll forward' };
+    }
+}
+
+export async function updateScenario(scenarioId: string, patch: { name?: string; year?: number; openingCash?: number; openingSourceScenarioId?: string | null; notes?: string | null }) {
+    try {
+        const userId = await requireAuth();
+        const current = await ownScenario(scenarioId, userId);
+        const year = patch.year ?? current.year;
+        const sourceId = patch.openingSourceScenarioId === undefined ? current.openingSourceScenarioId : patch.openingSourceScenarioId;
+        if (sourceId) await validateOpeningSource(userId, scenarioId, sourceId, year);
+
+        // Unlinking without a new amount: freeze the opening at what the link was producing
+        // so the statement does not jump back to a stale stored number.
+        let openingCash = patch.openingCash;
+        if (openingCash === undefined && current.openingSourceScenarioId && !sourceId) {
+            const resolved = await resolveOpeningSource(current.openingSourceScenarioId, userId);
+            if (resolved) openingCash = resolved.endingCash;
+        }
+
         await db.update(cfScenarios).set({
             ...(patch.name !== undefined ? { name: patch.name } : {}),
             ...(patch.year !== undefined ? { year: patch.year } : {}),
-            ...(patch.openingCash !== undefined ? { openingCash: String(patch.openingCash) } : {}),
+            ...(openingCash !== undefined ? { openingCash: String(openingCash) } : {}),
+            ...(patch.openingSourceScenarioId !== undefined ? { openingSourceScenarioId: sourceId } : {}),
             ...(patch.notes !== undefined ? { notes: patch.notes } : {}),
             updatedAt: new Date(),
         }).where(eq(cfScenarios.id, scenarioId));
@@ -142,6 +154,17 @@ export async function deleteScenario(scenarioId: string) {
     try {
         const userId = await requireAuth();
         await ownScenario(scenarioId, userId);
+        // Years that carried their opening cash forward from this one keep the number
+        // it was producing, as a plain stored value, instead of dropping to zero.
+        const dependents = await db.select().from(cfScenarios).where(and(eq(cfScenarios.openingSourceScenarioId, scenarioId), eq(cfScenarios.userId, userId)));
+        if (dependents.length) {
+            const resolved = await resolveOpeningSource(scenarioId, userId);
+            for (const d of dependents) {
+                await db.update(cfScenarios)
+                    .set({ openingSourceScenarioId: null, openingCash: String(resolved?.endingCash ?? Number(d.openingCash)), updatedAt: new Date() })
+                    .where(eq(cfScenarios.id, d.id));
+            }
+        }
         // Explicit child deletes so this works even if the FK cascade is missing.
         await db.delete(cfCells).where(eq(cfCells.scenarioId, scenarioId));
         await db.delete(cfCalculators).where(eq(cfCalculators.scenarioId, scenarioId));

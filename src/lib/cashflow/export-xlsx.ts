@@ -5,7 +5,7 @@
  */
 import * as XLSX from 'xlsx';
 import { MONTHS_SHORT } from './constants';
-import { sortByOrder } from './compute';
+import { effectiveOpeningCash, sortByOrder } from './compute';
 import type { ScenarioBundle } from './types';
 
 type Cell = XLSX.CellObject | number | string | null;
@@ -27,7 +27,8 @@ export function buildWorkbook(bundle: ScenarioBundle): XLSX.WorkBook {
     push(['Line', 'Due', ...MONTHS_SHORT, 'Year', '% Out']);
 
     // Opening cash row
-    const openingRow = push(['Cash on Hand (beginning of month)', null, bundle.scenario.openingCash, ...Array(11).fill(null), null, null]);
+    // Linked years export the resolved prior-year ending, the same number the grid shows.
+    const openingRow = push(['Cash on Hand (beginning of month)', null, effectiveOpeningCash(bundle), ...Array(11).fill(null), null, null]);
     push([]);
 
     const sections = sortByOrder(bundle.sections);

@@ -10,8 +10,8 @@ import { randomUUID } from "crypto";
 import { eq, count } from "drizzle-orm";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { systemSettings, cfScenarios } from "@/lib/db/schema";
-import { cloneScenarioRows, deleteScenariosForUser } from "@/lib/cashflow/db-clone";
+import { systemSettings } from "@/lib/db/schema";
+import { cloneScenariosForUser, deleteScenariosForUser } from "@/lib/cashflow/db-clone";
 
 // --- Admin Stats ---
 export async function getAdminStats() {
@@ -239,11 +239,9 @@ export async function publishToDemo() {
         if (adminExp.length > 0) await db.insert(expenses).values(cloneData(adminExp));
         if (adminBudgets.length > 0) await db.insert(targetBudgets).values(cloneData(adminBudgets));
 
-        // Cash flow scenarios (sections, lines, cells, calculators are re-keyed inside the clone)
-        const adminScenarios = await db.query.cfScenarios.findMany({ where: eq(cfScenarios.userId, ADMIN_ID) });
-        for (const sc of adminScenarios) {
-            await cloneScenarioRows(sc.id, DEMO_ID, { name: sc.name, isPrimary: sc.isPrimary, clonedFromId: null });
-        }
+        // Cash flow scenarios (sections, lines, cells, calculators are re-keyed inside the
+        // clone; year-to-year opening-cash links are remapped to the copies)
+        await cloneScenariosForUser(ADMIN_ID, DEMO_ID);
 
         // Upsert demo user profile with static guest values + admin's hero image
         const adminProfile = await db.query.userProfiles.findFirst({ where: eq(userProfiles.userId, ADMIN_ID) });

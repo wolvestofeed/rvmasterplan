@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, integer, numeric, jsonb, uniqueIndex, index } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, integer, numeric, jsonb, uniqueIndex, index, type AnyPgColumn } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // --- Users & Profiles ---
@@ -262,10 +262,13 @@ export const cfScenarios = pgTable('cf_scenarios', {
     openingCash: numeric('opening_cash').default('0').notNull(),
     isPrimary: boolean('is_primary').default(false).notNull(),
     clonedFromId: text('cloned_from_id'),
+    // When set, opening cash is the December ending cash of this earlier-year scenario
+    // (resolved at load time, never copied). Cleared if the source is deleted.
+    openingSourceScenarioId: text('opening_source_scenario_id').references((): AnyPgColumn => cfScenarios.id, { onDelete: 'set null' }),
     notes: text('notes'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (t) => [index('cf_scenarios_user_idx').on(t.userId)]);
+}, (t) => [index('cf_scenarios_user_idx').on(t.userId), index('cf_scenarios_opening_source_idx').on(t.openingSourceScenarioId)]);
 
 // Sections group line items: receipts (cash in) or outflow (cash out).
 export const cfSections = pgTable('cf_sections', {

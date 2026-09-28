@@ -56,6 +56,12 @@ export interface StatementComputed {
 
 const ZERO12 = () => Array<number>(12).fill(0);
 
+/** Opening cash the statement actually starts from: the linked prior year's December
+ *  ending cash when the link resolved, otherwise the value stored on the scenario. */
+export function effectiveOpeningCash(bundle: ScenarioBundle): number {
+    return bundle.openingSource ? bundle.openingSource.endingCash : (bundle.scenario.openingCash || 0);
+}
+
 /** Value a cell contributes under the given mode. In 'actual' mode a cell with
  *  no actual yet falls back to its planned value, so partial months still add up. */
 export function cellValue(cell: CfCell | undefined, mode: StatementMode = 'planned'): number {
@@ -80,7 +86,6 @@ export function sortByOrder<T extends { sortOrder: number; name: string }>(items
 }
 
 export function computeStatement(bundle: ScenarioBundle, mode: StatementMode = 'planned'): StatementComputed {
-    const { scenario } = bundle;
     const sections = sortByOrder(bundle.sections);
     const lineItems = sortByOrder(bundle.lineItems.filter(l => !l.archived));
     const byLine = indexCells(bundle.cells);
@@ -113,7 +118,8 @@ export function computeStatement(bundle: ScenarioBundle, mode: StatementMode = '
 
     // Month roll-forward
     const months: MonthComputed[] = [];
-    let opening = scenario.openingCash || 0;
+    const openingCash = effectiveOpeningCash(bundle);
+    let opening = openingCash;
     for (let m = 0; m < 12; m++) {
         let receipts = 0, outflow = 0;
         for (const s of sectionsComputed) {
@@ -145,11 +151,11 @@ export function computeStatement(bundle: ScenarioBundle, mode: StatementMode = '
         sections: sectionsComputed,
         lines,
         totals: {
-            openingCash: scenario.openingCash || 0,
+            openingCash,
             receipts: totalReceipts,
             outflow: totalOutflow,
             net: totalReceipts - totalOutflow,
-            endingCash: months[11]?.ending ?? scenario.openingCash,
+            endingCash: months[11]?.ending ?? openingCash,
         },
         lowestEnding: lowest,
         firstNegativeMonth,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Plus, Pencil, Calculator } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Pencil, Calculator, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MONTHS_SHORT } from "@/lib/cashflow/constants";
 import { sortByOrder } from "@/lib/cashflow/compute";
@@ -19,11 +19,13 @@ interface StatementGridProps {
     onOpeningCashCommit: (value: number) => void;
     onEditLine: (line: CfLineItem) => void;
     onAddLine: (section: CfSection) => void;
+    /** Opens the scenario dialog; used by the linked opening-cash cell. */
+    onEditScenario?: () => void;
 }
 
 const num = (v: number, opts: { blankZero?: boolean } = {}) => (opts.blankZero && !v ? "" : fmtCell(Math.round(v * 100) / 100) || "0");
 
-export function StatementGrid({ bundle, computed, readOnly, currentMonth, onCellCommit, onOpeningCashCommit, onEditLine, onAddLine }: StatementGridProps) {
+export function StatementGrid({ bundle, computed, readOnly, currentMonth, onCellCommit, onOpeningCashCommit, onEditLine, onAddLine, onEditScenario }: StatementGridProps) {
     const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
     const sections = sortByOrder(bundle.sections);
     const lineById = new Map(bundle.lineItems.map(l => [l.id, l]));
@@ -127,6 +129,12 @@ export function StatementGrid({ bundle, computed, readOnly, currentMonth, onCell
 
     const months = computed.months;
     const openingRow = 0;
+    // A linked year shows the prior year's December ending instead of an editable cell.
+    const linked = !!bundle.scenario.openingSourceScenarioId;
+    const source = bundle.openingSource;
+    const linkTitle = source
+        ? `Carried forward from ${source.name} (${source.year}): its December ending cash. Click to change.`
+        : "Linked to a scenario that no longer exists, so the last stored amount is used. Click to pick a source or enter an amount.";
     return (
         <div className="overflow-x-auto rounded-xl border-2 border-brand-primary/20 bg-white shadow-[4px_4px_12px_rgba(0,0,0,0.15)]">
             <table className="min-w-full border-separate border-spacing-0 text-sm">
@@ -145,9 +153,17 @@ export function StatementGrid({ bundle, computed, readOnly, currentMonth, onCell
                         <td />
                         {months.map((mo, m) => (
                             <td key={m} className={cn(monthCell(m), "px-1.5 text-sm font-semibold tabular-nums", mo.opening < 0 ? "text-red-700" : "text-slate-800")}>
-                                {m === 0
-                                    ? <CellInput row={openingRow} col={0} value={bundle.scenario.openingCash} disabled={readOnly} onCommit={onOpeningCashCommit} className="font-semibold" title="Opening cash for the year (editable)" />
-                                    : num(mo.opening)}
+                                {m !== 0 ? num(mo.opening) : linked ? (
+                                    <button
+                                        type="button" onClick={onEditScenario} disabled={readOnly} title={linkTitle}
+                                        className="w-full h-8 px-1.5 inline-flex items-center justify-end gap-1 rounded-sm border border-transparent text-right tabular-nums font-semibold hover:border-[#e0e8d5] hover:bg-white disabled:cursor-default"
+                                    >
+                                        <Link2 className={cn("h-3 w-3 shrink-0", source ? "text-brand-blue-accent" : "text-brand-solar")} />
+                                        {num(mo.opening)}
+                                    </button>
+                                ) : (
+                                    <CellInput row={openingRow} col={0} value={bundle.scenario.openingCash} disabled={readOnly} onCommit={onOpeningCashCommit} className="font-semibold" title="Opening cash for the year (editable)" />
+                                )}
                             </td>
                         ))}
                         <td /><td />
@@ -164,6 +180,7 @@ export function StatementGrid({ bundle, computed, readOnly, currentMonth, onCell
             </table>
             <div className="px-3 py-2 text-[11px] text-slate-500 border-t border-[#e0e8d5]">
                 Click a line name to edit it. Enter moves down, Tab moves across, Esc cancels. Year-total percentages are each line&apos;s share of total cash paid out.
+                {source && ` January opening cash is carried forward from ${source.name}.`}
                 {lineById.size === 0 && " Start by adding a line to a section."}
             </div>
         </div>

@@ -15,7 +15,17 @@ export interface CfScenario {
     openingCash: number;
     isPrimary: boolean;
     clonedFromId: string | null;
+    /** Earlier-year scenario whose December ending cash becomes this year's opening cash. */
+    openingSourceScenarioId: string | null;
     notes: string | null;
+}
+
+/** The resolved prior-year link: who feeds this scenario's opening cash and with what. */
+export interface OpeningSource {
+    scenarioId: string;
+    name: string;
+    year: number;
+    endingCash: number;
 }
 
 export interface CfSection {
@@ -66,6 +76,10 @@ export interface ScenarioBundle {
     lineItems: CfLineItem[];
     cells: CfCell[];
     calculators: CfCalculator[];
+    /** Set when `scenario.openingSourceScenarioId` is present: the resolved source, or
+     *  null when the link could not be resolved (source deleted or not owned). Absent
+     *  when the scenario uses its stored opening cash. */
+    openingSource?: OpeningSource | null;
 }
 
 /** Which number a cell contributes to the statement. */
