@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { formatCurrency } from "@/lib/utils";
 import type { CfScenario } from "@/lib/cashflow/types";
 
@@ -15,24 +14,22 @@ interface RollForwardDialogProps {
     scenario: CfScenario;
     /** This scenario's December ending cash, shown so the user knows what next year starts with. */
     endingCash: number;
-    onConfirm: (input: { name: string; copyAmounts: boolean }) => Promise<void>;
+    onConfirm: (input: { name: string }) => Promise<void>;
 }
 
 export function RollForwardDialog({ open, onOpenChange, scenario, endingCash, onConfirm }: RollForwardDialogProps) {
     const nextYear = scenario.year + 1;
     const [name, setName] = useState("");
-    const [copyAmounts, setCopyAmounts] = useState(true);
     const [busy, setBusy] = useState(false);
 
     useEffect(() => {
         if (!open) return;
         setName(`${nextYear} Budget`);
-        setCopyAmounts(true);
     }, [open, nextYear]);
 
     const confirm = async () => {
         setBusy(true);
-        try { await onConfirm({ name: name.trim() || `${nextYear} Budget`, copyAmounts }); onOpenChange(false); }
+        try { await onConfirm({ name: name.trim() || `${nextYear} Budget` }); onOpenChange(false); }
         finally { setBusy(false); }
     };
 
@@ -42,8 +39,8 @@ export function RollForwardDialog({ open, onOpenChange, scenario, endingCash, on
                 <DialogHeader>
                     <DialogTitle>Roll forward to {nextYear}</DialogTitle>
                     <DialogDescription>
-                        Creates a {nextYear} scenario from &ldquo;{scenario.name}&rdquo; with the same sections and lines.
-                        Its January opening cash follows this scenario&apos;s December ending cash ({formatCurrency(endingCash)} right now) and updates whenever {scenario.year} changes.
+                        Creates {nextYear} from &ldquo;{scenario.name}&rdquo;: every line with all of its details, and every month&apos;s amount carried into the same month next year.
+                        January opening cash follows this scenario&apos;s December ending cash ({formatCurrency(endingCash)} right now) and updates whenever {scenario.year} changes.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4">
@@ -51,12 +48,10 @@ export function RollForwardDialog({ open, onOpenChange, scenario, endingCash, on
                         <Label>Name</Label>
                         <Input value={name} onChange={e => setName(e.target.value)} autoFocus />
                     </div>
-                    <div className="flex items-start justify-between gap-4 rounded-lg border border-[#e0e8d5] bg-[#f8fbf5] p-3">
-                        <div>
-                            <div className="text-sm font-medium text-slate-800">Copy planned amounts</div>
-                            <div className="text-xs text-slate-500">Off copies the lines only, with every month blank. Paid flags and cell notes are never carried over.</div>
-                        </div>
-                        <Switch checked={copyAmounts} onCheckedChange={setCopyAmounts} />
+                    <div className="rounded-lg border border-[#e0e8d5] bg-[#f8fbf5] p-3 text-xs text-slate-600 space-y-1">
+                        <div><span className="font-medium text-slate-800">Monthly lines</span> also fill any month that is still empty this year with their latest amount, so next year starts with every bill from January. A monthly line with an amount in only one month is treated as a one-off and copied as is.</div>
+                        <div><span className="font-medium text-slate-800">Annual, seasonal and calculator lines</span> keep exactly the months they have this year.</div>
+                        <div>Paid flags and cell notes are not carried over. Override any month by hand afterwards.</div>
                     </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-2">

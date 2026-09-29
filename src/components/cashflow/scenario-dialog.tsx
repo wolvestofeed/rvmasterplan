@@ -88,7 +88,7 @@ export function ScenarioDialog({ open, onOpenChange, scenario, scenarios, effect
             <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{scenario ? "Edit scenario" : "New scenario"}</DialogTitle>
-                    <DialogDescription>A scenario is one 12-month statement. Clone it to try a what-if without touching the original.</DialogDescription>
+                    <DialogDescription>A scenario is one 12-month statement, usually one per year.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4">
                     <div className="grid gap-1.5">

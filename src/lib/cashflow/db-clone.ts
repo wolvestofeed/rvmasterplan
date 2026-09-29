@@ -7,6 +7,8 @@ import { db } from '@/lib/db';
 import { cfScenarios, cfSections, cfLineItems, cfCells, cfCalculators } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
+import { rollForwardValues } from './compute';
+import type { Recurrence } from './types';
 
 export interface CloneScenarioOptions {
     name?: string;
@@ -17,10 +19,10 @@ export interface CloneScenarioOptions {
     year?: number;
     /** Opening-cash link for the copy. undefined = same link as the source; null = none. */
     openingSourceScenarioId?: string | null;
-    /** Roll-forward mode: drop paid flags, actuals and cell notes. */
-    resetCells?: boolean;
-    /** With resetCells, whether planned amounts survive (false = lines only). Default true. */
-    keepPlanned?: boolean;
+    /** Roll-forward mode: planned amounts are projected per line with rollForwardValues
+     *  (monthly lines fill empty months with their latest amount, everything else keeps
+     *  its months); paid flags, actuals and cell notes are dropped. */
+    rollForward?: boolean;
 }
 
 export async function cloneScenarioRows(sourceScenarioId: string, targetUserId: string, opts: CloneScenarioOptions = {}) {
@@ -65,14 +67,26 @@ export async function cloneScenarioRows(sourceScenarioId: string, targetUserId: 
             };
         }));
     }
-    const keepPlanned = opts.keepPlanned ?? true;
-    if (cells.length && (!opts.resetCells || keepPlanned)) {
+    if (opts.rollForward) {
+        // Scrub the whole source year line by line and write next year's planned cells.
+        const byLine = new Map<string, number[]>();
+        for (const c of cells) {
+            const arr = byLine.get(c.lineItemId) ?? Array<number>(12).fill(0);
+            arr[c.month] = Number(c.planned) || 0;
+            byLine.set(c.lineItemId, arr);
+        }
+        const newCells: (typeof cfCells.$inferInsert)[] = [];
+        for (const l of lines) {
+            const values = rollForwardValues(l.recurrence as Recurrence, byLine.get(l.id) ?? []);
+            values.forEach((planned, month) => {
+                if (planned) newCells.push({ id: randomUUID(), scenarioId: newScenarioId, lineItemId: lineMap.get(l.id)!, month, planned: String(planned) });
+            });
+        }
+        if (newCells.length) await db.insert(cfCells).values(newCells);
+    } else if (cells.length) {
         await db.insert(cfCells).values(cells.map(c => ({
             id: randomUUID(), scenarioId: newScenarioId, lineItemId: lineMap.get(c.lineItemId)!,
-            month: c.month, planned: c.planned,
-            actual: opts.resetCells ? null : c.actual,
-            paid: opts.resetCells ? false : c.paid,
-            note: opts.resetCells ? null : c.note,
+            month: c.month, planned: c.planned, actual: c.actual, paid: c.paid, note: c.note,
         })));
     }
     if (calcs.length) {

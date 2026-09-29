@@ -8,7 +8,7 @@
  *   Total Cash Available − Cash Paid Out = Cash Position (EOM) → next month's BOM
  */
 
-import type { CfCell, CfLineItem, CfSection, ScenarioBundle, SectionKind, StatementMode } from './types';
+import type { CfCell, CfLineItem, CfSection, Recurrence, ScenarioBundle, SectionKind, StatementMode } from './types';
 
 export interface LineComputed {
     lineItemId: string;
@@ -160,6 +160,25 @@ export function computeStatement(bundle: ScenarioBundle, mode: StatementMode = '
         lowestEnding: lowest,
         firstNegativeMonth,
     };
+}
+
+/**
+ * Next year's 12 planned values for one line, from this year's.
+ * Every month copies straight across (a lived year rolls forward as actuals).
+ * A `monthly` line then fills any empty month with its latest non-zero amount, so a
+ * year that was only filled from October still starts next January with every bill.
+ * A monthly line that had an amount in only one month is treated as a one-off (a sale,
+ * a deposit) and copied as is, whatever its label says.
+ * Annual, seasonal and calculator lines keep exactly the months they had.
+ */
+export function rollForwardValues(recurrence: Recurrence, monthly: number[]): number[] {
+    const out = Array.from({ length: 12 }, (_, m) => monthly[m] || 0);
+    if (recurrence !== 'monthly') return out;
+    const filled = out.filter(Boolean).length;
+    if (filled < 2) return out;
+    let latest = 0;
+    for (let m = 11; m >= 0; m--) if (out[m]) { latest = out[m]; break; }
+    return out.map(v => v || latest);
 }
 
 /** Outflow by category for the year (for the breakdown chart). */

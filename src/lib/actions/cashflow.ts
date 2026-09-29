@@ -80,10 +80,12 @@ export async function cloneScenario(scenarioId: string, name?: string) {
     }
 }
 
-/** Create next year's scenario from this one: year + 1, same sections and lines,
- *  opening cash linked to this scenario's December ending. Paid flags, actuals and
- *  cell notes are dropped; planned amounts are kept unless copyAmounts is false. */
-export async function rollForwardScenario(scenarioId: string, opts: { name?: string; copyAmounts?: boolean } = {}) {
+/** Create next year's scenario from this one: year + 1, same sections and lines with
+ *  every field, opening cash linked to this scenario's December ending. Amounts follow
+ *  rollForwardValues (monthly lines fill every month with their latest amount; annual,
+ *  seasonal and calculator lines keep their months). Paid flags, actuals and cell
+ *  notes are dropped. */
+export async function rollForwardScenario(scenarioId: string, opts: { name?: string } = {}) {
     try {
         const userId = await requireAuth();
         const src = await ownScenario(scenarioId, userId);
@@ -93,8 +95,7 @@ export async function rollForwardScenario(scenarioId: string, opts: { name?: str
             year,
             openingSourceScenarioId: scenarioId,
             clonedFromId: scenarioId,
-            resetCells: true,
-            keepPlanned: opts.copyAmounts ?? true,
+            rollForward: true,
         });
         revalidatePath(PATH);
         return { success: true as const, data: { id } };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Copy, Download, Plus, Star, Pencil, Trash2, Calculator, AlertTriangle, CalendarPlus } from "lucide-react";
+import { Download, Plus, Star, Pencil, Trash2, Calculator, AlertTriangle, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { HeaderHero } from "@/components/layout/header-hero";
@@ -28,7 +28,7 @@ import { MONTHS_LONG } from "@/lib/cashflow/constants";
 import { downloadWorkbook } from "@/lib/cashflow/export-xlsx";
 import type { CfLineItem, CfScenario, CfSection, ScenarioBundle } from "@/lib/cashflow/types";
 import {
-    getScenarios, getScenarioBundle, createScenario, cloneScenario, rollForwardScenario, updateScenario, setPrimaryScenario, deleteScenario,
+    getScenarios, getScenarioBundle, createScenario, rollForwardScenario, updateScenario, setPrimaryScenario, deleteScenario,
     addLineItem, updateLineItem, deleteLineItem, reorderLineItems, setCellsPlanned, setCellPaid, saveCalculator,
     type LineItemInput,
 } from "@/lib/actions/cashflow";
@@ -170,21 +170,14 @@ export default function CashFlowPage() {
             await loadScenarios(res.data.id);
         }
     };
-    const onRollForward = async ({ name, copyAmounts }: { name: string; copyAmounts: boolean }) => {
+    const onRollForward = async ({ name }: { name: string }) => {
         if (!bundle || !guard()) return;
-        const res = await rollForwardScenario(bundle.scenario.id, { name, copyAmounts });
+        const res = await rollForwardScenario(bundle.scenario.id, { name });
         if (!res.success) { toast.error(res.error); return; }
         toast.success(`${name} created; its opening cash follows ${bundle.scenario.name}`);
         await loadScenarios(res.data.id);
     };
     const openScenarioEditor = () => bundle && setScenarioDialog({ open: true, scenario: bundle.scenario });
-    const onClone = async () => {
-        if (!bundle || !guard()) return;
-        const name = prompt("Name for the copy:", `${bundle.scenario.name} (what-if)`); if (name === null) return;
-        const res = await cloneScenario(bundle.scenario.id, name.trim() || undefined);
-        if (!res.success) { toast.error(res.error); return; }
-        toast.success("Scenario cloned"); await loadScenarios(res.data.id);
-    };
     const onSetPrimary = async () => {
         if (!bundle || !guard()) return;
         const res = await setPrimaryScenario(bundle.scenario.id);
@@ -238,7 +231,7 @@ export default function CashFlowPage() {
         <div className="p-6 space-y-6">
             <HeaderHero
                 title="Cash Flow Statement"
-                description="Your year, month by month: cash in, cash out, and where you land. Scenarios let you try a what-if without losing the plan you live by."
+                description="Your year, month by month: cash in, cash out, and where you land. Roll a finished year forward and next year starts with every bill already in place."
                 imageUrl="/images/page-headers/cashflow-header.jpg"
                 imageClass="object-cover object-[50%_62%]"
                 frameClass="aspect-[16/7] max-h-[520px]"
@@ -286,7 +279,6 @@ export default function CashFlowPage() {
                     <>
                         <Button variant="outline" size="sm" onClick={() => setScenarioDialog({ open: true })}><Plus className="h-4 w-4 mr-1" />New</Button>
                         <Button variant="outline" size="sm" disabled={!bundle} onClick={() => bundle && setScenarioDialog({ open: true, scenario: bundle.scenario })}><Pencil className="h-4 w-4 mr-1" />Edit</Button>
-                        <Button variant="outline" size="sm" disabled={!bundle} onClick={onClone}><Copy className="h-4 w-4 mr-1" />Clone</Button>
                         <Button variant="outline" size="sm" disabled={!bundle} onClick={() => setRollForwardOpen(true)} title="Create next year from this scenario, opening cash linked to this December"><CalendarPlus className="h-4 w-4 mr-1" />Roll forward</Button>
                         <Button variant="outline" size="sm" disabled={!bundle || bundle.scenario.isPrimary} onClick={onSetPrimary}><Star className="h-4 w-4 mr-1" />Set primary</Button>
                         <Button variant="ghost" size="sm" disabled={!bundle} className="text-red-700 hover:text-red-800" onClick={onDeleteScenario}><Trash2 className="h-4 w-4" /></Button>

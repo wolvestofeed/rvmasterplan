@@ -234,7 +234,10 @@ strings from Drizzle, so convert at the action boundary, as the other pages do.
 ### Phase 2 — beyond the spreadsheet
 - [x] **Add a year**: roll December ending cash into a new scenario for year+1, copy lines forward
       (shipped 2026-09-28: `opening_source_scenario_id` on `cf_scenarios`, resolved live at load;
-      "Roll forward" button and "Carry forward from an earlier year" in the scenario dialog)
+      "Roll forward" button and "Carry forward from an earlier year" in the scenario dialog).
+      Roll forward copies every line with all fields and every month's amount into the same
+      month; monthly lines fill empty months with their latest amount (rollForwardValues).
+      Clone button removed from the toolbar per Robert 2026-09-28; the action remains.
 - [ ] Plan vs Actual per cell (schema already has `actual`), view toggle Plan / Actual / Variance
 - [ ] Pull actuals from Living Budget `expenses` by category and month
 - [ ] Scenario compare: overlay EOM cash lines, yearly totals with deltas, line diff
